@@ -1,25 +1,23 @@
 package dataquest;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+
+import com.google.gson.*;
 
 class Importing {
     static void readFirstJSON(JsonArray jsonArray) {
         System.out.println("Read check: " + jsonArray.get(0).getAsJsonObject().toString());
     }
     
-    static JsonArray csvToJSON(File csv) throws IOException {
+    static JsonArray csvToJSON(String fileString) throws IOException {
         JsonArray jsonArray = new JsonArray();
-        BufferedReader csvReader = new BufferedReader(new FileReader(csv)); //TODO: fix so less class needs
+        BufferedReader csvReader = new BufferedReader(new FileReader(fileString)); //TODO: fix so less class needs
         String row = csvReader.readLine();
         String[] categories;
         String[] datatypes;
@@ -32,6 +30,7 @@ class Importing {
 
             //TODO: Handle when the first String category (i.e. date or a title) appears to be number/boolean
             //TODO: Include date datatype
+            //NOTE: Currently handles mismatched types by printing error and adding it as a String
             row = csvReader.readLine();
             while(row != null) {
                 rowSplit = row.split(",");
@@ -54,11 +53,23 @@ class Importing {
                         //datatypes[] used to keep datatypes consistent down the whole category
                         if(datatypes[i] != null){
                             if(datatypes[i].equals("boolean")){
-                                stringJson += Boolean.valueOf(cell);
+                                try {
+                                    stringJson += Boolean.valueOf(cell);
+                                } catch (Exception e) {
+                                    System.out.println("Mismatched type error: " + cell + " is not a boolean");
+                                    stringJson += "\""+cell+"\"";
+                                    incorrectCount++;
+                                }
                                 if(i+1 < categories.length){stringJson+=",";}
-                                continue;                             
+                                continue;                                 
                             } else if (datatypes[i].equals("float")){
-                                stringJson += Float.valueOf(cell);
+                                try {
+                                    stringJson += Float.valueOf(cell);
+                                } catch (Exception e) {
+                                    System.out.println("Mismatched type error: " + cell + " is not a number");
+                                    stringJson += "\""+cell+"\"";
+                                    incorrectCount++;
+                                }
                                 if(i+1 < categories.length){stringJson+=",";}
                                 continue;
                             } else if(datatypes[i].equals("String")){
@@ -79,7 +90,11 @@ class Importing {
                         //NOTE: Doesn't separate ints from floats - unnecessary
                         else {
                             try {
+                                // if(cell.contains("F") || cell.contains("f")) {
+                                //     throw new Exception(""); //catches when the first String of a category contains F
+                                // }
                                 stringJson += Float.valueOf(cell);
+                                System.out.println("\tFloat: " + cell);
                                 datatypes[i] = "float";
                                 if(i+1 < categories.length){stringJson+=",";}
                                 continue;
@@ -115,44 +130,33 @@ class Importing {
     }
     
     public void gui(){
-        JTextField textField;
         JFrame frame;
-        JButton button;
-        frame = new JFrame("textfield");
-        button = new JButton("submit");  
-        textField = new JTextField(30);
-        JPanel panel = new JPanel();
-		panel.add(textField);
-		panel.add(button);
-		frame.add(panel);
-		frame.setSize(500, 200);
+        frame = new JFrame("textfield"); 
+        frame.setSize(500, 200);
         frame.setVisible(true);
-
-        button.addActionListener(e -> {
-                File file = new File(textField.getText());
-                if (file.isFile()){
-                    if(file.getName().contains(".csv")) {
-                        System.out.println("csv");
-                        try {
-                            readFirstJSON(csvToJSON(file));
-                        } catch (FileNotFoundException e1) {
-                            //Shouldn't be reached by the way this is set up
-                            e1.printStackTrace();
-                        } catch(IOException e2) {
-                            e2.printStackTrace();
-                        }
-                    } else if(file.getName().contains(".xlsx")) {
-                        //TO DO: Handle reading in .xlsx files 
-                        System.out.println("xlsx");
-                    } else if(file.getName().contains(".xls")) {
-                        //TO DO: Handle reading in .xls files
-                        System.out.println("xls");
-                    } else {
-                        System.out.println("Not a valid file type");
-                    }
-                } else {
-                    System.out.println("Not a file");
-                }
-        });
+        frame.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
+        
+        JFileChooser fileSelect = new JFileChooser();
+        fileSelect.setAcceptAllFileFilterUsed(false);
+        fileSelect.setFileFilter(new FileNameExtensionFilter(".csv, .xls, .xlsx", "csv","xls","xlsx"));
+        fileSelect.showOpenDialog(frame);
+        String fileString = fileSelect.getSelectedFile().getAbsolutePath();
+        if(fileString.endsWith(".csv")){
+            System.out.println("csv");
+            try {
+                readFirstJSON(csvToJSON(fileString));
+            } catch(IOException e1) {
+                System.out.println("CSV File not found");
+            }
+        } else if(fileString.endsWith(".xlsx")) {
+            //TODO: Handle reading in .xlsx files 
+            System.out.println("xlsx");
+        } else if(fileString.endsWith(".xls")) {
+            //TODO: Handle reading in .xls files
+            System.out.println("xls");
+        } else {
+            System.out.println("Not a valid file type");
+        }
+        //});
     }
 }
