@@ -3,6 +3,8 @@ package dataquest;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -18,6 +20,7 @@ class Importing {
     public static void main(String[] args) {
         getFields();
     }
+
     static void readFirstJSON(JsonArray jsonArray) {
         System.out.println("Read check: " + jsonArray.get(0).getAsJsonObject().toString());
     }
@@ -26,6 +29,29 @@ class Importing {
             gui();
         }
         return fieldName;
+    }
+    //returns String[0] if the field does not exist
+    static String[] getValues(String field) {
+        if(fieldName == null) {
+            gui();
+        }
+        boolean validField = false;
+        for (String string : fieldName) {
+            if(field.equals(string)){validField = true;break;}
+        }
+        if (!validField) {
+            System.out.println("ERROR: Field not found");
+            for (String string : fieldName) {
+                System.out.println("\t" + string);
+            }
+            return new String[0];
+        }
+        String[] values = new String[jsonArray.size()];
+        for (int j = 0; j < jsonArray.size(); j++) {
+            JsonObject jObject = jsonArray.get(j).getAsJsonObject();
+            values[j] = jObject.get(field).getAsString();
+        }
+        return values;
     }
     
     static JsonArray csvToJSON(String fileString) throws IOException {
