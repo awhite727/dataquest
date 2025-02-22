@@ -5,17 +5,17 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.charset.MalformedInputException;
 
 import javax.swing.*;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.stream.MalformedJsonException;
-
 
 class Importing {
+    static void readFirstJSON(JsonArray jsonArray) {
+        System.out.println("Read check: " + jsonArray.get(0).getAsJsonObject().toString());
+    }
     
     static JsonArray csvToJSON(File csv) throws IOException {
         JsonArray jsonArray = new JsonArray();
@@ -94,7 +94,7 @@ class Importing {
                 }
                 stringJson += "}";
                 try {
-                    JsonObject o = new JsonParser().parse(stringJson).getAsJsonObject();
+                    JsonObject o = JsonParser.parseString(stringJson).getAsJsonObject();
                     jsonArray.add(o);
                     //System.out.println("Attempt: " + o.toString());
                 } catch (Exception e) {
@@ -109,7 +109,7 @@ class Importing {
         System.out.println("Reading completed.");
         System.out.println("\tTotal lines of data: " + jsonArray.size());
         System.out.println("\tTotal incorrect lines: " + incorrectCount);
-        System.out.println("Sum: " + (incorrectCount+jsonArray.size()));
+        System.out.println("\tSum: " + (incorrectCount+jsonArray.size()));
 
         return jsonArray;
     }
@@ -134,7 +134,7 @@ class Importing {
                     if(file.getName().contains(".csv")) {
                         System.out.println("csv");
                         try {
-                            csvToJSON(file);
+                            readFirstJSON(csvToJSON(file));
                         } catch (FileNotFoundException e1) {
                             //Shouldn't be reached by the way this is set up
                             e1.printStackTrace();
