@@ -3,8 +3,6 @@ package dataquest;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -18,12 +16,17 @@ class Importing {
     public static String[] datatypes;
 
     public static void main(String[] args) {
-        getFields();
+        System.out.println("getValues: "); 
+        String [] values = getValues("energy");
+        for (String string : values) {
+            System.out.println(string);
+        }
     }
 
     static void readFirstJSON(JsonArray jsonArray) {
         System.out.println("Read check: " + jsonArray.get(0).getAsJsonObject().toString());
     }
+
     static String[] getFields() {
         if(fieldName == null) {
             gui();
@@ -183,7 +186,7 @@ class Importing {
         if(fileString.endsWith(".csv")){
             System.out.println("csv");
             try {
-                readFirstJSON(csvToJSON(fileString));
+                csvToJSON(fileString);
             } catch(IOException e1) {
                 System.out.println("CSV File not found");
             }
