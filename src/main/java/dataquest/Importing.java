@@ -17,7 +17,7 @@ import com.google.gson.stream.MalformedJsonException;
 
 class Importing {
     
-    static void csvToJSON(File csv) throws IOException {
+    static JsonArray csvToJSON(File csv) throws IOException {
         JsonArray jsonArray = new JsonArray();
         BufferedReader csvReader = new BufferedReader(new FileReader(csv)); //TODO: fix so less class needs
         String row = csvReader.readLine();
@@ -29,7 +29,7 @@ class Importing {
         if (row != null) {
             categories = row.split(",");
             datatypes = new String[categories.length];
-            
+
             //TODO: Handle when the first String category (i.e. date or a title) appears to be number/boolean
             //TODO: Include date datatype
             row = csvReader.readLine();
@@ -110,6 +110,8 @@ class Importing {
         System.out.println("\tTotal lines of data: " + jsonArray.size());
         System.out.println("\tTotal incorrect lines: " + incorrectCount);
         System.out.println("Sum: " + (incorrectCount+jsonArray.size()));
+
+        return jsonArray;
     }
     
     public void gui(){
