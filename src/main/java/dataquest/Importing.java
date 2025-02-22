@@ -11,22 +11,33 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import com.google.gson.*;
 
 class Importing {
+    public static JsonArray jsonArray;
+    public static String[] fieldName;
+    public static String[] datatypes;
+
+    public static void main(String[] args) {
+        getFields();
+    }
     static void readFirstJSON(JsonArray jsonArray) {
         System.out.println("Read check: " + jsonArray.get(0).getAsJsonObject().toString());
     }
+    static String[] getFields() {
+        if(fieldName == null) {
+            gui();
+        }
+        return fieldName;
+    }
     
     static JsonArray csvToJSON(String fileString) throws IOException {
-        JsonArray jsonArray = new JsonArray();
+        jsonArray = new JsonArray();
         BufferedReader csvReader = new BufferedReader(new FileReader(fileString)); //TODO: fix so less class needs
         String row = csvReader.readLine();
-        String[] categories;
-        String[] datatypes;
         String[] rowSplit;
         String stringJson = "";
         int incorrectCount = 1; //Instantiated with 1 to account for category row
         if (row != null) {
-            categories = row.split(",");
-            datatypes = new String[categories.length];
+            fieldName = row.split(",");
+            datatypes = new String[fieldName.length];
 
             //TODO: Handle when the first String category (i.e. date or a title) appears to be number/boolean
             //TODO: Include date datatype
@@ -34,7 +45,7 @@ class Importing {
             row = csvReader.readLine();
             while(row != null) {
                 rowSplit = row.split(",");
-                if(rowSplit.length > categories.length) {
+                if(rowSplit.length > fieldName.length) {
                     System.out.println("ERROR: Skipping data with a comma within it");
                     incorrectCount++;
                     row = csvReader.readLine();
@@ -42,12 +53,12 @@ class Importing {
                 } else {
                     stringJson = "{"; //Start building csv into a parseable string
                     for (int i = 0; i < rowSplit.length; i++) {
-                        stringJson += "\"" + categories[i] +"\": ";
+                        stringJson += "\"" + fieldName[i] +"\": ";
                         String cell = rowSplit[i];
                         //TODO: Implement null handling (JSON doesn't allow?)
                         if (cell == null || cell.isEmpty()) {
                             stringJson += "\"NA\"";
-                            if(i+1 < categories.length){stringJson+=",";}
+                            if(i+1 < fieldName.length){stringJson+=",";}
                             continue;
                         }
                         //datatypes[] used to keep datatypes consistent down the whole category
@@ -57,24 +68,26 @@ class Importing {
                                     stringJson += Boolean.valueOf(cell);
                                 } catch (Exception e) {
                                     System.out.println("Mismatched type error: " + cell + " is not a boolean");
-                                    stringJson += "\""+cell+"\"";
+                                    //stringJson += "\""+cell+"\"";
                                     incorrectCount++;
+                                    break;
                                 }
-                                if(i+1 < categories.length){stringJson+=",";}
+                                if(i+1 < fieldName.length){stringJson+=",";}
                                 continue;                                 
                             } else if (datatypes[i].equals("float")){
                                 try {
                                     stringJson += Float.valueOf(cell);
                                 } catch (Exception e) {
                                     System.out.println("Mismatched type error: " + cell + " is not a number");
-                                    stringJson += "\""+cell+"\"";
+                                    //stringJson += "\""+cell+"\"";
                                     incorrectCount++;
+                                    break;
                                 }
-                                if(i+1 < categories.length){stringJson+=",";}
+                                if(i+1 < fieldName.length){stringJson+=",";}
                                 continue;
                             } else if(datatypes[i].equals("String")){
                                 stringJson += "\"" + cell + "\"";
-                                if(i+1 < categories.length){stringJson+=",";}
+                                if(i+1 < fieldName.length){stringJson+=",";}
                                 continue;
                             } else {
                                 System.out.println("ERROR: Unknown data type: " + datatypes[i]);
@@ -84,7 +97,7 @@ class Importing {
                         } else if("true".equalsIgnoreCase(cell) || "false".equalsIgnoreCase(cell)) {
                             datatypes[i] = "boolean";
                             stringJson += Boolean.valueOf(cell);
-                            if(i+1 < categories.length){stringJson+=",";}
+                            if(i+1 < fieldName.length){stringJson+=",";}
                             continue;                         
                         }
                         //NOTE: Doesn't separate ints from floats - unnecessary
@@ -96,12 +109,12 @@ class Importing {
                                 stringJson += Float.valueOf(cell);
                                 System.out.println("\tFloat: " + cell);
                                 datatypes[i] = "float";
-                                if(i+1 < categories.length){stringJson+=",";}
+                                if(i+1 < fieldName.length){stringJson+=",";}
                                 continue;
                             } catch (Exception e) {
                                 datatypes[i] = "String";
                                 stringJson += "\"" + cell + "\"";
-                                if(i+1 < categories.length){stringJson+=",";}
+                                if(i+1 < fieldName.length){stringJson+=",";}
                                 continue;
                             }
                         }                
@@ -129,7 +142,7 @@ class Importing {
         return jsonArray;
     }
     
-    public void gui(){
+    public static void gui(){
         JFrame frame;
         frame = new JFrame("textfield"); 
         frame.setSize(500, 200);
