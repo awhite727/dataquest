@@ -1,176 +1,163 @@
 package dataquest;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-
+import java.util.ArrayList;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-
-import com.google.gson.*;
-
 class Importing {
-    public static JsonArray jsonArray;
-    public static String[] fieldName;
-    public static String[] datatypes;
+    public static ArrayList<Field> dataArray;
 
     public static void main(String[] args) {
-        System.out.println("getValues: "); 
+        /* System.out.println("getValues: "); 
         String [] values = getValues("energy");
+        System.out.println("\n\n");
         for (String string : values) {
             System.out.println(string);
         }
-    }
+        */
+        getFields();
+        Field energy = dataArray.get(indexOfField("energy"));
+        int energyIndex = energy.getStringArray().size()-1;
+        System.out.println(energy.getCellString(energyIndex));
+        energy.updateCell(energyIndex, "9999999");
+        System.out.println(energy.getCellString(energyIndex));
+        energy.deleteCell(energyIndex);
+        System.out.println(energy.getCellString(energyIndex));
 
-    static void readFirstJSON(JsonArray jsonArray) {
-        System.out.println("Read check: " + jsonArray.get(0).getAsJsonObject().toString());
+
+        
     }
 
     static String[] getFields() {
-        if(fieldName == null) {
+        if(dataArray == null) {
             gui();
         }
-        return fieldName;
+        String [] fields = new String[dataArray.size()];
+        for (int i = 0; i < dataArray.size(); i++) {
+            fields[i] = dataArray.get(i).getName();
+        }
+        return fields;
     }
+
+    static int indexOfField(String fieldName){
+        for (Field field : dataArray) {
+            if(fieldName.equals(field.getName())){
+                return dataArray.indexOf(field);
+            }
+        }
+        return -1;
+    }
+    //TODO: TO BE DELETEED
     //returns String[0] if the field does not exist
-    static String[] getValues(String field) {
-        if(fieldName == null) {
+    static String[] getValues(String fieldName) {
+        if(dataArray == null) {
             gui();
         }
-        boolean validField = false;
-        for (String string : fieldName) {
-            if(field.equals(string)){validField = true;break;}
+        Field validField=null;
+        for (Field field : dataArray) {
+            if(fieldName.equals(field.getName())){validField = field;break;}
         }
-        if (!validField) {
+        try {
+            String[] vals = new String[validField.getStringArray().size()];
+            for (int i = 0; i < vals.length; i++) {
+                vals[i] = validField.getStringArray().get(i);
+            }
+            return vals;
+        } catch (Exception e) {
             System.out.println("ERROR: Field not found");
-            for (String string : fieldName) {
-                System.out.println("\t" + string);
+            for (Field field : dataArray) {
+                System.out.println("\t" + field.getName());
             }
             return new String[0];
         }
-        String[] values = new String[jsonArray.size()];
-        for (int j = 0; j < jsonArray.size(); j++) {
-            JsonObject jObject = jsonArray.get(j).getAsJsonObject();
-            values[j] = jObject.get(field).getAsString();
-        }
-        return values;
     }
-    
-    static JsonArray csvToJSON(String fileString) throws IOException {
-        jsonArray = new JsonArray();
-        BufferedReader csvReader = new BufferedReader(new FileReader(fileString)); //TODO: fix so less class needs
+    static void csvToField(File file) throws IOException{
+        BufferedReader csvReader = new BufferedReader(new FileReader(file)); //TODO: fix so less class needs
         String row = csvReader.readLine();
+        dataArray = new ArrayList<>();
         String[] rowSplit;
-        String stringJson = "";
+        String[] fieldNames;
         int incorrectCount = 1; //Instantiated with 1 to account for category row
-        if (row != null) {
-            fieldName = row.split(",");
-            datatypes = new String[fieldName.length];
-
-            //TODO: Handle when the first String category (i.e. date or a title) appears to be number/boolean
-            //TODO: Include date datatype
-            //NOTE: Currently handles mismatched types by printing error and adding it as a String
-            row = csvReader.readLine();
-            while(row != null) {
-                rowSplit = row.split(",");
-                if(rowSplit.length > fieldName.length) {
-                    System.out.println("ERROR: Skipping data with a comma within it");
-                    incorrectCount++;
-                    row = csvReader.readLine();
-                    continue;
-                } else {
-                    stringJson = "{"; //Start building csv into a parseable string
-                    for (int i = 0; i < rowSplit.length; i++) {
-                        stringJson += "\"" + fieldName[i] +"\": ";
-                        String cell = rowSplit[i];
-                        //TODO: Implement null handling (JSON doesn't allow?)
-                        if (cell == null || cell.isEmpty()) {
-                            stringJson += "\"NA\"";
-                            if(i+1 < fieldName.length){stringJson+=",";}
-                            continue;
+        if (row == null) {csvReader.close();return;}
+        
+        fieldNames = row.split(",");
+        for (String string : fieldNames) {
+            dataArray.add(new Field(string));
+        }
+        row = csvReader.readLine();
+        while(row != null) {
+            rowSplit = row.split(",");
+            if(rowSplit.length > fieldNames.length) {
+                //System.out.println("ERROR: Skipping data with a comma within it");
+                incorrectCount++;
+                row = csvReader.readLine();
+                continue;
+            }
+            for (int i = 0; i < rowSplit.length; i++) {
+                if(dataArray.get(i).getType() == null){
+                    if("true".equalsIgnoreCase(rowSplit[i]) || "false".equalsIgnoreCase(rowSplit[i])) {
+                        if(!dataArray.get(i).setType("boolean")){
+                            System.out.println("ERROR: Issue setting " + rowSplit[i] + " to type boolean");
                         }
-                        //datatypes[] used to keep datatypes consistent down the whole category
-                        if(datatypes[i] != null){
-                            if(datatypes[i].equals("boolean")){
-                                try {
-                                    stringJson += Boolean.valueOf(cell);
-                                } catch (Exception e) {
-                                    System.out.println("Mismatched type error: " + cell + " is not a boolean");
-                                    //stringJson += "\""+cell+"\"";
-                                    incorrectCount++;
-                                    break;
-                                }
-                                if(i+1 < fieldName.length){stringJson+=",";}
-                                continue;                                 
-                            } else if (datatypes[i].equals("float")){
-                                try {
-                                    stringJson += Float.valueOf(cell);
-                                } catch (Exception e) {
-                                    System.out.println("Mismatched type error: " + cell + " is not a number");
-                                    //stringJson += "\""+cell+"\"";
-                                    incorrectCount++;
-                                    break;
-                                }
-                                if(i+1 < fieldName.length){stringJson+=",";}
-                                continue;
-                            } else if(datatypes[i].equals("String")){
-                                stringJson += "\"" + cell + "\"";
-                                if(i+1 < fieldName.length){stringJson+=",";}
-                                continue;
-                            } else {
-                                System.out.println("ERROR: Unknown data type: " + datatypes[i]);
-                                incorrectCount++;
-                                continue;
+                    }
+                    //NOTE: Doesn't separate ints from floats - unnecessary
+                    else {
+                        try {
+                            Float.valueOf(rowSplit[i]);
+                            if(!dataArray.get(i).setType("float")){
+                                System.out.println("ERROR: Issue setting " + rowSplit[i] + " to type float");
                             }
-                        } else if("true".equalsIgnoreCase(cell) || "false".equalsIgnoreCase(cell)) {
-                            datatypes[i] = "boolean";
-                            stringJson += Boolean.valueOf(cell);
-                            if(i+1 < fieldName.length){stringJson+=",";}
-                            continue;                         
+                        } catch (Exception e) {
+                            if(!dataArray.get(i).setType("String")){
+                                System.out.println("ERROR: Issue setting " + rowSplit[i] + " to type String");
+                            }
                         }
-                        //NOTE: Doesn't separate ints from floats - unnecessary
-                        else {
-                            try {
-                                // if(cell.contains("F") || cell.contains("f")) {
-                                //     throw new Exception(""); //catches when the first String of a category contains F
-                                // }
-                                stringJson += Float.valueOf(cell);
-                                System.out.println("\tFloat: " + cell);
-                                datatypes[i] = "float";
-                                if(i+1 < fieldName.length){stringJson+=",";}
-                                continue;
-                            } catch (Exception e) {
-                                datatypes[i] = "String";
-                                stringJson += "\"" + cell + "\"";
-                                if(i+1 < fieldName.length){stringJson+=",";}
-                                continue;
-                            }
-                        }                
                     }
                 }
-                stringJson += "}";
-                try {
-                    JsonObject o = JsonParser.parseString(stringJson).getAsJsonObject();
-                    jsonArray.add(o);
-                    //System.out.println("Attempt: " + o.toString());
-                } catch (Exception e) {
-                    System.out.println("ERROR: Malformed data; data skipped");
+                if(dataArray.get(i).addCell(rowSplit[i])){
+                    continue;
+                } else {
+                    System.out.println("ERROR: " + rowSplit[i] + " is not a " + dataArray.get(i).getType());
                     incorrectCount++;
                 }
-                row = csvReader.readLine();
-
             }
+            row = csvReader.readLine();
         }
         csvReader.close();
         System.out.println("Reading completed.");
-        System.out.println("\tTotal lines of data: " + jsonArray.size());
+        System.out.println("\tTotal lines of data: " + dataArray.get(0).getStringArray().size());
         System.out.println("\tTotal incorrect lines: " + incorrectCount);
-        System.out.println("\tSum: " + (incorrectCount+jsonArray.size()));
-
-        return jsonArray;
+        System.out.println("\tSum: " + (incorrectCount+dataArray.get(0).getStringArray().size()));
     }
     
+   /*
+    static void xlsxReading(File file) throws IOException{
+        try {
+            POIFSFileSystem fs = new POIFSFileSystem(file);
+            HSSFWorkbook wb = new HSSFWorkbook(fs);
+            HSSFSheet sheet = wb.getSheetAt(0);
+            wb.close();
+            HSSFRow row = sheet.getRow(0);
+            
+            int numFields = row.getPhysicalNumberOfCells();
+            fieldName = new String[numFields];
+            for (int i=0; i < numFields; i++) {
+                if (row.getCell(i) == null) {
+                    //TODO: Handle when there's a gap between fields
+                } else {
+                    fieldName[i] = row.getCell(i).getStringCellValue();
+                }
+            }
+            
+        } catch(Exception ioe) {
+            ioe.printStackTrace();
+        }
+    }
+    */
     public static void gui(){
         JFrame frame;
         frame = new JFrame("textfield"); 
@@ -182,23 +169,24 @@ class Importing {
         fileSelect.setAcceptAllFileFilterUsed(false);
         fileSelect.setFileFilter(new FileNameExtensionFilter(".csv, .xls, .xlsx", "csv","xls","xlsx"));
         fileSelect.showOpenDialog(frame);
-        String fileString = fileSelect.getSelectedFile().getAbsolutePath();
-        if(fileString.endsWith(".csv")){
+        File file = new File(fileSelect.getSelectedFile().getAbsolutePath());
+        if(file.exists()){
+            if(file.getName().endsWith(".csv")) {
             System.out.println("csv");
             try {
-                csvToJSON(fileString);
+                csvToField(file);
             } catch(IOException e1) {
                 System.out.println("CSV File not found");
             }
-        } else if(fileString.endsWith(".xlsx")) {
+        } else if(file.getName().endsWith(".xlsx")) {
             //TODO: Handle reading in .xlsx files 
             System.out.println("xlsx");
-        } else if(fileString.endsWith(".xls")) {
+        } else if(file.getName().endsWith(".xls")) {
             //TODO: Handle reading in .xls files
             System.out.println("xls");
+        }
         } else {
             System.out.println("Not a valid file type");
         }
-        //});
     }
 }
