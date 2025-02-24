@@ -106,6 +106,28 @@ class Dataset {
         return typeFound;
     }
 
+    //Helps csvToField split complex CSVs 
+    //TODO: combine with csvToField after thorough testing
+    private static String[] unpackCSVwithComma(String row, int numFields) {
+        String[] unpacked;// = new String[numFields];
+        //Copied from https://stackoverflow.com/questions/1757065/java-splitting-a-comma-separated-string-but-ignoring-commas-in-quotes 
+        String regex = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"; 
+            //Split by ,
+                //That has a __ after it (?=(__)) of any amount
+                    //Don't split by anything (?:) that matches the substring
+                        //Any amount of characters not a " 
+                        //followed by a quote
+                        //folowed by any amount of characters not a "
+                        //followed by another " 
+                //Ending in any amount of any character not a "
+            
+        unpacked = row.split(regex);
+        if (unpacked.length != numFields) {
+            unpacked = new String[0];
+        }
+        return unpacked;
+    }
+
     //Takes in the imported file and fills out the dataArray
     static void csvToField(File file) throws IOException{
         BufferedReader csvReader = new BufferedReader(new FileReader(file)); //TODO: fix so less class needs
@@ -113,8 +135,8 @@ class Dataset {
         dataArray = new ArrayList<>();
         String[] rowSplit;
         String[] fieldNames;
-        int incorrectCount = 1; //Instantiated with 1 to account for category row
-        int commaSkips = 1;
+        int incorrectCount = 0; 
+        int commaSplit = 0;
         if (row == null) {csvReader.close();return;}
         
         fieldNames = row.split(",");
@@ -126,10 +148,16 @@ class Dataset {
             rowSplit = row.split(",");
             if(rowSplit.length > fieldNames.length) {
                 //System.out.println("ERROR: Skipping data with a comma within it");
-                incorrectCount++;
-                commaSkips++;
-                row = csvReader.readLine();
-                continue;
+                rowSplit = unpackCSVwithComma(row, fieldNames.length);
+                if(rowSplit.length == 0) {
+                    System.out.println("ERROR: Unable to unpack row " + row);
+                    incorrectCount++;
+                    row = csvReader.readLine();
+                    continue;
+                } else {
+                    //System.out.println("\nrowSplit updated: " + Arrays.toString(rowSplit));
+                    commaSplit++;
+                }
             }
             for (int i = 0; i < rowSplit.length; i++) {
                 if(dataArray.get(i).getType() == null){
@@ -150,8 +178,8 @@ class Dataset {
         System.out.println("Reading completed.");
         System.out.println("\tTotal lines of data: " + dataArray.get(0).getStringArray().size());
         System.out.println("\tTotal incorrect lines: " + incorrectCount);
-        System.out.println("\t\tComma skips: " + commaSkips);
-        System.out.println("\tSum: " + (incorrectCount+dataArray.get(0).getStringArray().size()));
+        System.out.println("\tSuccessful comma splits: " + commaSplit);
+        System.out.println("\tSum: " + (incorrectCount+dataArray.get(0).getStringArray().size())+1);
     }
     
     //Takes an imported file and fills out the dataArray
