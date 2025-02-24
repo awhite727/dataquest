@@ -30,6 +30,8 @@ public class Layout extends JFrame {
     private Color[] colorPalette;
     private JButton addRowButton, addColumnButton;
 
+    
+
     public Layout() {
         setTitle("DataQuest");
         setSize(800, 600);
@@ -99,6 +101,10 @@ public class Layout extends JFrame {
 
     private void addColumn() {
         tableModel.addColumn("Column " + (tableModel.getColumnCount() + 1));
+    }
+
+    private void addColumn(String name) {
+        tableModel.addColumn(name + (tableModel.getColumnCount() + 1));
     }
 
     private void updateCharts() {
