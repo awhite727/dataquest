@@ -8,28 +8,19 @@ import java.util.ArrayList;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-class Importing {
-    public static ArrayList<Field> dataArray;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-    public static void main(String[] args) {
-        /* System.out.println("getValues: "); 
-        String [] values = getValues("energy");
-        System.out.println("\n\n");
-        for (String string : values) {
-            System.out.println(string);
+class Dataset {
+    public static ArrayList<Field> dataArray = null;
+
+    static ArrayList<Field> getDataArray() {
+        if(dataArray == null) {
+            gui();
         }
-        */
-        getFields();
-        Field energy = dataArray.get(indexOfField("energy"));
-        int energyIndex = energy.getStringArray().size()-1;
-        System.out.println(energy.getCellString(energyIndex));
-        energy.updateCell(energyIndex, "9999999");
-        System.out.println(energy.getCellString(energyIndex));
-        energy.deleteCell(energyIndex);
-        System.out.println(energy.getCellString(energyIndex));
-
-
-        
+        return dataArray;
     }
 
     static String[] getFields() {
@@ -134,30 +125,81 @@ class Importing {
         System.out.println("\tSum: " + (incorrectCount+dataArray.get(0).getStringArray().size()));
     }
     
-   /*
+
     static void xlsxReading(File file) throws IOException{
+        int incorrectCount = 1; //Instantiated with 1 to account for category row
+        //POIFSFileSystem fs;
+        XSSFWorkbook wb;
+        XSSFSheet sheet;
         try {
-            POIFSFileSystem fs = new POIFSFileSystem(file);
-            HSSFWorkbook wb = new HSSFWorkbook(fs);
-            HSSFSheet sheet = wb.getSheetAt(0);
+            //fs = new POIFSFileSystem(file);
+            wb = new XSSFWorkbook(file);
+            sheet = wb.getSheetAt(0);
             wb.close();
-            HSSFRow row = sheet.getRow(0);
-            
-            int numFields = row.getPhysicalNumberOfCells();
-            fieldName = new String[numFields];
-            for (int i=0; i < numFields; i++) {
-                if (row.getCell(i) == null) {
-                    //TODO: Handle when there's a gap between fields
-                } else {
-                    fieldName[i] = row.getCell(i).getStringCellValue();
+            //HSSFRow row = sheet.getRow(0);
+        } catch(Exception ioException) {
+            ioException.printStackTrace();
+            return;
+        }
+        int numFields = sheet.getRow(0).getPhysicalNumberOfCells();
+        for (Row row : sheet) {
+            if(dataArray == null) {
+                dataArray = new ArrayList<>();
+                for (Cell cell : row) {
+                    dataArray.add(new Field(cell.getStringCellValue()));
+                    //NOTE: getStringCellValue throws an error if it's numeric or formulas
+                }
+                continue;
+            }
+            else {
+                for (int i=0; i < numFields; i++) {
+                    String cell = "";
+                    try {
+                        cell = row.getCell(i).getStringCellValue();
+                    } catch (Exception e1) {
+                        try {
+                            cell = row.getCell(i).getBooleanCellValue()+"";
+                        } catch (Exception e2) {
+                            cell = (row.getCell(i).getNumericCellValue())+"";
+                        //NOTE: getNumericCellValue is a double, not float
+                        }
+                        
+                    }
+                    if(dataArray.get(i).getType() == null){
+                        if("true".equalsIgnoreCase(cell) || "false".equalsIgnoreCase(cell)) {
+                            if(!dataArray.get(i).setType("boolean")){
+                                System.out.println("ERROR: Issue setting " + cell + " to type boolean");
+                            }
+                        }
+                        //NOTE: Doesn't separate ints from floats - unnecessary
+                        else {
+                            try {
+                                Float.valueOf(cell);
+                                if(!dataArray.get(i).setType("float")){
+                                    System.out.println("ERROR: Issue setting " + cell + " to type float");
+                                }
+                            } catch (Exception e) {
+                                if(!dataArray.get(i).setType("String")){
+                                    System.out.println("ERROR: Issue setting " + cell + " to type String");
+                                }
+                            }
+                        }
+                    }
+                    if(dataArray.get(i).addCell(cell)){
+                        continue;
+                    } else {
+                        System.out.println("ERROR: " + cell + " is not a " + dataArray.get(i).getType());
+                        incorrectCount++;
+                    }
                 }
             }
-            
-        } catch(Exception ioe) {
-            ioe.printStackTrace();
         }
+        System.out.println("Reading completed.");
+        System.out.println("\tTotal lines of data: " + dataArray.get(0).getStringArray().size());
+        System.out.println("\tTotal incorrect lines: " + incorrectCount);
+        System.out.println("\tSum: " + (incorrectCount+dataArray.get(0).getStringArray().size()));        
     }
-    */
+    
     public static void gui(){
         JFrame frame;
         frame = new JFrame("textfield"); 
@@ -179,8 +221,12 @@ class Importing {
                 System.out.println("CSV File not found");
             }
         } else if(file.getName().endsWith(".xlsx")) {
-            //TODO: Handle reading in .xlsx files 
             System.out.println("xlsx");
+            try {
+                xlsxReading(file);
+            } catch(IOException e1) {
+                System.out.println("xlsx File not found");
+            }
         } else if(file.getName().endsWith(".xls")) {
             //TODO: Handle reading in .xls files
             System.out.println("xls");

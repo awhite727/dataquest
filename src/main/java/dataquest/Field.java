@@ -9,8 +9,8 @@ public class Field {
     private ArrayList<Object> typedArray = new ArrayList<>();
     Field(String fieldName) {//, ArrayList<String> fieldArray){
         this.name = fieldName;
-        
     }
+    
     Field(String fieldName, String fieldType) {
         this.name = fieldName;
         boolean validType = (fieldType.equalsIgnoreCase("String") ||fieldType.equalsIgnoreCase("float") ||fieldType.equalsIgnoreCase("boolean"));
