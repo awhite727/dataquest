@@ -5,7 +5,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import javax.swing.*;
+
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -15,6 +17,10 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 class Dataset {
     public static ArrayList<Field> dataArray = null;
+
+    public Dataset() {
+        
+    }
 
     static ArrayList<Field> getDataArray() {
         if(dataArray == null) {
