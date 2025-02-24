@@ -19,6 +19,10 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6318ff7be90f2753a6d688326943f8b9a114dd61
 public class Layout extends JFrame {
     private JTable spreadsheet;
     private DefaultTableModel tableModel;
