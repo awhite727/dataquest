@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
+
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -15,7 +17,11 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 class Dataset {
     public static ArrayList<Field> dataArray = null;
+    private static Pattern booleanPattern = null;
+    private static Pattern numericPattern = null;
+    private static Pattern sciNoPattern = null;
 
+    //Checks if the dataArray exists, and if not opens the importing window, then returns the dataArray
     static ArrayList<Field> getDataArray() {
         if(dataArray == null) {
             gui();
@@ -23,6 +29,7 @@ class Dataset {
         return dataArray;
     }
 
+    //Returns a String[] with all of the field names 
     static String[] getFields() {
         if(dataArray == null) {
             gui();
@@ -34,6 +41,7 @@ class Dataset {
         return fields;
     }
 
+    //Takes the fieldName and returns the index within dataArray; returns -1 if the field does not exist
     static int indexOfField(String fieldName){
         for (Field field : dataArray) {
             if(fieldName.equals(field.getName())){
@@ -42,30 +50,63 @@ class Dataset {
         }
         return -1;
     }
-    //TODO: TO BE DELETEED
-    //returns String[0] if the field does not exist
-    static String[] getValues(String fieldName) {
-        if(dataArray == null) {
-            gui();
+
+    //sets the allowed Patterns and returns an array with the compiled patterns
+    static Pattern[] setPatterns(){
+            Pattern[] patterns;
+            booleanPattern = Pattern.compile("^true|false$", Pattern.CASE_INSENSITIVE);
+            numericPattern = Pattern.compile("^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$");
+                        /* Start with an optional +|-
+                        End with a mandatory: 
+                            At least one number, followed by an optional
+                            decimal with any number of numbers following
+                            OR exactly one decimal with 1 or more numbers following (without number before)
+                        Example allowed edges: 
+                            +.1
+                            1. */
+            sciNoPattern = Pattern.compile("^[+-]?([1-9]([.][0-9]+)?[e][-]?[0-9]+)$", Pattern.CASE_INSENSITIVE);
+                        /*Start with an optional +|-
+                        End with a mandatory: 
+                            Exactly 1 number 1-9, 
+                                optionally (exactly one decimal and at least one number 0-9 after) 
+                            Exactly 1 'e'
+                            optionally one - 
+                            And at least one number after afterwards
+                        Example tests: 
+                            String test = "+1E-1"; //Sci
+                            test = "1.333e5"; //Sci
+                            test = "12.1e1"; //String
+                            test = "1.e1"; //String
+                            test = "1e"; //String
+                            test = "1e.1"; //String
+                            test = "4.321768E3"; //Sci
+                        */   
+            patterns = new Pattern[]{booleanPattern,numericPattern,sciNoPattern};
+            return patterns;
         }
-        Field validField=null;
-        for (Field field : dataArray) {
-            if(fieldName.equals(field.getName())){validField = field;break;}
-        }
-        try {
-            String[] vals = new String[validField.getStringArray().size()];
-            for (int i = 0; i < vals.length; i++) {
-                vals[i] = validField.getStringArray().get(i);
+
+    //Takes a cell value as input and returns the pattern it matches
+    static String getPattern(String cellString) {
+        String typeFound = "";
+            //Check if the patterns have been compiled (no need to check all) and if not compile them
+            if(booleanPattern == null) {
+                setPatterns();
             }
-            return vals;
-        } catch (Exception e) {
-            System.out.println("ERROR: Field not found");
-            for (Field field : dataArray) {
-                System.out.println("\t" + field.getName());
-            }
-            return new String[0];
+        
+        //use patterns to find and return the type
+        if(booleanPattern.matcher(cellString).matches()) {
+            typeFound = "boolean";
+        } else if(numericPattern.matcher(cellString).matches()) {
+            typeFound = "float";
+        } else if(sciNoPattern.matcher(cellString).matches()) {
+            typeFound = "float"; //reads the same for Float.valueOf
+        } else {
+            typeFound = "String";
         }
+        return typeFound;
     }
+
+    //Takes in the imported file and fills out the dataArray
     static void csvToField(File file) throws IOException{
         BufferedReader csvReader = new BufferedReader(new FileReader(file)); //TODO: fix so less class needs
         String row = csvReader.readLine();
@@ -73,6 +114,7 @@ class Dataset {
         String[] rowSplit;
         String[] fieldNames;
         int incorrectCount = 1; //Instantiated with 1 to account for category row
+        int commaSkips = 1;
         if (row == null) {csvReader.close();return;}
         
         fieldNames = row.split(",");
@@ -85,34 +127,20 @@ class Dataset {
             if(rowSplit.length > fieldNames.length) {
                 //System.out.println("ERROR: Skipping data with a comma within it");
                 incorrectCount++;
+                commaSkips++;
                 row = csvReader.readLine();
                 continue;
             }
             for (int i = 0; i < rowSplit.length; i++) {
                 if(dataArray.get(i).getType() == null){
-                    if("true".equalsIgnoreCase(rowSplit[i]) || "false".equalsIgnoreCase(rowSplit[i])) {
-                        if(!dataArray.get(i).setType("boolean")){
-                            System.out.println("ERROR: Issue setting " + rowSplit[i] + " to type boolean");
-                        }
-                    }
-                    //NOTE: Doesn't separate ints from floats - unnecessary
-                    else {
-                        try {
-                            Float.valueOf(rowSplit[i]);
-                            if(!dataArray.get(i).setType("float")){
-                                System.out.println("ERROR: Issue setting " + rowSplit[i] + " to type float");
-                            }
-                        } catch (Exception e) {
-                            if(!dataArray.get(i).setType("String")){
-                                System.out.println("ERROR: Issue setting " + rowSplit[i] + " to type String");
-                            }
-                        }
-                    }
+                    String type = getPattern(rowSplit[i].strip());
+                    dataArray.get(i).setType(type); //Error message printed in Field
                 }
-                if(dataArray.get(i).addCell(rowSplit[i])){
+                //attempt to add the cell to the field; if it fails, returns an error 
+                if(dataArray.get(i).addCell(rowSplit[i].strip())){
                     continue;
                 } else {
-                    System.out.println("ERROR: " + rowSplit[i] + " is not a " + dataArray.get(i).getType());
+                    System.out.println("ERROR: " + rowSplit[i].strip() + " is not a " + dataArray.get(i).getType());
                     incorrectCount++;
                 }
             }
@@ -122,10 +150,11 @@ class Dataset {
         System.out.println("Reading completed.");
         System.out.println("\tTotal lines of data: " + dataArray.get(0).getStringArray().size());
         System.out.println("\tTotal incorrect lines: " + incorrectCount);
+        System.out.println("\t\tComma skips: " + commaSkips);
         System.out.println("\tSum: " + (incorrectCount+dataArray.get(0).getStringArray().size()));
     }
     
-
+    //Takes an imported file and fills out the dataArray
     static void xlsxReading(File file) throws IOException{
         int incorrectCount = 1; //Instantiated with 1 to account for category row
         //POIFSFileSystem fs;
@@ -200,6 +229,8 @@ class Dataset {
         System.out.println("\tSum: " + (incorrectCount+dataArray.get(0).getStringArray().size()));        
     }
     
+    //Sets up a basic gui and pops up the importing window 
+    //Calls the repesective methods for unpacking a csv, xls, or xlsx
     public static void gui(){
         JFrame frame;
         frame = new JFrame("textfield"); 
