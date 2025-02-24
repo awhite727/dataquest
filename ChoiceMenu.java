@@ -64,5 +64,3 @@ public class ChoiceMenu extends JFrame {
         });
     }
 }
-
-
