@@ -1,14 +1,18 @@
 package dataquest;
 
+import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -257,9 +261,6 @@ class Dataset {
         System.out.println("\tSum: " + (incorrectCount+dataArray.get(0).getStringArray().size()));        
     }
     
-    public static void main(String[] args) {
-        gui();
-    }
     //Sets up a basic gui and pops up the importing window 
     //Calls the repesective methods for unpacking a csv, xls, or xlsx
     public static void gui(){
@@ -307,5 +308,73 @@ class Dataset {
         } else {
             System.out.println("Not a valid file type");
         }
+    }
+    //Calls PythonAssist.py to borrow its improved directory for importing
+   //Returns a File if it is a valid File, returns null if not 
+   private static File importingWithPy(){
+      String pythonPath = "src\\main\\resources\\PythonAssist.py";
+      String selectedPath = "";
+      File file = null;
+      ProcessBuilder pb = new ProcessBuilder()
+         .command("python","-u", pythonPath, "openFile");
+      Process p;
+
+      try {
+         //run the process from process builder; 
+         p = pb.start();
+         BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+         selectedPath = in.readLine();
+         p.waitFor();
+         in.close();
+         file = new File(selectedPath);
+      } catch (IOException e) {
+         System.out.println("ERROR: " + pythonPath + " could not be found");
+         e.printStackTrace();
+      } catch (InterruptedException e) {
+         //Process p interupted by another thread
+         e.printStackTrace();
+      } catch (NullPointerException e){
+         //file selection canceled 
+      }
+     
+      return file;
+   }
+   public static void newGui() {
+      JFrame frame = new JFrame("textfield"); 
+      JPanel panel = new JPanel();
+      JButton button = new JButton("Import");
+      panel.add(button);
+      frame.add(panel);
+      frame.setSize(500, 200);
+      frame.setVisible(true);
+      frame.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
+      
+      button.addActionListener(new ActionListener() {
+         public void actionPerformed(ActionEvent arg0) {
+            File file = null;
+            try {
+               file = importingWithPy();
+               if(file.getName().endsWith(".csv")) {
+                  System.out.println("csv");
+                  csvToField(file);
+               } else if(file.getName().endsWith(".xlsx")) {
+                  System.out.println("xlsx");
+                  xlsxReading(file);
+               } else if(file.getName().endsWith(".xls")) {
+                  //TODO: Handle reading in .xls files
+                  System.out.println("xls");
+               } else {
+                  System.out.println("Not a valid file type");
+               }
+            } catch (NullPointerException e) {
+               //Error or nothing selected; errors handled in importingWithPy
+            } catch(IOException e) {
+               System.out.println("xlsx File not found");
+            }
+
+      }});
+    }
+    public static void main(String[] args) {
+        newGui();
     }
 }
