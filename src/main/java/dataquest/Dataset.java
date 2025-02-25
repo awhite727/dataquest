@@ -257,22 +257,37 @@ class Dataset {
         System.out.println("\tSum: " + (incorrectCount+dataArray.get(0).getStringArray().size()));        
     }
     
+    public static void main(String[] args) {
+        gui();
+    }
     //Sets up a basic gui and pops up the importing window 
     //Calls the repesective methods for unpacking a csv, xls, or xlsx
     public static void gui(){
         JFrame frame;
+        JFileChooser fileSelect;
+        File file;
+
         frame = new JFrame("textfield"); 
         frame.setSize(500, 200);
         frame.setVisible(true);
-        frame.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
-        
-        JFileChooser fileSelect = new JFileChooser();
+        //frame.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException
+                | UnsupportedLookAndFeelException e) {
+            System.out.println("Error loading system LookAndFeel: Using swing basic");
+        }
+        fileSelect = new JFileChooser();
         fileSelect.setAcceptAllFileFilterUsed(false);
         fileSelect.setFileFilter(new FileNameExtensionFilter(".csv, .xls, .xlsx", "csv","xls","xlsx"));
         fileSelect.showOpenDialog(frame);
-        File file = new File(fileSelect.getSelectedFile().getAbsolutePath());
-        if(file.exists()){
-            if(file.getName().endsWith(".csv")) {
+        try{
+            file = new File(fileSelect.getSelectedFile().getAbsolutePath());
+        }
+        catch (NullPointerException e){
+            return;
+        }
+        if(file.getName().endsWith(".csv")) {
             System.out.println("csv");
             try {
                 csvToField(file);
@@ -289,7 +304,6 @@ class Dataset {
         } else if(file.getName().endsWith(".xls")) {
             //TODO: Handle reading in .xls files
             System.out.println("xls");
-        }
         } else {
             System.out.println("Not a valid file type");
         }
