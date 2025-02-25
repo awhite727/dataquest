@@ -81,6 +81,10 @@ public class Field {
     //Either way, the cell is added as given to stringArray
     boolean addCell(String newValue) {
         stringArray.add(newValue);
+        if(type == null) {
+            System.out.println("ERROR: type not determined");
+            return false;
+        }
         if(type.equals("String")) {
             typedArray.add(newValue);
         } else {

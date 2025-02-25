@@ -12,9 +12,10 @@ import java.util.regex.Pattern;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -46,6 +47,7 @@ class Dataset {
     }
 
     //Takes the fieldName and returns the index within dataArray; returns -1 if the field does not exist
+    //TODO: Not called by Dataset or Field; delete if viewing elements does not need 
     static int indexOfField(String fieldName){
         for (Field field : dataArray) {
             if(fieldName.equals(field.getName())){
@@ -183,134 +185,65 @@ class Dataset {
         System.out.println("\tTotal lines of data: " + dataArray.get(0).getStringArray().size());
         System.out.println("\tTotal incorrect lines: " + incorrectCount);
         System.out.println("\tSuccessful comma splits: " + commaSplit);
-        System.out.println("\tSum: " + (incorrectCount+dataArray.get(0).getStringArray().size())+1);
+        System.out.println("\tSum: " + (incorrectCount+dataArray.get(0).getStringArray().size()+1));
     }
     
-    //Takes an imported file and fills out the dataArray
-    static void xlsxReading(File file) throws IOException{
-        int incorrectCount = 1; //Instantiated with 1 to account for category row
-        //POIFSFileSystem fs;
+    //Takes an imported .xlsx file and fills out the dataArray
+    public static void xlsxReading(File file) throws IOException{
         XSSFWorkbook wb;
         XSSFSheet sheet;
+        DataFormatter df = new DataFormatter();
+        String type = "";
+        dataArray = new ArrayList<>();
+        int incorrectCount = 0;
         try {
-            //fs = new POIFSFileSystem(file);
-            wb = new XSSFWorkbook(file);
+            System.out.println("Attempt to get sheet");
+            wb = new XSSFWorkbook(file); //allows for more efficient reading of big files
             sheet = wb.getSheetAt(0);
+            if(sheet == null){
+                System.out.println("ERROR: Sheet not found within file");
+                wb.close();
+                return;
+            }
             wb.close();
-            //HSSFRow row = sheet.getRow(0);
-        } catch(Exception ioException) {
-            ioException.printStackTrace();
+        } catch(InvalidFormatException ioException) {
+            System.out.println("ERROR: Not a valid file type");
             return;
         }
-        int numFields = sheet.getRow(0).getPhysicalNumberOfCells();
+        Row fields = sheet.getRow(0);
+        System.out.println("Preparing iterations: ");
+        int numFields = fields.getPhysicalNumberOfCells();
+        System.out.println(numFields);
         for (Row row : sheet) {
-            if(dataArray == null) {
-                dataArray = new ArrayList<>();
-                for (Cell cell : row) {
-                    dataArray.add(new Field(cell.getStringCellValue()));
-                    //NOTE: getStringCellValue throws an error if it's numeric or formulas
+            for (int j=0; j < numFields; j++) {
+                Cell cell = row.getCell(j);
+                String cellString = df.formatCellValue(cell).strip();
+                if(row.equals(fields)) {
+                    if(!cell.getCellType().toString().equalsIgnoreCase("STRING")){
+                        System.out.println("NOTICE: Cell " + df.formatCellValue(cell) + "is not a String. Is this intended to be a data cell?");
+                    }
+                    dataArray.add(new Field(cellString));
+                    continue;
+                } 
+                if(dataArray.get(j).getType() == null){
+                    type = getPattern(cellString);
+                    dataArray.get(j).setType(type); //Error message printed in Field
                 }
-                continue;
-            }
-            else {
-                for (int i=0; i < numFields; i++) {
-                    String cell = "";
-                    try {
-                        cell = row.getCell(i).getStringCellValue();
-                    } catch (Exception e1) {
-                        try {
-                            cell = row.getCell(i).getBooleanCellValue()+"";
-                        } catch (Exception e2) {
-                            cell = (row.getCell(i).getNumericCellValue())+"";
-                        //NOTE: getNumericCellValue is a double, not float
-                        }
-                        
-                    }
-                    if(dataArray.get(i).getType() == null){
-                        if("true".equalsIgnoreCase(cell) || "false".equalsIgnoreCase(cell)) {
-                            if(!dataArray.get(i).setType("boolean")){
-                                System.out.println("ERROR: Issue setting " + cell + " to type boolean");
-                            }
-                        }
-                        //NOTE: Doesn't separate ints from floats - unnecessary
-                        else {
-                            try {
-                                Float.valueOf(cell);
-                                if(!dataArray.get(i).setType("float")){
-                                    System.out.println("ERROR: Issue setting " + cell + " to type float");
-                                }
-                            } catch (Exception e) {
-                                if(!dataArray.get(i).setType("String")){
-                                    System.out.println("ERROR: Issue setting " + cell + " to type String");
-                                }
-                            }
-                        }
-                    }
-                    if(dataArray.get(i).addCell(cell)){
-                        continue;
-                    } else {
-                        System.out.println("ERROR: " + cell + " is not a " + dataArray.get(i).getType());
-                        incorrectCount++;
-                    }
+                if(!dataArray.get(j).addCell(cellString)){
+                    incorrectCount++;
                 }
             }
         }
         System.out.println("Reading completed.");
         System.out.println("\tTotal lines of data: " + dataArray.get(0).getStringArray().size());
         System.out.println("\tTotal incorrect lines: " + incorrectCount);
-        System.out.println("\tSum: " + (incorrectCount+dataArray.get(0).getStringArray().size()));        
+        System.out.println("\tSum: " + (incorrectCount+dataArray.get(0).getStringArray().size()+1));
     }
     
-    //Sets up a basic gui and pops up the importing window 
-    //Calls the repesective methods for unpacking a csv, xls, or xlsx
-    public static void gui(){
-        JFrame frame;
-        JFileChooser fileSelect;
-        File file;
-
-        frame = new JFrame("textfield"); 
-        frame.setSize(500, 200);
-        frame.setVisible(true);
-        //frame.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException
-                | UnsupportedLookAndFeelException e) {
-            System.out.println("Error loading system LookAndFeel: Using swing basic");
-        }
-        fileSelect = new JFileChooser();
-        fileSelect.setAcceptAllFileFilterUsed(false);
-        fileSelect.setFileFilter(new FileNameExtensionFilter(".csv, .xls, .xlsx", "csv","xls","xlsx"));
-        fileSelect.showOpenDialog(frame);
-        try{
-            file = new File(fileSelect.getSelectedFile().getAbsolutePath());
-        }
-        catch (NullPointerException e){
-            return;
-        }
-        if(file.getName().endsWith(".csv")) {
-            System.out.println("csv");
-            try {
-                csvToField(file);
-            } catch(IOException e1) {
-                System.out.println("CSV File not found");
-            }
-        } else if(file.getName().endsWith(".xlsx")) {
-            System.out.println("xlsx");
-            try {
-                xlsxReading(file);
-            } catch(IOException e1) {
-                System.out.println("xlsx File not found");
-            }
-        } else if(file.getName().endsWith(".xls")) {
-            //TODO: Handle reading in .xls files
-            System.out.println("xls");
-        } else {
-            System.out.println("Not a valid file type");
-        }
-    }
+    
+    //Called by gui()
     //Calls PythonAssist.py to borrow its improved directory for importing
-   //Returns a File if it is a valid File, returns null if not 
+   //Returns a File if it is a valid File, returns null if not
    private static File importingWithPy(){
       String pythonPath = "src\\main\\resources\\PythonAssist.py";
       String selectedPath = "";
@@ -336,10 +269,12 @@ class Dataset {
       } catch (NullPointerException e){
          //file selection canceled 
       }
-     
       return file;
    }
-   public static void newGui() {
+
+   //Sets up a basic gui and pops up the importing window 
+    //Calls the repesective methods for unpacking a csv, xls, or xlsx
+   public static void gui() {
       JFrame frame = new JFrame("textfield"); 
       JPanel panel = new JPanel();
       JButton button = new JButton("Import");
@@ -371,10 +306,10 @@ class Dataset {
             } catch(IOException e) {
                System.out.println("xlsx File not found");
             }
-
       }});
     }
+
     public static void main(String[] args) {
-        newGui();
+        gui();
     }
 }
