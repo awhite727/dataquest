@@ -36,7 +36,6 @@ public class Field {
     //If a cell cannot be set to the new type, the index in typedArray is set to null
     //Case sensitive
     boolean setType(String newType){
-        System.out.println("setType called: "+ name);
         boolean validType = (newType.equals("String") ||newType.equals("float") ||newType.equals("boolean"));
 
         if(!validType){
@@ -63,7 +62,9 @@ public class Field {
         for (int i = 0; i < stringArray.size(); i++) {
             String realType = Dataset.getPattern(stringArray.get(i));
             if(!realType.equals(newType)){
-                System.out.println("ERROR: " + stringArray.get(i) + " can't be parsed to a " + newType + ". Value set to null");
+                if(!stringArray.get(i).isEmpty()){
+                    System.out.println("ERROR: Field " + name + " value \"" + stringArray.get(i) + "\" can't be parsed to a " + newType + ". Value set to null");
+                }
                 typedArray.set(i,null);
             } else if(realType.equals("float")) {
                 typedArray.set(i,Float.valueOf(stringArray.get(i)));

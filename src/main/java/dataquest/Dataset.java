@@ -122,37 +122,14 @@ class Dataset {
         return typeFound;
     }
 
-    //Helps csvToField split complex CSVs 
-    //TODO: combine with csvToField after thorough testing
-    private static String[] unpackCSVwithComma(String row, int numFields) {
-        String[] unpacked;// = new String[numFields];
-        //Copied from https://stackoverflow.com/questions/1757065/java-splitting-a-comma-separated-string-but-ignoring-commas-in-quotes 
-        String regex = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"; 
-            //Split by ,
-                //That has a __ after it (?=(__)) of any amount
-                    //Don't split by anything (?:) that matches the substring
-                        //Any amount of characters not a " 
-                        //followed by a quote
-                        //folowed by any amount of characters not a "
-                        //followed by another " 
-                //Ending in any amount of any character not a "
-            
-        unpacked = row.split(regex);
-        if (unpacked.length != numFields) {
-            unpacked = new String[0];
-        }
-        return unpacked;
-    }
-
     //Takes in the imported file and fills out the dataArray
     static void csvToField(File file) throws IOException{
-        BufferedReader csvReader = new BufferedReader(new FileReader(file)); //TODO: fix so less class needs
+        BufferedReader csvReader = new BufferedReader(new FileReader(file));
         String row = csvReader.readLine();
         dataArray = new ArrayList<>();
         String[] rowSplit;
         String[] fieldNames;
         int incorrectCount = 0; 
-        int commaSplit = 0;
         if (row == null) {csvReader.close();return;}
         
         fieldNames = row.split(",");
@@ -161,18 +138,12 @@ class Dataset {
         }
         row = csvReader.readLine();
         while(row != null) {
-            rowSplit = row.split(",");
-            if(rowSplit.length > fieldNames.length) {
-                //System.out.println("ERROR: Skipping data with a comma within it");
-                rowSplit = unpackCSVwithComma(row, fieldNames.length);
-                if(rowSplit.length == 0) {
+            rowSplit = row.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+            if(rowSplit.length != fieldNames.length) {
                     System.out.println("ERROR: Unable to unpack row " + row);
                     incorrectCount++;
                     row = csvReader.readLine();
                     continue;
-                } else {
-                    commaSplit++;
-                }
             }
             for (int i = 0; i < rowSplit.length; i++) {
                 //Field.addCell() handles cases where the first row has empty cells
@@ -351,8 +322,11 @@ class Dataset {
       return file;
    }
 
-   //Sets up a basic gui and pops up the importing window 
+    //Sets up a basic gui and pops up the importing window 
     //Calls the repesective methods for unpacking a csv, xls, or xlsx
+    //TODO: Lock button so it cannot be pressed multiple times? 
+    //Doesn't currently cause any issues other than multiple importing windows opening
+    //But could potentially cause issues later
    public static void gui() {
       JFrame frame = new JFrame("textfield"); 
       JPanel panel = new JPanel();
@@ -368,9 +342,10 @@ class Dataset {
             File file = null;
             try {
                file = importingWithPy();
-               if(file.getName().endsWith(".csv")) {
+               if(file.getName().equals("")){}//nothing selected
+               else if(file.getName().endsWith(".csv")) {
                   System.out.println("csv");
-                  csvToField(file);
+                  csvToField(file); //TODO: change name to csvReading to match naming scheme
                } else if(file.getName().endsWith(".xlsx")) {
                   System.out.println("xlsx");
                   xlsxReading(file);
@@ -378,13 +353,14 @@ class Dataset {
                   System.out.println("xls");
                   xlsReading(file);
                } else {
-                  System.out.println("Not a valid file type");
+                  System.out.println("Not a valid file type: " + file.getName());
                }
-            } catch (NullPointerException e) {
-               //Error or nothing selected; errors handled in importingWithPy
             } catch(IOException e) {
                System.out.println("File not found: ");
                System.out.println(file);
+            } catch(Exception e) {
+                System.out.println("ERROR: Unknown error in Dataset.gui()");
+                e.printStackTrace();
             }
       }});
 
