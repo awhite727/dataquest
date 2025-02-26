@@ -1,5 +1,6 @@
 package dataquest;
 
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.File;
@@ -9,16 +10,25 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import java.awt.event.ActionEvent;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
 
+//NOTE: apache.poi and JXL share some import names 
+//If more imports are needed later and share the same class name, 
+//Replace class name in declarations to full import name (i.e. "jxl.Sheet sheet = new jxl.Sheet()")
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+//NOTE: JXL has some known vulnerabilities, including with SQL injection
+//Not relevant to our current plan, but be careful using it outside of local usage
+import jxl.Sheet;
+import jxl.Workbook;
+import jxl.read.biff.BiffException; 
 
 class Dataset {
     public static ArrayList<Field> dataArray = null;
@@ -161,31 +171,39 @@ class Dataset {
                     row = csvReader.readLine();
                     continue;
                 } else {
-                    //System.out.println("\nrowSplit updated: " + Arrays.toString(rowSplit));
                     commaSplit++;
                 }
             }
             for (int i = 0; i < rowSplit.length; i++) {
-                if(dataArray.get(i).getType() == null){
+                //Field.addCell() handles cases where the first row has empty cells
+                if(dataArray.get(i).getType() == null && !rowSplit[i].strip().isEmpty()){
                     String type = getPattern(rowSplit[i].strip());
-                    dataArray.get(i).setType(type); //Error message printed in Field
+                    dataArray.get(i).setType(type); //Error message printed in Field)
                 }
                 //attempt to add the cell to the field; if it fails, returns an error 
                 if(dataArray.get(i).addCell(rowSplit[i].strip())){
                     continue;
                 } else {
-                    System.out.println("ERROR: " + rowSplit[i].strip() + " is not a " + dataArray.get(i).getType());
                     incorrectCount++;
                 }
             }
             row = csvReader.readLine();
         }
         csvReader.close();
-        System.out.println("Reading completed.");
-        System.out.println("\tTotal lines of data: " + dataArray.get(0).getStringArray().size());
-        System.out.println("\tTotal incorrect lines: " + incorrectCount);
-        System.out.println("\tSuccessful comma splits: " + commaSplit);
-        System.out.println("\tSum: " + (incorrectCount+dataArray.get(0).getStringArray().size()+1));
+        System.out.println("\n~ ~ ~\nReading completed.");
+        System.out.println("Total lines of data: " + dataArray.get(0).getStringArray().size());
+        System.out.println("Lines with typing errors: " + incorrectCount);
+        for (Field field : dataArray) {
+            int nullCount = 0;
+            for (int i=0; i < field.getTypedArray().size(); i++) {
+                if(field.getTypedArray().get(i) == null && !field.getStringArray().get(i).isEmpty()) {
+                    nullCount++;
+                }
+            } 
+            if(nullCount > 0) {
+                System.out.println("\t" + field.getName() + ": " + nullCount);
+            }
+        }
     }
     
     //Takes an imported .xlsx file and fills out the dataArray
@@ -198,7 +216,7 @@ class Dataset {
         int incorrectCount = 0;
         try {
             System.out.println("Attempt to get sheet");
-            wb = new XSSFWorkbook(file); //allows for more efficient reading of big files
+            wb = new XSSFWorkbook(file);
             sheet = wb.getSheetAt(0);
             if(sheet == null){
                 System.out.println("ERROR: Sheet not found within file");
@@ -213,8 +231,7 @@ class Dataset {
         Row fields = sheet.getRow(0);
         System.out.println("Preparing iterations: ");
         int numFields = fields.getPhysicalNumberOfCells();
-        System.out.println(numFields);
-        for (Row row : sheet) {
+        for (Row row : sheet){
             for (int j=0; j < numFields; j++) {
                 Cell cell = row.getCell(j);
                 String cellString = df.formatCellValue(cell).strip();
@@ -225,7 +242,7 @@ class Dataset {
                     dataArray.add(new Field(cellString));
                     continue;
                 } 
-                if(dataArray.get(j).getType() == null){
+                if(dataArray.get(j).getType() == null && !cellString.isEmpty()){
                     type = getPattern(cellString);
                     dataArray.get(j).setType(type); //Error message printed in Field
                 }
@@ -234,12 +251,74 @@ class Dataset {
                 }
             }
         }
-        System.out.println("Reading completed.");
-        System.out.println("\tTotal lines of data: " + dataArray.get(0).getStringArray().size());
-        System.out.println("\tTotal incorrect lines: " + incorrectCount);
-        System.out.println("\tSum: " + (incorrectCount+dataArray.get(0).getStringArray().size()+1));
+        System.out.println("\n~ ~ ~\nReading completed.");
+        System.out.println("Total lines of data: " + dataArray.get(0).getStringArray().size());
+        System.out.println("Lines with typing errors: " + incorrectCount);
+        for (Field field : dataArray) {
+            int nullCount = 0;
+            for (int i=0; i < field.getTypedArray().size(); i++) {
+                if(field.getTypedArray().get(i) == null && !field.getStringArray().get(i).isEmpty()) {
+                    nullCount++;
+                }
+            } 
+            if(nullCount > 0) {
+                System.out.println("\t" + field.getName() + ": " + nullCount);
+            }
+        }
     }
     
+    //Takes an imported .xls file and fills out the dataArray
+    public static void xlsReading(File file) throws IOException{
+        Workbook workbook;
+        Sheet sheet;
+        String type = "";
+        dataArray = new ArrayList<>();
+        int incorrectCount = 0;
+
+        try {
+            System.out.println("Attempt to get sheet");
+            workbook = Workbook.getWorkbook(file);
+            sheet = workbook.getSheet(0);
+            int numFields = sheet.getColumns();
+            int numRows = sheet.getRows();
+            for (int i=0; i < numFields; i++){
+                for(int j=0; j < numRows; j++){
+                    String cellString = sheet.getCell(i, j).getContents().strip();
+                    if(j==0){
+                        dataArray.add(new Field(cellString));
+                        continue;
+                    }
+                    if(dataArray.get(i).getType() == null && !cellString.isEmpty()){
+                        type = getPattern(cellString);
+                        dataArray.get(i).setType(type); //Error message printed in Field
+                    }
+                    if(!dataArray.get(i).addCell(cellString)){
+                        incorrectCount++;
+                    }
+                }              
+            }
+            workbook.close();
+            System.out.println("Success!");
+        } catch (BiffException | IOException e) {
+            System.out.println("ERROR: Issue reading a BIFF file");
+            e.printStackTrace();
+            return;
+        }
+        System.out.println("\n~ ~ ~\nReading completed.");
+        System.out.println("Total lines of data: " + dataArray.get(0).getStringArray().size());
+        System.out.println("Lines with typing errors: " + incorrectCount);
+        for (Field field : dataArray) {
+            int nullCount = 0;
+            for (int i=0; i < field.getTypedArray().size(); i++) {
+                if(field.getTypedArray().get(i) == null && !field.getStringArray().get(i).isEmpty()) {
+                    nullCount++;
+                }
+            } 
+            if(nullCount > 0) {
+                System.out.println("\t" + field.getName() + ": " + nullCount);
+            }
+        }
+    }
     
     //Called by gui()
     //Calls PythonAssist.py to borrow its improved directory for importing
@@ -296,17 +375,24 @@ class Dataset {
                   System.out.println("xlsx");
                   xlsxReading(file);
                } else if(file.getName().endsWith(".xls")) {
-                  //TODO: Handle reading in .xls files
                   System.out.println("xls");
+                  xlsReading(file);
                } else {
                   System.out.println("Not a valid file type");
                }
             } catch (NullPointerException e) {
                //Error or nothing selected; errors handled in importingWithPy
             } catch(IOException e) {
-               System.out.println("xlsx File not found");
+               System.out.println("File not found: ");
+               System.out.println(file);
             }
       }});
+
+
+
+
+
+      
     }
 
     public static void main(String[] args) {

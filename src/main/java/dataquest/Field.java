@@ -36,6 +36,7 @@ public class Field {
     //If a cell cannot be set to the new type, the index in typedArray is set to null
     //Case sensitive
     boolean setType(String newType){
+        System.out.println("setType called: "+ name);
         boolean validType = (newType.equals("String") ||newType.equals("float") ||newType.equals("boolean"));
 
         if(!validType){
@@ -80,11 +81,19 @@ public class Field {
     //If the new cell does not match the field type, the index in typedArray is set to null
     //Either way, the cell is added as given to stringArray
     boolean addCell(String newValue) {
-        stringArray.add(newValue);
-        if(type == null) {
+        if(type == null && !newValue.isEmpty()) { //if the type hasn't been determined yet and the cell is populated
             System.out.println("ERROR: type not determined");
             return false;
+        } 
+        //TODO: replace with missing value handling
+        if(newValue.isEmpty()) { 
+            stringArray.add(newValue);
+            typedArray.add(null);
+            return true;
         }
+
+        //Type is determined and cell is populated
+        stringArray.add(newValue);
         if(type.equals("String")) {
             typedArray.add(newValue);
         } else {
