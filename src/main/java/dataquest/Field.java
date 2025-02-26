@@ -7,89 +7,8 @@ public class Field {
     private String type = null;
     private ArrayList<String> stringArray = new ArrayList<>();
     private ArrayList<Object> typedArray = new ArrayList<>();
-    Field(String fieldName) {//, ArrayList<String> fieldArray){
+    Field(String fieldName) {
         this.name = fieldName;
-    }
-    
-    Field(String fieldName, String fieldType) {
-        this.name = fieldName;
-        boolean validType = (fieldType.equalsIgnoreCase("String") ||fieldType.equalsIgnoreCase("float") ||fieldType.equalsIgnoreCase("boolean"));
-        if(validType){
-            this.type = fieldType;
-        }else {
-            this.type = "String";
-        }
-    }
-    Field(String fieldName, String fieldType, ArrayList<String> fieldArray){
-        this.name = fieldName;
-        this.stringArray = fieldArray;
-        boolean validType = (fieldType.equalsIgnoreCase("String") ||fieldType.equalsIgnoreCase("float") ||fieldType.equalsIgnoreCase("boolean"));
-        if(validType){
-            this.type = fieldType;
-            setType(fieldType);
-        }else {
-            this.type = "String";
-            setType(fieldType);
-        }
-    }
-    boolean setType(String newType){
-        boolean validType = (newType.equalsIgnoreCase("String") ||newType.equalsIgnoreCase("float") ||newType.equalsIgnoreCase("boolean"));
-        if(!validType){
-            System.out.println("ERROR: Type " + newType + " not recognized");
-            return false;
-        } else if(stringArray.isEmpty()) {
-            if(newType.equalsIgnoreCase("String")) {type = "String";}
-            else if(newType.equalsIgnoreCase("float")) {type = "float";}
-            else if(newType.equalsIgnoreCase("boolean")) {type = "boolean";}
-            return true;
-        }
-        if(newType.equalsIgnoreCase("String")) {
-            type = "String";
-            for (int i = 0; i < stringArray.size(); i++) {
-                if(typedArray.size() < i){
-                    typedArray.add(stringArray.get(i));
-                } else {
-                    typedArray.set(i, stringArray.get(i));
-                }
-            }
-        } else if (newType.equalsIgnoreCase("float")) {
-            type = "float";
-            for (int i = 0; i < stringArray.size(); i++) {
-                try {
-                    if(typedArray.size() < i){
-                        typedArray.add(Float.valueOf(stringArray.get(i)));
-                    } else {
-                        typedArray.set(i,Float.valueOf(stringArray.get(i)));
-                    }
-                } catch (Exception e) {
-                    System.out.println("ERROR: " + stringArray.get(i) + " can't be parsed to a float. Value set to null");
-                    if(typedArray.size() < i){
-                        typedArray.add(null);
-                    } else {
-                        typedArray.set(i,null);
-                    }
-                }
-            }
-        } else if (newType.equalsIgnoreCase("boolean")) {
-            type = "boolean";
-            for (int i = 0; i < stringArray.size(); i++) {
-                try {
-                    if(typedArray.size() < i){
-                        typedArray.add(Boolean.valueOf(stringArray.get(i)));
-                    } else {
-                        typedArray.set(i,Boolean.valueOf(stringArray.get(i)));
-                    }
-                } catch (Exception e) {
-                    System.out.println("ERROR: " + stringArray.get(i) + " can't be parsed to a boolean. Value set to null");
-                    if(typedArray.size() < i){
-                        typedArray.add(null);
-                    } else {
-                        typedArray.set(i,null);
-                    }
-                }
-            }
-        } 
-        return true;
     }
 
     ArrayList<Object> getTypedArray() {
@@ -108,70 +27,113 @@ public class Field {
         return name;
     }
 
-    boolean addCell(String newValue) {
-        stringArray.add(newValue);
-        if(type.equals("String")) {
-            typedArray.add(newValue);
-        } else if(type.equals("float")) {
-            try {
-                typedArray.add(Float.valueOf(newValue));
-            } catch (Exception e) {
-                System.out.println("ERROR: cannot parse " + newValue + " to float");
-                typedArray.add(null);
-                return false;
-            }
-        } else if(type.equals("boolean")) {
-            try {
-                typedArray.add(Boolean.valueOf(newValue));
-            } catch (Exception e) {
-                System.out.println("ERROR: cannot parse " + newValue + " to boolean");
-                typedArray.add(null);
-                return false;
-            }
-        } else {
-            System.out.println("ERROR: Unknown data type: " + type);
-            typedArray.add(null);
-            return false;
-        }
-        return true;
-    }
-
     String getCellString(int valIndex){
         if(valIndex >= stringArray.size()){return "ERROR: Index out of bounds";}
         return stringArray.get(valIndex);
     }
 
-    boolean updateCell(int oldValueIndex, String newValue){
-        if(oldValueIndex > typedArray.size()){return false;}
-        if(type.equals("String")) {
-            stringArray.set(oldValueIndex,newValue);
-            typedArray.set(oldValueIndex,newValue);
-        } else if(type.equals("float")) {
-            try {
-                typedArray.set(oldValueIndex,Float.valueOf(newValue));
-                stringArray.set(oldValueIndex,newValue);
-            } catch (Exception e) {
-                System.out.println("ERROR: cannot parse " + newValue + " to float");
-                return false;
+    //Passed the new type and returns if it succeeds in identifying the type 
+    //If a cell cannot be set to the new type, the index in typedArray is set to null
+    //Case sensitive
+    boolean setType(String newType){
+        boolean validType = (newType.equals("String") ||newType.equals("float") ||newType.equals("boolean"));
+
+        if(!validType){
+            System.out.println("ERROR: Type " + newType + " not recognized");
+            //If the type hasn't been set yet, set to String to prevent issues in Dataset
+            if(type == null){
+                type = "String";
             }
-        } else if(type.equals("boolean")) {
-            try {
-                typedArray.set(oldValueIndex,Boolean.valueOf(newValue));
-                stringArray.set(oldValueIndex,newValue);
-            } catch (Exception e) {
-                System.out.println("ERROR: cannot parse " + newValue + " to boolean");
-                return false;
-            }
-        } else {
-            System.out.println("ERROR: Unknown data type: " + type);
-            typedArray.add(null);
             return false;
+        }
+        if(stringArray.isEmpty()) {
+            type = newType;
+            return true;
+        }
+        type = newType;
+        //if the newType is a String, there is no need to verify with Patterns
+        if(newType.equals("String")) {
+            for (int i = 0; i < stringArray.size(); i++) {
+                typedArray.set(i, stringArray.get(i));
+            }
+            return true;
+        }
+
+        for (int i = 0; i < stringArray.size(); i++) {
+            String realType = Dataset.getPattern(stringArray.get(i));
+            if(!realType.equals(newType)){
+                System.out.println("ERROR: " + stringArray.get(i) + " can't be parsed to a " + newType + ". Value set to null");
+                typedArray.set(i,null);
+            } else if(realType.equals("float")) {
+                typedArray.set(i,Float.valueOf(stringArray.get(i)));
+            } else if(realType.equals("boolean")) {
+                typedArray.set(i,Boolean.valueOf(stringArray.get(i)));
+            } else {
+                System.out.println("ERROR: new valid pattern " + realType + " not added to Field.setType(String newType)");
+                return false;
+            }
         }
         return true;
     }
 
+    //Adds a new cell to stringArray and typedArray
+    //If the new cell does not match the field type, the index in typedArray is set to null
+    //Either way, the cell is added as given to stringArray
+    boolean addCell(String newValue) {
+        stringArray.add(newValue);
+        if(type.equals("String")) {
+            typedArray.add(newValue);
+        } else {
+            String realType = Dataset.getPattern(newValue);
+            if(!type.equals(realType)) {
+                System.out.println("ERROR: " + newValue + " is type " + realType + " and cannot be parsed to type " + type);
+                typedArray.add(null);
+                return false;
+            }
+            if(type.equals("float")) {
+                typedArray.add(Float.valueOf(newValue));
+            } else if(type.equals("boolean")) {
+                typedArray.add(Boolean.valueOf(newValue));
+            } else {
+                System.out.println("ERROR: new data type " + realType + " not handled in Field.addCell(String newValue)");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    //updates a cell at a specified index to a new value
+    //Does not allow updating unless it matches the specified type
+    boolean updateCell(int oldValueIndex, String newValue){
+        if(oldValueIndex > typedArray.size()){return false;}
+        
+        if(type.equals("String")) {
+            typedArray.set(oldValueIndex,newValue);
+            stringArray.set(oldValueIndex,newValue);
+        }
+        else {
+            String realType = Dataset.getPattern(newValue);
+            if(!type.equals(realType)) {
+                System.out.println("ERROR: " + newValue + " is type " + realType + " and cannot be parsed to type " + type);
+                return false;
+            }
+            if(realType.equals("float")) {
+                typedArray.set(oldValueIndex,Float.valueOf(newValue));
+                stringArray.set(oldValueIndex,newValue);
+            } else if(type.equals("boolean")) {
+                typedArray.set(oldValueIndex,Boolean.valueOf(newValue));
+                stringArray.set(oldValueIndex,newValue);
+            } else {
+                System.out.println("ERROR: new data type " + realType + " not handled in Field.updateCell(int oldValueIndex, String newValue)");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    //Removes a cell by index; returns true if the cell successfully deletes and false if the index is out of range
     boolean deleteCell(int oldValueIndex){
-        if(oldValueIndex > stringArray.size()){return false;}
+        if(oldValueIndex >= stringArray.size()){return false;}
         stringArray.remove(oldValueIndex);
         typedArray.remove(oldValueIndex);
         return true;
