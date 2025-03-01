@@ -8,7 +8,14 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import java.util.regex.Pattern;
+
+import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -31,7 +38,7 @@ import jxl.Workbook;
 import jxl.read.biff.BiffException; 
 
 class Dataset {
-    public ArrayList<Field> dataArray = null;
+    public static ArrayList<Field> dataArray = null;
     private static Pattern booleanPattern = null;
     private static Pattern numericPattern = null;
     private static Pattern sciNoPattern = null;

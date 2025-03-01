@@ -2,6 +2,9 @@ package dataquest;
 import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
+import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -27,7 +30,11 @@ public class Layout extends JFrame {
     private JFreeChart chart1, chart2;
     private ChartPanel chartPanel1, chartPanel2;
     private Color[] colorPalette;
-    private JButton addRowButton, addColumnButton;
+    private JButton addRowButton, addColumnButton, importingButton;
+
+    private Dataset dataset;
+
+    
 
     public Layout() {
         setTitle("DataQuest");
@@ -35,29 +42,68 @@ public class Layout extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
+        dataset = new Dataset();
+
+        // Create buttons
+        JPanel buttonPanel = new JPanel();
+        addRowButton = new JButton("Add Row");
+        addColumnButton = new JButton("Add Column");
+        importingButton = new JButton("Import Dataset");
+        
+        buttonPanel.add(addRowButton);
+        buttonPanel.add(addColumnButton);
+        buttonPanel.add(importingButton);
+        
+        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3; gbc.weighty = 0.1;
+        add(buttonPanel, gbc);
 
         // Create spreadsheet
         tableModel = new DefaultTableModel(5, 3);
         spreadsheet = new JTable(tableModel);
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 1; gbc.weightx = 1; gbc.weighty = 0.4; gbc.fill = GridBagConstraints.BOTH;
-        add(new JScrollPane(spreadsheet), gbc);
+
+        // Disable JTable auto-resizing to force horizontal scrolling
+        spreadsheet.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        // hover for full text if too long
+        spreadsheet.addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                int row = spreadsheet.rowAtPoint(e.getPoint());
+                int col = spreadsheet.columnAtPoint(e.getPoint());
+                if (row != -1 && col != -1) {
+                    Object value = spreadsheet.getValueAt(row, col);
+                    spreadsheet.setToolTipText(value != null ? value.toString() : null);
+                }
+            }
+        });
+        // hover for full text in column headers
+        spreadsheet.getTableHeader().addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                int col = spreadsheet.columnAtPoint(e.getPoint());
+                if (col != -1) {
+                    String columnName = spreadsheet.getColumnName(col);
+                    spreadsheet.getTableHeader().setToolTipText(columnName);
+                }
+            }
+        });
+
+        // Wrap JTable in JScrollPane with horizontal scrolling enabled
+        JScrollPane scrollPane = new JScrollPane(spreadsheet);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        // Add JScrollPane instead of JTable directly
+        gbc.gridx = 0; gbc.gridy = 0; 
+        gbc.gridwidth = 1; gbc.weightx = 1; gbc.weighty = 0.4; 
+        gbc.fill = GridBagConstraints.BOTH;
+        add(scrollPane, gbc);
+
 
         // Create output area
         output = new JTextArea();
         output.setEditable(false);
         gbc.gridx = 1; gbc.gridy = 0;
         add(new JScrollPane(output), gbc);
-
-        // Create buttons
-        JPanel buttonPanel = new JPanel();
-        addRowButton = new JButton("Add Row");
-        addColumnButton = new JButton("Add Column");
-        
-        buttonPanel.add(addRowButton);
-        buttonPanel.add(addColumnButton);
-        
-        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 2; gbc.weighty = 0.1;
-        add(buttonPanel, gbc);
 
         // Set color palette
         colorPalette = new Color[]{
@@ -79,17 +125,42 @@ public class Layout extends JFrame {
         // Add listeners
         addRowButton.addActionListener(e -> addRow());
         addColumnButton.addActionListener(e -> addColumn());
+        importingButton.addActionListener(e -> importDataset());
         tableModel.addTableModelListener(e -> updateCharts());
     }
 
     private JFreeChart createEmptyChart(String title) {
-        XYSeriesCollection dataset = new XYSeriesCollection();
-        JFreeChart chart = ChartFactory.createXYLineChart(title, "X", "Y", dataset);
+        XYSeriesCollection data = new XYSeriesCollection();
+        JFreeChart chart = ChartFactory.createXYLineChart(title, "X", "Y", data);
         XYPlot plot = chart.getXYPlot();
         plot.setBackgroundPaint(Color.WHITE);
         plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
         plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
         return chart;
+    }
+
+    // called from button
+    private void importDataset() {
+        dataset.gui();
+        ArrayList<Field> data = dataset.getDataArray();
+        int rows = data.get(0).getTypedArray().size();
+        int columns = data.size();
+        tableModel = new DefaultTableModel(rows, columns);
+        spreadsheet.setModel(tableModel); // update model
+        // cache columns to reduce method calls
+        ArrayList<ArrayList<?>> cachedColumns = new ArrayList<>();
+        for (Field field : data) { 
+            cachedColumns.add(field.getTypedArray()); 
+        }
+
+        // populate table, data must be populated by row
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < columns; j++) {
+                tableModel.setValueAt(cachedColumns.get(j).get(i), i, j);
+            }
+        }
+        tableModel.setColumnIdentifiers(dataset.getFields());
+        System.out.println("Import Successful");
     }
 
     private void addRow() {
@@ -98,6 +169,10 @@ public class Layout extends JFrame {
 
     private void addColumn() {
         tableModel.addColumn("Column " + (tableModel.getColumnCount() + 1));
+    }
+
+    private void addColumn(String name) {
+        tableModel.addColumn(name + (tableModel.getColumnCount() + 1));
     }
 
     private void updateCharts() {
