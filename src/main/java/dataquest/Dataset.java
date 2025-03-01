@@ -31,13 +31,13 @@ import jxl.Workbook;
 import jxl.read.biff.BiffException; 
 
 class Dataset {
-    public static ArrayList<Field> dataArray = null;
+    public ArrayList<Field> dataArray = null;
     private static Pattern booleanPattern = null;
     private static Pattern numericPattern = null;
     private static Pattern sciNoPattern = null;
 
     //Checks if the dataArray exists, and if not opens the importing window, then returns the dataArray
-    static ArrayList<Field> getDataArray() {
+    ArrayList<Field> getDataArray() {
         if(dataArray == null) {
             gui();
         }
@@ -45,7 +45,7 @@ class Dataset {
     }
 
     //Returns a String[] with all of the field names 
-    static String[] getFields() {
+    String[] getFields() {
         if(dataArray == null) {
             gui();
         }
@@ -58,7 +58,7 @@ class Dataset {
 
     //Takes the fieldName and returns the index within dataArray; returns -1 if the field does not exist
     //TODO: Not called by Dataset or Field; delete if viewing elements does not need 
-    static int indexOfField(String fieldName){
+    int indexOfField(String fieldName){
         for (Field field : dataArray) {
             if(fieldName.equals(field.getName())){
                 return dataArray.indexOf(field);
@@ -123,7 +123,7 @@ class Dataset {
     }
 
     //Takes in the imported file and fills out the dataArray
-    static void csvToField(File file) throws IOException{
+    void csvToField(File file) throws IOException{
         BufferedReader csvReader = new BufferedReader(new FileReader(file));
         String row = csvReader.readLine();
         dataArray = new ArrayList<>();
@@ -178,7 +178,7 @@ class Dataset {
     }
     
     //Takes an imported .xlsx file and fills out the dataArray
-    public static void xlsxReading(File file) throws IOException{
+    public void xlsxReading(File file) throws IOException{
         XSSFWorkbook wb;
         XSSFSheet sheet;
         DataFormatter df = new DataFormatter();
@@ -239,7 +239,7 @@ class Dataset {
     }
     
     //Takes an imported .xls file and fills out the dataArray
-    public static void xlsReading(File file) throws IOException{
+    public void xlsReading(File file) throws IOException{
         Workbook workbook;
         Sheet sheet;
         String type = "";
@@ -294,7 +294,7 @@ class Dataset {
     //Called by gui()
     //Calls PythonAssist.py to borrow its improved directory for importing
    //Returns a File if it is a valid File, returns null if not
-   private static File importingWithPy(){
+   private File importingWithPy(){
       String pythonPath = "src\\main\\resources\\PythonAssist.py";
       String selectedPath = "";
       File file = null;
@@ -327,7 +327,7 @@ class Dataset {
     //TODO: Lock button so it cannot be pressed multiple times? 
     //Doesn't currently cause any issues other than multiple importing windows opening
     //But could potentially cause issues later
-   public static void gui() {
+   public void gui() {
       JFrame frame = new JFrame("textfield"); 
       JPanel panel = new JPanel();
       JButton button = new JButton("Import");
@@ -372,6 +372,7 @@ class Dataset {
     }
 
     public static void main(String[] args) {
-        gui();
+        Dataset d = new Dataset();
+        d.gui();
     }
 }
