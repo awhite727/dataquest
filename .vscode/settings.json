@@ -3,5 +3,6 @@
         "lib/**/*.jar",
         "c:\\Users\\srava\\OneDrive\\Documentos\\jfreechart-1.0.19\\lib\\jfreechart-1.0.19.jar",
         "c:\\Users\\srava\\OneDrive\\Documentos\\jfreechart-1.0.19\\lib\\jcommon-1.0.23.jar"
-    ]
+    ],
+    "java.configuration.updateBuildConfiguration": "interactive"
 }
