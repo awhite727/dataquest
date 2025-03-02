@@ -174,20 +174,22 @@ public class Layout extends JFrame {
       return file;
    }
 
+    // called from button
     //Sets up a basic gui and pops up the importing window 
-    //Calls the repesective methods for unpacking a csv, xls, or xlsx
+    //Calls the repesective Dataset's csvReading, xlsReading, or xlsxReading
     //TODO: Lock button so it cannot be pressed multiple times? 
     //Doesn't currently cause any issues other than multiple importing windows opening
     //But could potentially cause issues later
-    // called from button
     private void importDataset() {
         File file = null;
         try {
             file = importingWithPy();
-            if(file.getName().equals("")){}//nothing selected
+            if(file.getName().equals("")){//nothing selected
+                return;
+            }
             else if(file.getName().endsWith(".csv")) {
                 System.out.println("csv");
-                dataset.csvToField(file); //TODO: change name to csvReading to match naming scheme
+                dataset.csvReading(file); //TODO: change name to csvReading to match naming scheme
             } else if(file.getName().endsWith(".xlsx")) {
                 System.out.println("xlsx");
                 dataset.xlsxReading(file);
@@ -207,7 +209,7 @@ public class Layout extends JFrame {
             e.printStackTrace();
             return;
         }
-        ArrayList<Field> data = dataset.getDataArray()
+        ArrayList<Field> data = dataset.getDataArray();
 
         int rows = data.get(0).getTypedArray().size();
         int columns = data.size();

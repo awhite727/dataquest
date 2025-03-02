@@ -1,25 +1,11 @@
 package dataquest;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
-
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import java.util.regex.Pattern;
-
-import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
-
-
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
 
 //NOTE: apache.poi and JXL share some import names 
 //If more imports are needed later and share the same class name, 
@@ -43,19 +29,14 @@ class Dataset {
     private static Pattern numericPattern = null;
     private static Pattern sciNoPattern = null;
 
-    //Checks if the dataArray exists, and if not opens the importing window, then returns the dataArray
+    //Returns the dataArray
+    //Checks if the dataArray exists should be handled in Layout
     ArrayList<Field> getDataArray() {
-        if(dataArray == null) {
-            gui();
-        }
         return dataArray;
     }
 
     //Returns a String[] with all of the field names 
     String[] getFields() {
-        if(dataArray == null) {
-            gui();
-        }
         String [] fields = new String[dataArray.size()];
         for (int i = 0; i < dataArray.size(); i++) {
             fields[i] = dataArray.get(i).getName();
@@ -130,7 +111,7 @@ class Dataset {
     }
 
     //Takes in the imported file and fills out the dataArray
-    void csvToField(File file) throws IOException{
+    void csvReading(File file) throws IOException{
         BufferedReader csvReader = new BufferedReader(new FileReader(file));
         String row = csvReader.readLine();
         dataArray = new ArrayList<>();
@@ -296,90 +277,5 @@ class Dataset {
                 System.out.println("\t" + field.getName() + ": " + nullCount);
             }
         }
-    }
-    
-    //Called by gui()
-    //Calls PythonAssist.py to borrow its improved directory for importing
-   //Returns a File if it is a valid File, returns null if not
-   private File importingWithPy(){
-      String pythonPath = "src\\main\\resources\\PythonAssist.py";
-      String selectedPath = "";
-      File file = null;
-      ProcessBuilder pb = new ProcessBuilder()
-         .command("python","-u", pythonPath, "openFile");
-      Process p;
-
-      try {
-         //run the process from process builder; 
-         p = pb.start();
-         BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-         selectedPath = in.readLine();
-         p.waitFor();
-         in.close();
-         file = new File(selectedPath);
-      } catch (IOException e) {
-         System.out.println("ERROR: " + pythonPath + " could not be found");
-         e.printStackTrace();
-      } catch (InterruptedException e) {
-         //Process p interupted by another thread
-         e.printStackTrace();
-      } catch (NullPointerException e){
-         //file selection canceled 
-      }
-      return file;
-   }
-
-    //Sets up a basic gui and pops up the importing window 
-    //Calls the repesective methods for unpacking a csv, xls, or xlsx
-    //TODO: Lock button so it cannot be pressed multiple times? 
-    //Doesn't currently cause any issues other than multiple importing windows opening
-    //But could potentially cause issues later
-   public void gui() {
-      JFrame frame = new JFrame("textfield"); 
-      JPanel panel = new JPanel();
-      JButton button = new JButton("Import");
-      panel.add(button);
-      frame.add(panel);
-      frame.setSize(500, 200);
-      frame.setVisible(true);
-      frame.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
-      
-      button.addActionListener(new ActionListener() {
-         public void actionPerformed(ActionEvent arg0) {
-            File file = null;
-            try {
-               file = importingWithPy();
-               if(file.getName().equals("")){}//nothing selected
-               else if(file.getName().endsWith(".csv")) {
-                  System.out.println("csv");
-                  csvToField(file); //TODO: change name to csvReading to match naming scheme
-               } else if(file.getName().endsWith(".xlsx")) {
-                  System.out.println("xlsx");
-                  xlsxReading(file);
-               } else if(file.getName().endsWith(".xls")) {
-                  System.out.println("xls");
-                  xlsReading(file);
-               } else {
-                  System.out.println("Not a valid file type: " + file.getName());
-               }
-            } catch(IOException e) {
-               System.out.println("File not found: ");
-               System.out.println(file);
-            } catch(Exception e) {
-                System.out.println("ERROR: Unknown error in Dataset.gui()");
-                e.printStackTrace();
-            }
-      }});
-
-
-
-
-
-      
-    }
-
-    public static void main(String[] args) {
-        Dataset d = new Dataset();
-        d.gui();
     }
 }
