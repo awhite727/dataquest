@@ -29,7 +29,6 @@ class Dataset implements Serializable{
     private static Pattern booleanPattern = null;
     private static Pattern numericPattern = null;
     private static Pattern sciNoPattern = null;
-    public static final long serialVersionUID = 1234L;
 
 
     //Returns the dataArray

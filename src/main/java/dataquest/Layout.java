@@ -33,7 +33,7 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
-public class Layout extends JFrame {
+public class Layout extends JFrame implements Serializable {
     private JTable spreadsheet;
     private DefaultTableModel tableModel;
     private JTextArea output;
