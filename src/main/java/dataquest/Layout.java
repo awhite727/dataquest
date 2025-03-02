@@ -4,6 +4,10 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 import javax.swing.JButton;
@@ -138,11 +142,75 @@ public class Layout extends JFrame {
         plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
         return chart;
     }
+    
+    //Called by gui()
+    //Calls PythonAssist.py to borrow its improved directory for importing
+   //Returns a File if it is a valid File, returns null if not
+   private File importingWithPy(){
+      String pythonPath = "src\\main\\resources\\PythonAssist.py";
+      String selectedPath = "";
+      File file = null;
+      ProcessBuilder pb = new ProcessBuilder()
+         .command("python","-u", pythonPath, "openFile");
+      Process p;
+
+      try {
+         //run the process from process builder; 
+         p = pb.start();
+         BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+         selectedPath = in.readLine();
+         p.waitFor();
+         in.close();
+         file = new File(selectedPath);
+      } catch (IOException e) {
+         System.out.println("ERROR: " + pythonPath + " could not be found");
+         e.printStackTrace();
+      } catch (InterruptedException e) {
+         //Process p interupted by another thread
+         e.printStackTrace();
+      } catch (NullPointerException e){
+         //file selection canceled 
+      }
+      return file;
+   }
 
     // called from button
+    //Sets up a basic gui and pops up the importing window 
+    //Calls the repesective Dataset's csvReading, xlsReading, or xlsxReading
+    //TODO: Lock button so it cannot be pressed multiple times? 
+    //Doesn't currently cause any issues other than multiple importing windows opening
+    //But could potentially cause issues later
     private void importDataset() {
-        dataset.gui();
+        File file = null;
+        try {
+            file = importingWithPy();
+            if(file.getName().equals("")){//nothing selected
+                return;
+            }
+            else if(file.getName().endsWith(".csv")) {
+                System.out.println("csv");
+                dataset.csvReading(file); //TODO: change name to csvReading to match naming scheme
+            } else if(file.getName().endsWith(".xlsx")) {
+                System.out.println("xlsx");
+                dataset.xlsxReading(file);
+            } else if(file.getName().endsWith(".xls")) {
+                System.out.println("xls");
+                dataset.xlsReading(file);
+            } else {
+                System.out.println("Not a valid file type: " + file.getName());
+                return;
+            }
+        } catch(IOException e) {
+            System.out.println("File not found: ");
+            System.out.println(file);
+            return;
+        } catch(Exception e) {
+            System.out.println("ERROR: Unknown error in Dataset.gui()");
+            e.printStackTrace();
+            return;
+        }
         ArrayList<Field> data = dataset.getDataArray();
+
         int rows = data.get(0).getTypedArray().size();
         int columns = data.size();
         tableModel = new DefaultTableModel(rows, columns);
