@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -23,11 +24,13 @@ import jxl.Sheet;
 import jxl.Workbook;
 import jxl.read.biff.BiffException; 
 
-class Dataset {
-    public static ArrayList<Field> dataArray = null;
+class Dataset implements Serializable{
+    public ArrayList<Field> dataArray = null;
     private static Pattern booleanPattern = null;
     private static Pattern numericPattern = null;
     private static Pattern sciNoPattern = null;
+    public static final long serialVersionUID = 1234L;
+
 
     //Returns the dataArray
     //Checks if the dataArray exists should be handled in Layout
@@ -109,6 +112,12 @@ class Dataset {
         }
         return typeFound;
     }
+
+    //Takes the fieldName, creates a Field, and adds it to the Dataset array
+    void addManualField(String fieldName){
+        dataArray.add(new Field(fieldName));
+    }
+    
 
     //Takes in the imported file and fills out the dataArray
     void csvReading(File file) throws IOException{

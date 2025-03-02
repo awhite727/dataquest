@@ -4,14 +4,20 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Serializable;
 import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -36,17 +42,28 @@ public class Layout extends JFrame {
     private Color[] colorPalette;
     private JButton addRowButton, addColumnButton, importingButton;
 
-    private Dataset dataset;
-
-    
+    private Dataset dataset;    
 
     public Layout() {
         setTitle("DataQuest");
         setSize(800, 600);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        //setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                int exitChoice = JOptionPane.showConfirmDialog (null, "Would you like to save your workspace?",null, JOptionPane.YES_NO_OPTION);                
+                if(exitChoice == JOptionPane.YES_OPTION){
+                    Serialization ser = new Serialization();
+                    ser.saveProject(dataset);
+                } if(exitChoice == JOptionPane.YES_OPTION || exitChoice == JOptionPane.NO_OPTION) {
+                    System.exit(0);
+                }
+            }  
+        });
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        dataset = new Dataset();
 
         // Create buttons
         JPanel buttonPanel = new JPanel();
@@ -129,8 +146,17 @@ public class Layout extends JFrame {
         // Add listeners
         addRowButton.addActionListener(e -> addRow());
         addColumnButton.addActionListener(e -> addColumn());
-        importingButton.addActionListener(e -> importDataset());
+        importingButton.addActionListener(e -> importAssist());
         tableModel.addTableModelListener(e -> updateCharts());
+
+        Serialization ser = new Serialization();
+        dataset = ser.openProject();
+        if(dataset.getDataArray() != null){
+            for (Field field : dataset.getDataArray()) {
+                System.out.println(field.getName());
+            }
+            importDataset();
+        }
     }
 
     private JFreeChart createEmptyChart(String title) {
@@ -143,24 +169,41 @@ public class Layout extends JFrame {
         return chart;
     }
     
-    //Called by gui()
-    //Calls PythonAssist.py to borrow its improved directory for importing
-   //Returns a File if it is a valid File, returns null if not
-   private File importingWithPy(){
-      String pythonPath = "src\\main\\resources\\PythonAssist.py";
-      String selectedPath = "";
-      File file = null;
-      ProcessBuilder pb = new ProcessBuilder()
-         .command("python","-u", pythonPath, "openFile");
-      Process p;
+    //Opens the importing window
+    //Checks if the user has python properly installed
+    //If so, it opens the modern importing window
+    //If not, it defaults to the old version
+    //Once file selected, calls the repesective Dataset's csvReading, xlsReading, or xlsxReading
+   //Returns true if the file was found and properly added to Dataset.dataArray, returns false if not 
+    private void importAssist(){
+        String pythonPath = "src\\main\\resources\\PythonAssist.py";
+        String selectedPath = "";
+        File file = null;
+        ProcessBuilder pb;
+        Process p;
+        BufferedReader bf;
+        try {
+            p = Runtime.getRuntime().exec("python --version");
+            bf = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            p.waitFor();
+            System.out.println(bf.readLine()); //prints the python version read
+            bf.close();
+        } catch (Exception e) {
+            //Python isn't present
+            System.out.println("ERROR: Python not installed. Using java version");
+            //return new File("");
+            return;
+        }
 
+        pb = new ProcessBuilder()
+            .command("python","-u", pythonPath, "openFile");
       try {
          //run the process from process builder; 
          p = pb.start();
-         BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-         selectedPath = in.readLine();
+         bf = new BufferedReader(new InputStreamReader(p.getInputStream()));
+         selectedPath = bf.readLine();
          p.waitFor();
-         in.close();
+         bf.close();
          file = new File(selectedPath);
       } catch (IOException e) {
          System.out.println("ERROR: " + pythonPath + " could not be found");
@@ -171,19 +214,8 @@ public class Layout extends JFrame {
       } catch (NullPointerException e){
          //file selection canceled 
       }
-      return file;
-   }
-
-    // called from button
-    //Sets up a basic gui and pops up the importing window 
-    //Calls the repesective Dataset's csvReading, xlsReading, or xlsxReading
-    //TODO: Lock button so it cannot be pressed multiple times? 
-    //Doesn't currently cause any issues other than multiple importing windows opening
-    //But could potentially cause issues later
-    private void importDataset() {
-        File file = null;
+      
         try {
-            file = importingWithPy();
             if(file.getName().equals("")){//nothing selected
                 return;
             }
@@ -209,6 +241,11 @@ public class Layout extends JFrame {
             e.printStackTrace();
             return;
         }
+        importDataset();
+   }
+
+    // called from button
+    private void importDataset() {
         ArrayList<Field> data = dataset.getDataArray();
 
         int rows = data.get(0).getTypedArray().size();

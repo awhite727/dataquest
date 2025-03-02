@@ -1,14 +1,19 @@
 package dataquest;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class Field {
+public class Field implements Serializable{
     private String name;
     private String type = null;
     private ArrayList<String> stringArray = new ArrayList<>();
     private ArrayList<Object> typedArray = new ArrayList<>();
     Field(String fieldName) {
         this.name = fieldName;
+    }
+
+    void setFieldName(String newName) {
+        name = newName;
     }
 
     ArrayList<Object> getTypedArray() {
