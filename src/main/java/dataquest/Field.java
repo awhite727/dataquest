@@ -116,6 +116,7 @@ public class Field implements Serializable {
         if(newValue.isEmpty()) { 
             stringArray.add(newValue);
             typedArray.add(null);
+            isMissing.add(true);
             return true;
         }
 
