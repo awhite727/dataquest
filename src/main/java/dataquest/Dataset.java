@@ -8,9 +8,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-//NOTE: apache.poi and JXL share some import names 
-//If more imports are needed later and share the same class name, 
-//Replace class name in declarations to full import name (i.e. "jxl.Sheet sheet = new jxl.Sheet()")
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DataFormatter;
@@ -18,18 +15,17 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-//NOTE: JXL has some known vulnerabilities, including with SQL injection
-//Not relevant to our current plan, but be careful using it outside of local usage
 import jxl.Sheet;
 import jxl.Workbook;
 import jxl.read.biff.BiffException; 
 
-class Dataset implements Serializable{
-    public ArrayList<Field> dataArray = null;
+class Dataset implements Serializable {
+    public static ArrayList<Field> dataArray = null;
     private static Pattern booleanPattern = null;
     private static Pattern numericPattern = null;
     private static Pattern sciNoPattern = null;
-
+    // missing value handling 
+    private static Pattern missingPattern = null;
 
     //Returns the dataArray
     //Checks if the dataArray exists should be handled in Layout
@@ -46,9 +42,22 @@ class Dataset implements Serializable{
         return fields;
     }
 
+    // returns all fields with float type
+    static Field[] getNumericFields() {
+        ArrayList<Field> fieldsList = new ArrayList<>();
+        for(int i=0; i<dataArray.size(); i++) {
+            Field f = dataArray.get(i);
+            if(f.getType().equals("float")) {
+                fieldsList.add(f);
+            }
+        }
+        Field[] fields = fieldsList.toArray(new Field[fieldsList.size()]);
+        return fields;
+    }
+
     //Takes the fieldName and returns the index within dataArray; returns -1 if the field does not exist
     //TODO: Not called by Dataset or Field; delete if viewing elements does not need 
-    int indexOfField(String fieldName){
+    static int indexOfField(String fieldName){
         for (Field field : dataArray) {
             if(fieldName.equals(field.getName())){
                 return dataArray.indexOf(field);
@@ -60,6 +69,14 @@ class Dataset implements Serializable{
     //sets the allowed Patterns and returns an array with the compiled patterns
     static Pattern[] setPatterns(){
             Pattern[] patterns;
+            missingPattern = Pattern.compile("^\\s*$|^\\s*(NA|null|n/a|missing|\\?|\\.|-|none|unknown|not available)\\s*$",
+                Pattern.CASE_INSENSITIVE);
+                        /* 
+                            empty strings
+                            strings consisting of only whitespace
+                            also matches placeholders like na, null, n/a, missing, the characters ?, ., and -, 
+                                none, unknown, and not available
+                        */
             booleanPattern = Pattern.compile("^true|false$", Pattern.CASE_INSENSITIVE);
             numericPattern = Pattern.compile("^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$");
                         /* Start with an optional +|-
@@ -102,6 +119,8 @@ class Dataset implements Serializable{
         //use patterns to find and return the type
         if(booleanPattern.matcher(cellString).matches()) {
             typeFound = "boolean";
+        } else if(missingPattern.matcher(cellString).matches()) {
+            typeFound = "missing";
         } else if(numericPattern.matcher(cellString).matches()) {
             typeFound = "float";
         } else if(sciNoPattern.matcher(cellString).matches()) {

@@ -6,17 +6,15 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -33,30 +31,37 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
-public class Layout extends JFrame implements Serializable {
+
+//NOTE: Tried to directly implement Serializable to Layout, but caused an infinite loop somewhere and I can't find it
+public class Layout extends JFrame {
     private JTable spreadsheet;
     private DefaultTableModel tableModel;
     private JTextArea output;
     private JFreeChart chart1, chart2;
     private ChartPanel chartPanel1, chartPanel2;
     private Color[] colorPalette;
-    private JButton addRowButton, addColumnButton, importingButton;
+    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton;
 
-    private Dataset dataset;    
+    private Dataset dataset;
 
     public Layout() {
         setTitle("DataQuest");
         setSize(800, 600);
+        //setIconImage(new ImageIcon("src\\main\\resources\\icon.png").getImage()); //Just changes icon at the bottom when it's running to whatever icon.png we have in resources
         //setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
                 int exitChoice = JOptionPane.showConfirmDialog (null, "Would you like to save your workspace?",null, JOptionPane.YES_NO_OPTION);                
                 if(exitChoice == JOptionPane.YES_OPTION){
+                    //TODO: Add loading bar; takes a good bit
+                    System.out.println("Loading");
                     Serialization ser = new Serialization();
-                    ser.saveProject(dataset);
+                    ArrayList<Object> states = new ArrayList<>();
+                    if(dataset.getDataArray()==null){System.out.println("dataset null");}
+                    states.add(dataset);
+                    ser.saveProject(states);
                 } if(exitChoice == JOptionPane.YES_OPTION || exitChoice == JOptionPane.NO_OPTION) {
                     System.exit(0);
                 }
@@ -70,10 +75,12 @@ public class Layout extends JFrame implements Serializable {
         addRowButton = new JButton("Add Row");
         addColumnButton = new JButton("Add Column");
         importingButton = new JButton("Import Dataset");
-        
+        handleMissingButton = new JButton("Handle Missing");
         buttonPanel.add(addRowButton);
         buttonPanel.add(addColumnButton);
         buttonPanel.add(importingButton);
+        buttonPanel.add(handleMissingButton);
+
         
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3; gbc.weighty = 0.1;
         add(buttonPanel, gbc);
@@ -147,16 +154,14 @@ public class Layout extends JFrame implements Serializable {
         addRowButton.addActionListener(e -> addRow());
         addColumnButton.addActionListener(e -> addColumn());
         importingButton.addActionListener(e -> importAssist());
-        tableModel.addTableModelListener(e -> updateCharts());
-
-        Serialization ser = new Serialization();
-        dataset = ser.openProject();
-        if(dataset.getDataArray() != null){
-            for (Field field : dataset.getDataArray()) {
-                System.out.println(field.getName());
+        handleMissingButton.addActionListener(e -> {
+            if(dataset.dataArray != null) {
+                ChoiceMenu.missingValueMenu(this);
+                updateSpreadsheet();
+                System.out.println("Missing handled successfully.");
             }
-            importDataset();
-        }
+        });
+        tableModel.addTableModelListener(e -> updateCharts());
     }
 
     private JFreeChart createEmptyChart(String title) {
@@ -168,11 +173,33 @@ public class Layout extends JFrame implements Serializable {
         plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
         return chart;
     }
+
+    private void loadSavedWorkspace() {
+        //TODO: Include a loading bar; takes a bit to load in
+        System.out.println("Loading");
+        Serialization ser = new Serialization();
+        ArrayList<Object> state = ser.openProject();
+        if(state.size() == 0){return;}
+        //Loads in classes from Arraylist, regardless of order
+        //TODO: Add any other serialized objects to loadSavedWorkspace
+        try {
+            boolean datasetFound = state.stream()
+                .filter(oneState -> oneState instanceof Dataset)
+                .map(oneState->this.dataset = (Dataset)oneState)
+                .collect(Collectors.toList()).isEmpty();
+            System.out.println("Dataset found? " + datasetFound);
+            
+        } catch(Exception e) {
+            e.printStackTrace();
+            return;
+        }
+        updateSpreadsheet();
+    }
     
     //Opens the importing window
     //Checks if the user has python properly installed
     //If so, it opens the modern importing window
-    //If not, it defaults to the old version
+    //TODO: Add notification if they don't have it
     //Once file selected, calls the repesective Dataset's csvReading, xlsReading, or xlsxReading
    //Returns true if the file was found and properly added to Dataset.dataArray, returns false if not 
     private void importAssist(){
@@ -197,6 +224,7 @@ public class Layout extends JFrame implements Serializable {
 
         pb = new ProcessBuilder()
             .command("python","-u", pythonPath, "openFile");
+      
       try {
          //run the process from process builder; 
          p = pb.start();
@@ -214,14 +242,14 @@ public class Layout extends JFrame implements Serializable {
       } catch (NullPointerException e){
          //file selection canceled 
       }
-      
+      dataset = new Dataset();
         try {
             if(file.getName().equals("")){//nothing selected
                 return;
             }
             else if(file.getName().endsWith(".csv")) {
                 System.out.println("csv");
-                dataset.csvReading(file); //TODO: change name to csvReading to match naming scheme
+                dataset.csvReading(file); 
             } else if(file.getName().endsWith(".xlsx")) {
                 System.out.println("xlsx");
                 dataset.xlsxReading(file);
@@ -241,13 +269,13 @@ public class Layout extends JFrame implements Serializable {
             e.printStackTrace();
             return;
         }
-        importDataset();
-   }
+        updateSpreadsheet();
+    }
 
-    // called from button
-    private void importDataset() {
+    
+    private void updateSpreadsheet() {
         ArrayList<Field> data = dataset.getDataArray();
-
+        if(data == null){return;} //Handles if workspace saved an empty Dataset
         int rows = data.get(0).getTypedArray().size();
         int columns = data.size();
         tableModel = new DefaultTableModel(rows, columns);
@@ -265,7 +293,6 @@ public class Layout extends JFrame implements Serializable {
             }
         }
         tableModel.setColumnIdentifiers(dataset.getFields());
-        System.out.println("Import Successful");
     }
 
     private void addRow() {
@@ -324,6 +351,9 @@ public class Layout extends JFrame implements Serializable {
         SwingUtilities.invokeLater(() -> {
             Layout layout = new Layout();
             layout.setVisible(true);
+            layout.loadSavedWorkspace();
+
         });
+        
     }
 }
