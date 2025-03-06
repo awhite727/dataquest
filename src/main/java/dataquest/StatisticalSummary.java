@@ -1,4 +1,4 @@
-package main.java.dataquest;
+package dataquest;
 
 import java.util.List;
 
