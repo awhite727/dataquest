@@ -8,26 +8,19 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.filechooser.FileNameExtensionFilter;
-
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-//NOTE: JXL has some known vulnerabilities, including with SQL injection
-//Not relevant to our current plan, but be careful using it outside of local usage
 import jxl.Sheet;
 import jxl.Workbook;
 import jxl.read.biff.BiffException; 
 
 class Dataset implements Serializable {
-    public ArrayList<Field> dataArray = null;
+    public static ArrayList<Field> dataArray = null;
     private static Pattern booleanPattern = null;
     private static Pattern numericPattern = null;
     private static Pattern sciNoPattern = null;
@@ -51,9 +44,6 @@ class Dataset implements Serializable {
 
     // returns all fields with float type
     static Field[] getNumericFields() {
-        if(dataArray==null) {
-            gui();
-        }
         ArrayList<Field> fieldsList = new ArrayList<>();
         for(int i=0; i<dataArray.size(); i++) {
             Field f = dataArray.get(i);
@@ -67,7 +57,7 @@ class Dataset implements Serializable {
 
     //Takes the fieldName and returns the index within dataArray; returns -1 if the field does not exist
     //TODO: Not called by Dataset or Field; delete if viewing elements does not need 
-    int indexOfField(String fieldName){
+    static int indexOfField(String fieldName){
         for (Field field : dataArray) {
             if(fieldName.equals(field.getName())){
                 return dataArray.indexOf(field);

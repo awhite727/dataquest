@@ -6,7 +6,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -14,10 +13,8 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -279,7 +276,6 @@ public class Layout extends JFrame {
 
     // called from button
     private void importDataset() {
-        dataset.gui();
         updateSpreadsheet();
         System.out.println("Import Successful");
     }
