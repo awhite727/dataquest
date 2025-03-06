@@ -50,6 +50,7 @@ public class Layout extends JFrame {
         //setIconImage(new ImageIcon("src\\main\\resources\\icon.png").getImage()); //Just changes icon at the bottom when it's running to whatever icon.png we have in resources
         //setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        dataset = new Dataset();
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -57,11 +58,11 @@ public class Layout extends JFrame {
                 if(exitChoice == JOptionPane.YES_OPTION){
                     //TODO: Add loading bar; takes a good bit
                     System.out.println("Loading");
-                    Serialization ser = new Serialization();
                     ArrayList<Object> states = new ArrayList<>();
                     if(dataset.getDataArray()==null){System.out.println("dataset null");}
                     states.add(dataset);
-                    ser.saveProject(states);
+                    Serialization ser = new Serialization();
+                    ser.saveProject();
                 } if(exitChoice == JOptionPane.YES_OPTION || exitChoice == JOptionPane.NO_OPTION) {
                     System.exit(0);
                 }
@@ -155,7 +156,7 @@ public class Layout extends JFrame {
         addColumnButton.addActionListener(e -> addColumn());
         importingButton.addActionListener(e -> importAssist());
         handleMissingButton.addActionListener(e -> {
-            if(dataset.dataArray != null) {
+            if(Dataset.dataArray != null) {
                 ChoiceMenu.missingValueMenu(this);
                 updateSpreadsheet();
                 System.out.println("Missing handled successfully.");
@@ -180,15 +181,10 @@ public class Layout extends JFrame {
         Serialization ser = new Serialization();
         ArrayList<Object> state = ser.openProject();
         if(state.size() == 0){return;}
-        //Loads in classes from Arraylist, regardless of order
+        
         //TODO: Add any other serialized objects to loadSavedWorkspace
         try {
-            boolean datasetFound = state.stream()
-                .filter(oneState -> oneState instanceof Dataset)
-                .map(oneState->this.dataset = (Dataset)oneState)
-                .collect(Collectors.toList()).isEmpty();
-            System.out.println("Dataset found? " + datasetFound);
-            
+            dataset.setDataArray((ArrayList<Field>)state.get(0));
         } catch(Exception e) {
             e.printStackTrace();
             return;
@@ -217,8 +213,8 @@ public class Layout extends JFrame {
             bf.close();
         } catch (Exception e) {
             //Python isn't present
-            System.out.println("ERROR: Python not installed. Using java version");
-            //return new File("");
+            System.out.println("ERROR: Python not installed.");
+            JOptionPane.showMessageDialog(null, "ERROR: Python not properly installed. Please install to import data");
             return;
         }
 
@@ -242,7 +238,6 @@ public class Layout extends JFrame {
       } catch (NullPointerException e){
          //file selection canceled 
       }
-      dataset = new Dataset();
         try {
             if(file.getName().equals("")){//nothing selected
                 return;

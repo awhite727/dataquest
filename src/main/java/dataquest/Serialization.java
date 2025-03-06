@@ -5,21 +5,27 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 
-//NOTE: Can eventually be put directly into Layout; left separate for readability/editability
-//NOTE: Currently saves the Layout class, and then Layout loads the info back into the correct places
 //Anything added to the array in Layout but not actually added to Layout will not be saved
-public class Serialization {
-
-    //Attempts to save the Layout to SaveState.ser
-    //If successful, just closes. If not, prints an error
-    public void saveProject(ArrayList<Object> object) {
+public class Serialization implements Serializable{
+    ArrayList<Object> savedWorkspace = new ArrayList<>();
+    
+    //Attempts to save the all the information to SaveState.ser
+    //TODO: Include any other information needed to be saved
+    //If need to save something non-static, need to change pass saveProject an ArrayList<Object> of all the classes
+    //And make those classes implement Serializable 
+    public void saveProject() {
         String savePath = "src\\main\\resources\\SaveState.ser";
         try {
+            //Add any more elements here
+            savedWorkspace.add(new ArrayList<Field>(Dataset.dataArray));
+            
             ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(savePath));
-            out.writeObject(object);
+            out.writeObject(savedWorkspace);
             out.close();
             System.out.println("Successfully saved");
         }
