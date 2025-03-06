@@ -8,10 +8,12 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-//NOTE: apache.poi and JXL share some import names 
-//If more imports are needed later and share the same class name, 
-//Replace class name in declarations to full import name (i.e. "jxl.Sheet sheet = new jxl.Sheet()")
+
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
@@ -29,6 +31,8 @@ class Dataset implements Serializable {
     private static Pattern booleanPattern = null;
     private static Pattern numericPattern = null;
     private static Pattern sciNoPattern = null;
+    // missing value handling 
+    private static Pattern missingPattern = null;
 
     //Returns the dataArray
     //Checks if the dataArray exists should be handled in Layout
@@ -42,6 +46,22 @@ class Dataset implements Serializable {
         for (int i = 0; i < dataArray.size(); i++) {
             fields[i] = dataArray.get(i).getName();
         }
+        return fields;
+    }
+
+    // returns all fields with float type
+    static Field[] getNumericFields() {
+        if(dataArray==null) {
+            gui();
+        }
+        ArrayList<Field> fieldsList = new ArrayList<>();
+        for(int i=0; i<dataArray.size(); i++) {
+            Field f = dataArray.get(i);
+            if(f.getType().equals("float")) {
+                fieldsList.add(f);
+            }
+        }
+        Field[] fields = fieldsList.toArray(new Field[fieldsList.size()]);
         return fields;
     }
 
@@ -59,6 +79,14 @@ class Dataset implements Serializable {
     //sets the allowed Patterns and returns an array with the compiled patterns
     static Pattern[] setPatterns(){
             Pattern[] patterns;
+            missingPattern = Pattern.compile("^\\s*$|^\\s*(NA|null|n/a|missing|\\?|\\.|-|none|unknown|not available)\\s*$",
+                Pattern.CASE_INSENSITIVE);
+                        /* 
+                            empty strings
+                            strings consisting of only whitespace
+                            also matches placeholders like na, null, n/a, missing, the characters ?, ., and -, 
+                                none, unknown, and not available
+                        */
             booleanPattern = Pattern.compile("^true|false$", Pattern.CASE_INSENSITIVE);
             numericPattern = Pattern.compile("^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$");
                         /* Start with an optional +|-
@@ -101,6 +129,8 @@ class Dataset implements Serializable {
         //use patterns to find and return the type
         if(booleanPattern.matcher(cellString).matches()) {
             typeFound = "boolean";
+        } else if(missingPattern.matcher(cellString).matches()) {
+            typeFound = "missing";
         } else if(numericPattern.matcher(cellString).matches()) {
             typeFound = "float";
         } else if(sciNoPattern.matcher(cellString).matches()) {

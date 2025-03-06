@@ -43,7 +43,8 @@ public class Layout extends JFrame {
     private JFreeChart chart1, chart2;
     private ChartPanel chartPanel1, chartPanel2;
     private Color[] colorPalette;
-    private JButton addRowButton, addColumnButton, importingButton;
+    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton;
+
     private Dataset dataset;
 
     public Layout() {
@@ -78,10 +79,12 @@ public class Layout extends JFrame {
         addRowButton = new JButton("Add Row");
         addColumnButton = new JButton("Add Column");
         importingButton = new JButton("Import Dataset");
-        
+        handleMissingButton = new JButton("Handle Missing");
         buttonPanel.add(addRowButton);
         buttonPanel.add(addColumnButton);
         buttonPanel.add(importingButton);
+        buttonPanel.add(handleMissingButton);
+
         
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3; gbc.weighty = 0.1;
         add(buttonPanel, gbc);
@@ -155,6 +158,13 @@ public class Layout extends JFrame {
         addRowButton.addActionListener(e -> addRow());
         addColumnButton.addActionListener(e -> addColumn());
         importingButton.addActionListener(e -> importAssist());
+        handleMissingButton.addActionListener(e -> {
+            if(dataset.dataArray != null) {
+                ChoiceMenu.missingValueMenu(this);
+                updateSpreadsheet();
+                System.out.println("Missing handled successfully.");
+            }
+        });
         tableModel.addTableModelListener(e -> updateCharts());
 
         dataset = new Dataset();
@@ -266,8 +276,16 @@ public class Layout extends JFrame {
         }
       importDataset();
    }
-   // called from button
-   private void importDataset() {
+
+    // called from button
+    private void importDataset() {
+        dataset.gui();
+        updateSpreadsheet();
+        System.out.println("Import Successful");
+    }
+
+    // updates the values of the spreadsheet. call after any data in dataArray changes
+    private void updateSpreadsheet() {
         ArrayList<Field> data = dataset.getDataArray();
         if(data == null){return;} //Handles if workspace saved an empty Dataset
         int rows = data.get(0).getTypedArray().size();
@@ -287,7 +305,6 @@ public class Layout extends JFrame {
             }
         }
         tableModel.setColumnIdentifiers(dataset.getFields());
-        System.out.println("Import Successful");
     }
 
     private void addRow() {
