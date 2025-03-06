@@ -7,8 +7,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
-
 
 //Anything added to the array in Layout but not actually added to Layout will not be saved
 public class Serialization implements Serializable{
@@ -16,11 +14,12 @@ public class Serialization implements Serializable{
     
     //Attempts to save the all the information to SaveState.ser
     //TODO: Include any other information needed to be saved
-    //If need to save something non-static, need to change pass saveProject an ArrayList<Object> of all the classes
+    //If need to save something non-static, add to the workspace from Layout
     //And make those classes implement Serializable 
-    public void saveProject() {
+    public void saveProject(ArrayList<Object> workspace) {
         String savePath = "src\\main\\resources\\SaveState.ser";
         try {
+            savedWorkspace.add(workspace);
             //Add any more elements here
             savedWorkspace.add(new ArrayList<Field>(Dataset.dataArray));
             
@@ -41,7 +40,10 @@ public class Serialization implements Serializable{
         String filename = "src\\main\\resources\\SaveState.ser";
         try {
             ObjectInputStream in = new ObjectInputStream(new FileInputStream(filename));
-            ArrayList<Object> deserialized = (ArrayList) in.readObject();
+            
+            @SuppressWarnings("unchecked")
+            ArrayList<Object> deserialized = (ArrayList<Object>) in.readObject();
+            
             in.close();
             if(deserialized instanceof ArrayList){ 
                 System.out.println("Workspace successfully opened");

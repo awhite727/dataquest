@@ -11,7 +11,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -58,11 +57,9 @@ public class Layout extends JFrame {
                 if(exitChoice == JOptionPane.YES_OPTION){
                     //TODO: Add loading bar; takes a good bit
                     System.out.println("Loading");
-                    ArrayList<Object> states = new ArrayList<>();
-                    if(dataset.getDataArray()==null){System.out.println("dataset null");}
-                    states.add(dataset);
+                    ArrayList<Object> workspace = new ArrayList<>();
                     Serialization ser = new Serialization();
-                    ser.saveProject();
+                    ser.saveProject(workspace);
                 } if(exitChoice == JOptionPane.YES_OPTION || exitChoice == JOptionPane.NO_OPTION) {
                     System.exit(0);
                 }
@@ -183,8 +180,8 @@ public class Layout extends JFrame {
         if(state.size() == 0){return;}
         
         //TODO: Add any other serialized objects to loadSavedWorkspace
-        try {
-            dataset.setDataArray((ArrayList<Field>)state.get(0));
+        try {   
+            dataset.setDataArray((ArrayList<Field>)state.get(1));
         } catch(Exception e) {
             e.printStackTrace();
             return;
