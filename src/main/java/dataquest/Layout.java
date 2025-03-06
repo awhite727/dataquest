@@ -4,14 +4,21 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -27,6 +34,8 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
+
+//NOTE: Tried to directly implement Serializable to Layout, but caused an infinite loop somewhere and I can't find it
 public class Layout extends JFrame {
     private JTable spreadsheet;
     private DefaultTableModel tableModel;
@@ -35,15 +44,31 @@ public class Layout extends JFrame {
     private ChartPanel chartPanel1, chartPanel2;
     private Color[] colorPalette;
     private JButton addRowButton, addColumnButton, importingButton;
-
     private Dataset dataset;
-
-    
 
     public Layout() {
         setTitle("DataQuest");
         setSize(800, 600);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        //setIconImage(new ImageIcon("src\\main\\resources\\icon.png").getImage()); //Just changes icon at the bottom when it's running to whatever icon.png we have in resources
+        //setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                int exitChoice = JOptionPane.showConfirmDialog (null, "Would you like to save your workspace?",null, JOptionPane.YES_NO_OPTION);                
+                if(exitChoice == JOptionPane.YES_OPTION){
+                    //TODO: Add loading bar; takes a good bit
+                    System.out.println("Loading");
+                    Serialization ser = new Serialization();
+                    ArrayList<Object> states = new ArrayList<>();
+                    if(dataset.getDataArray()==null){System.out.println("dataset null");}
+                    states.add(dataset);
+                    ser.saveProject(states);
+                } if(exitChoice == JOptionPane.YES_OPTION || exitChoice == JOptionPane.NO_OPTION) {
+                    System.exit(0);
+                }
+            }  
+        });
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         dataset = new Dataset();
@@ -129,8 +154,10 @@ public class Layout extends JFrame {
         // Add listeners
         addRowButton.addActionListener(e -> addRow());
         addColumnButton.addActionListener(e -> addColumn());
-        importingButton.addActionListener(e -> importDataset());
+        importingButton.addActionListener(e -> importAssist());
         tableModel.addTableModelListener(e -> updateCharts());
+
+        dataset = new Dataset();
     }
 
     private JFreeChart createEmptyChart(String title) {
@@ -143,17 +170,56 @@ public class Layout extends JFrame {
         return chart;
     }
     
-    //Called by gui()
-    //Calls PythonAssist.py to borrow its improved directory for importing
-   //Returns a File if it is a valid File, returns null if not
-   private File importingWithPy(){
-      String pythonPath = "src\\main\\resources\\PythonAssist.py";
-      String selectedPath = "";
-      File file = null;
-      ProcessBuilder pb = new ProcessBuilder()
-         .command("python","-u", pythonPath, "openFile");
-      Process p;
+    private void loadSavedWorkspace() {
+        //TODO: Include a loading bar; takes a bit to load in
+        System.out.println("Loading");
+        Serialization ser = new Serialization();
+        ArrayList<Object> state = ser.openProject();
+        if(state.size() == 0){return;}
+        //Loads in classes from Arraylist, regardless of order
+        //TODO: Add any other serialized objects to loadSavedWorkspace
+        try {
+            state.stream()
+                .filter(oneState -> oneState instanceof Dataset)
+                .map(oneState->this.dataset = (Dataset)oneState)
+                .collect(Collectors.toList());
+            
+        } catch(Exception e) {
+            e.printStackTrace();
+            return;
+        }
+        importDataset();
+        System.out.println("ImportDataset is Done");
+    }
+    //Opens the importing window
+    //Checks if the user has python properly installed
+    //If so, it opens the modern importing window
+    //If not, it defaults to the old version
+    //Once file selected, calls the repesective Dataset's csvReading, xlsReading, or xlsxReading
+   //Returns true if the file was found and properly added to Dataset.dataArray, returns false if not 
+    private void importAssist(){
+        String pythonPath = "src\\main\\resources\\PythonAssist.py";
+        String selectedPath = "";
+        File file = null;
+        ProcessBuilder pb;
+        Process p;
+        BufferedReader bf;
+        try {
+            p = Runtime.getRuntime().exec("python --version");
+            bf = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            p.waitFor();
+            System.out.println(bf.readLine()); //prints the python version read
+            bf.close();
+        } catch (Exception e) {
+            //Python isn't present
+            System.out.println("ERROR: Python not installed. Using java version");
+            //return new File("");
+            return;
+        }
 
+        pb = new ProcessBuilder()
+            .command("python","-u", pythonPath, "openFile");
+      
       try {
          //run the process from process builder; 
          p = pb.start();
@@ -171,46 +237,39 @@ public class Layout extends JFrame {
       } catch (NullPointerException e){
          //file selection canceled 
       }
-      return file;
-   }
-
-    // called from button
-    //Sets up a basic gui and pops up the importing window 
-    //Calls the repesective Dataset's csvReading, xlsReading, or xlsxReading
-    //TODO: Lock button so it cannot be pressed multiple times? 
-    //Doesn't currently cause any issues other than multiple importing windows opening
-    //But could potentially cause issues later
-    private void importDataset() {
-        File file = null;
-        try {
-            file = importingWithPy();
-            if(file.getName().equals("")){//nothing selected
-                return;
-            }
-            else if(file.getName().endsWith(".csv")) {
-                System.out.println("csv");
-                dataset.csvReading(file); //TODO: change name to csvReading to match naming scheme
-            } else if(file.getName().endsWith(".xlsx")) {
-                System.out.println("xlsx");
-                dataset.xlsxReading(file);
-            } else if(file.getName().endsWith(".xls")) {
-                System.out.println("xls");
-                dataset.xlsReading(file);
-            } else {
-                System.out.println("Not a valid file type: " + file.getName());
-                return;
-            }
-        } catch(IOException e) {
-            System.out.println("File not found: ");
-            System.out.println(file);
-            return;
-        } catch(Exception e) {
-            System.out.println("ERROR: Unknown error in Dataset.gui()");
-            e.printStackTrace();
+      
+      try {
+        if(file.getName().equals("")){//nothing selected
             return;
         }
+        else if(file.getName().endsWith(".csv")) {
+            System.out.println("csv");
+            dataset.csvReading(file); 
+        } else if(file.getName().endsWith(".xlsx")) {
+            System.out.println("xlsx");
+            dataset.xlsxReading(file);
+        } else if(file.getName().endsWith(".xls")) {
+            System.out.println("xls");
+            dataset.xlsReading(file);
+        } else {
+            System.out.println("Not a valid file type: " + file.getName());
+            return;
+        }
+    } catch(IOException e) {
+        System.out.println("File not found: ");
+        System.out.println(file);
+        return;
+    } catch(Exception e) {
+        System.out.println("ERROR: Unknown error in Dataset.gui()");
+        e.printStackTrace();
+        return;
+    }
+      importDataset();
+   }
+   // called from button
+   private void importDataset() {
         ArrayList<Field> data = dataset.getDataArray();
-
+        if(data == null){System.out.println("data is null");return;} //Handles if workspace saved an empty Dataset
         int rows = data.get(0).getTypedArray().size();
         int columns = data.size();
         tableModel = new DefaultTableModel(rows, columns);
@@ -287,6 +346,9 @@ public class Layout extends JFrame {
         SwingUtilities.invokeLater(() -> {
             Layout layout = new Layout();
             layout.setVisible(true);
+            layout.loadSavedWorkspace();
+
         });
+        
     }
 }

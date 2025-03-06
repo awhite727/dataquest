@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -23,8 +24,8 @@ import jxl.Sheet;
 import jxl.Workbook;
 import jxl.read.biff.BiffException; 
 
-class Dataset {
-    public static ArrayList<Field> dataArray = null;
+class Dataset implements Serializable {
+    public ArrayList<Field> dataArray = null;
     private static Pattern booleanPattern = null;
     private static Pattern numericPattern = null;
     private static Pattern sciNoPattern = null;
