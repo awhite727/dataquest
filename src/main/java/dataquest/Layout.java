@@ -169,7 +169,7 @@ public class Layout extends JFrame {
         plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
         return chart;
     }
-    
+
     private void loadSavedWorkspace() {
         //TODO: Include a loading bar; takes a bit to load in
         System.out.println("Loading");
@@ -189,12 +189,12 @@ public class Layout extends JFrame {
             return;
         }
         importDataset();
-        System.out.println("ImportDataset is Done");
     }
+    
     //Opens the importing window
     //Checks if the user has python properly installed
     //If so, it opens the modern importing window
-    //If not, it defaults to the old version
+    //TODO: Add notification if they don't have it
     //Once file selected, calls the repesective Dataset's csvReading, xlsReading, or xlsxReading
    //Returns true if the file was found and properly added to Dataset.dataArray, returns false if not 
     private void importAssist(){
@@ -238,38 +238,38 @@ public class Layout extends JFrame {
          //file selection canceled 
       }
       
-      try {
-        if(file.getName().equals("")){//nothing selected
+        try {
+            if(file.getName().equals("")){//nothing selected
+                return;
+            }
+            else if(file.getName().endsWith(".csv")) {
+                System.out.println("csv");
+                dataset.csvReading(file); 
+            } else if(file.getName().endsWith(".xlsx")) {
+                System.out.println("xlsx");
+                dataset.xlsxReading(file);
+            } else if(file.getName().endsWith(".xls")) {
+                System.out.println("xls");
+                dataset.xlsReading(file);
+            } else {
+                System.out.println("Not a valid file type: " + file.getName());
+                return;
+            }
+        } catch(IOException e) {
+            System.out.println("File not found: ");
+            System.out.println(file);
+            return;
+        } catch(Exception e) {
+            System.out.println("ERROR: Unknown error in Dataset.gui()");
+            e.printStackTrace();
             return;
         }
-        else if(file.getName().endsWith(".csv")) {
-            System.out.println("csv");
-            dataset.csvReading(file); 
-        } else if(file.getName().endsWith(".xlsx")) {
-            System.out.println("xlsx");
-            dataset.xlsxReading(file);
-        } else if(file.getName().endsWith(".xls")) {
-            System.out.println("xls");
-            dataset.xlsReading(file);
-        } else {
-            System.out.println("Not a valid file type: " + file.getName());
-            return;
-        }
-    } catch(IOException e) {
-        System.out.println("File not found: ");
-        System.out.println(file);
-        return;
-    } catch(Exception e) {
-        System.out.println("ERROR: Unknown error in Dataset.gui()");
-        e.printStackTrace();
-        return;
-    }
       importDataset();
    }
    // called from button
    private void importDataset() {
         ArrayList<Field> data = dataset.getDataArray();
-        if(data == null){System.out.println("data is null");return;} //Handles if workspace saved an empty Dataset
+        if(data == null){return;} //Handles if workspace saved an empty Dataset
         int rows = data.get(0).getTypedArray().size();
         int columns = data.size();
         tableModel = new DefaultTableModel(rows, columns);

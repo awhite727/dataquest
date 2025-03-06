@@ -1,6 +1,6 @@
 
 
-package dataquest;
+package dataquest.lib;
 
 import java.io.FileReader;
 import java.io.Reader;
