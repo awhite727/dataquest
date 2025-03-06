@@ -1,3 +1,4 @@
+
 package dataquest;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
@@ -65,3 +66,4 @@ public class ChoiceMenu extends JFrame {
         });
     }
 }
+
