@@ -69,7 +69,6 @@ public class Layout extends JFrame {
         });
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        dataset = new Dataset();
 
         // Create buttons
         JPanel buttonPanel = new JPanel();
@@ -163,8 +162,6 @@ public class Layout extends JFrame {
             }
         });
         tableModel.addTableModelListener(e -> updateCharts());
-
-        dataset = new Dataset();
     }
 
     private JFreeChart createEmptyChart(String title) {
@@ -186,16 +183,17 @@ public class Layout extends JFrame {
         //Loads in classes from Arraylist, regardless of order
         //TODO: Add any other serialized objects to loadSavedWorkspace
         try {
-            state.stream()
+            boolean datasetFound = state.stream()
                 .filter(oneState -> oneState instanceof Dataset)
                 .map(oneState->this.dataset = (Dataset)oneState)
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()).isEmpty();
+            System.out.println("Dataset found? " + datasetFound);
             
         } catch(Exception e) {
             e.printStackTrace();
             return;
         }
-        importDataset();
+        updateSpreadsheet();
     }
     
     //Opens the importing window
@@ -230,10 +228,10 @@ public class Layout extends JFrame {
       try {
          //run the process from process builder; 
          p = pb.start();
-         BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-         selectedPath = in.readLine();
+         bf = new BufferedReader(new InputStreamReader(p.getInputStream()));
+         selectedPath = bf.readLine();
          p.waitFor();
-         in.close();
+         bf.close();
          file = new File(selectedPath);
       } catch (IOException e) {
          System.out.println("ERROR: " + pythonPath + " could not be found");
@@ -244,7 +242,7 @@ public class Layout extends JFrame {
       } catch (NullPointerException e){
          //file selection canceled 
       }
-      
+      dataset = new Dataset();
         try {
             if(file.getName().equals("")){//nothing selected
                 return;
@@ -271,16 +269,10 @@ public class Layout extends JFrame {
             e.printStackTrace();
             return;
         }
-      importDataset();
-   }
-
-    // called from button
-    private void importDataset() {
         updateSpreadsheet();
-        System.out.println("Import Successful");
     }
 
-    // updates the values of the spreadsheet. call after any data in dataArray changes
+    
     private void updateSpreadsheet() {
         ArrayList<Field> data = dataset.getDataArray();
         if(data == null){return;} //Handles if workspace saved an empty Dataset
