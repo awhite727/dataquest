@@ -14,9 +14,25 @@ public class Field implements Serializable {
             missing pattern is in Dataset. values matching that pattern will get added to isMissing
             values that are unable to be parsed will also be added to isMissing
         */
-    public boolean missingOmitted = false; // checks if statistics should omit missing values or use them
     Field(String fieldName) {
         this.name = fieldName;
+    }
+
+    // proper way to get numerical data
+    ArrayList<Double> getValues() {
+        ArrayList<Double> values = new ArrayList<>();
+        if(type != "float") {
+            return values;
+        }  
+        for (int i=0; i<typedArray.size(); i++) {
+            Object v = typedArray.get(i);
+            // removes nulls as well as handles errors
+            // if v is null, v will not be added
+            if (v instanceof Number) {     
+                values.add(((Number) v).doubleValue());
+            }
+        }
+        return values;
     }
 
     ArrayList<Object> getTypedArray() {
@@ -33,6 +49,10 @@ public class Field implements Serializable {
 
     String getName(){
         return name;
+    }
+
+    public void setName( String name) {
+        this.name = name;
     }
 
     String getCellString(int valIndex){
@@ -181,6 +201,27 @@ public class Field implements Serializable {
         return true;
     }
 
+    // for manual entry
+    public boolean setCell(int index, String newValue) {
+        // if index is exactly at the end of the array, append the new cell.
+        if (index == stringArray.size()) {
+            return addCell(newValue);
+        }
+        // if the cell already exists, update it.
+        else if (index < stringArray.size()) {
+            boolean success = updateCell(index, newValue);
+            isMissing.set(index, !success); 
+            return success;
+        }
+        else {
+            while (stringArray.size() < index) {
+                addCell("");  // add empty cells to fill the gap.
+            }
+            return addCell(newValue);
+        }
+    }
+
+
     //Removes a cell by index; returns true if the cell successfully deletes and false if the index is out of range
     boolean deleteCell(int oldValueIndex){
         if(oldValueIndex >= stringArray.size()){return false;}
@@ -196,23 +237,24 @@ public class Field implements Serializable {
         // to do
         switch(method) {
             case "Replace With Mean":
-                replaceMissing(5); // change to mean when done
-                missingOmitted = false;
+                omitMissing();  // gets rid of replaced missing values before calculating mean
+                double mean = StatisticalSummary.getMean(this.getValues());
+                replaceMissing(mean); 
                 break;
             case "Replace With Median":
-                replaceMissing(5); // change to median when done
-                missingOmitted = false;
+                omitMissing();  // gets rid of replaced missing values before calculating median
+                System.out.println(typedArray.toString());
+                double median = StatisticalSummary.getMedian(this.getValues());
+                replaceMissing(median); // change to median when done
                 break;
             case "Forward Fill":
                 forwardFill();
-                missingOmitted = false;
                 break;
             case "Backward Fill":
                 backwardFill();
-                missingOmitted = false;
                 break;
             case "Omit Missing":
-                missingOmitted = true;
+                omitMissing();
                 break;
             default:
                 throw new IllegalArgumentException("Invalid missing value method: " + method);
@@ -226,6 +268,14 @@ public class Field implements Serializable {
             if(isMissing.get(i)) {
                 updateCell(i, stringValue);
                 System.out.println("Updated at " + i + " with "+ stringValue);
+            }
+        }
+    }
+    public void omitMissing() {
+        for (int i=0; i<typedArray.size(); i++) {
+            if(isMissing.get(i)) {
+                stringArray.set(i, null);
+                typedArray.set(i, null);
             }
         }
     }

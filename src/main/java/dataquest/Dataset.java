@@ -46,6 +46,7 @@ class Dataset implements Serializable {
     static Field[] getNumericFields() {
         ArrayList<Field> fieldsList = new ArrayList<>();
         for(int i=0; i<dataArray.size(); i++) {
+            System.out.println(i);
             Field f = dataArray.get(i);
             if(f.getType().equals("float")) {
                 fieldsList.add(f);
