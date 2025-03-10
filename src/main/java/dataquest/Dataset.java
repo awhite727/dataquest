@@ -132,6 +132,12 @@ class Dataset implements Serializable {
         return typeFound;
     }
 
+    //Takes the fieldName, creates a Field, and adds it to the Dataset array
+    void addManualField(String fieldName){
+        dataArray.add(new Field(fieldName));
+    }
+    
+
     //Takes in the imported file and fills out the dataArray
     void csvReading(File file) throws IOException{
         BufferedReader csvReader = new BufferedReader(new FileReader(file));
