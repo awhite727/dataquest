@@ -31,17 +31,18 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
 
-//NOTE: Tried to directly implement Serializable to Layout, but caused an infinite loop somewhere and I can't find it
 public class Layout extends JFrame {
     private JTable spreadsheet;
     private DefaultTableModel tableModel;
     private JTextArea output;
-    private JFreeChart chart1, chart2;
+    //private JFreeChart chart1, chart2;
     private ChartPanel chartPanel1, chartPanel2;
-    private Color[] colorPalette;
+    //private Color[] colorPalette;
     private JButton addRowButton, addColumnButton, importingButton, handleMissingButton;
 
     private Dataset dataset;
+    private Graph graph1;
+    private Graph graph2;
 
     public Layout() {
         setTitle("DataQuest");
@@ -50,6 +51,14 @@ public class Layout extends JFrame {
         //setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         dataset = new Dataset();
+        loadSavedWorkspace();
+        if (graph1 == null) {
+            graph1 = new Graph();
+        } 
+        if (graph2 ==null){
+            graph2 = new Graph();
+        } 
+
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -58,6 +67,8 @@ public class Layout extends JFrame {
                     //TODO: Add loading bar; takes a good bit
                     System.out.println("Loading");
                     ArrayList<Object> workspace = new ArrayList<>();
+                    Graph[] graphs = new Graph[]{graph1,graph2};
+                    workspace.add(graphs);
                     Serialization ser = new Serialization();
                     ser.saveProject(workspace);
                 } if(exitChoice == JOptionPane.YES_OPTION || exitChoice == JOptionPane.NO_OPTION) {
@@ -132,17 +143,20 @@ public class Layout extends JFrame {
         add(new JScrollPane(output), gbc);
 
         // Set color palette
-        colorPalette = new Color[]{
+        /* colorPalette = new Color[]{
             new Color(0x264653), new Color(0x2A9D8F), new Color(0xE9C46A),
             new Color(0xF4A261), new Color(0xE76F51), new Color(0x023047),
             new Color(0x219EBC), new Color(0xFFB703), new Color(0xFB8500)
-        };
+        }; */
 
+        //TODO: POSSIBLE BREAK POINT; make sure that updates to Graph chart affect charts here
         // Create empty charts
-        chart1 = createEmptyChart("Wavy Grpah-1");
-        chart2 = createEmptyChart("Wavy Graph-2");
-        chartPanel1 = new ChartPanel(chart1);
-        chartPanel2 = new ChartPanel(chart2);
+        //chart1 = createEmptyChart("Wavy Grpah-1");
+        //chart2 = createEmptyChart("Wavy Graph-2");
+
+        
+        chartPanel1 = new ChartPanel(graph1.getChart());
+        chartPanel2 = new ChartPanel(graph2.getChart());
         gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 1; gbc.weighty = 0.5;
         add(chartPanel1, gbc);
         gbc.gridx = 1;
@@ -160,9 +174,15 @@ public class Layout extends JFrame {
             }
         });
         tableModel.addTableModelListener(e -> updateCharts());
+
+        if (dataset == null) {
+            dataset = new Dataset();
+        } else {
+            updateSpreadsheet();
+        }
     }
 
-    private JFreeChart createEmptyChart(String title) {
+    /* private JFreeChart createEmptyChart(String title) {
         XYSeriesCollection data = new XYSeriesCollection();
         JFreeChart chart = ChartFactory.createXYLineChart(title, "X", "Y", data);
         XYPlot plot = chart.getXYPlot();
@@ -170,23 +190,39 @@ public class Layout extends JFrame {
         plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
         plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
         return chart;
-    }
+    } */
 
     private void loadSavedWorkspace() {
         //TODO: Include a loading bar; takes a bit to load in
         System.out.println("Loading");
         Serialization ser = new Serialization();
         ArrayList<Object> state = ser.openProject();
-        if(state.size() == 0){return;}
+        if(state.size() != 2){return;}
         
         //TODO: Add any other serialized objects to loadSavedWorkspace
-        try {   
+        try { 
+            ArrayList<Object> directState = (ArrayList<Object>)state.get(0);
+            for (Object object : directState) {
+                if (object instanceof Graph[]) {
+                    Graph[] graphs = (Graph[])object;
+                    for (int i = 0; i < graphs.length; i++){
+                    }
+                    graph1 = graphs[0];
+                    graph2 = graphs[1];
+                } else {
+                    System.out.println(object.getClass());
+                }
+            }
+            graph1 = (Graph)((Graph[])directState.get(0))[0];
+            graph2 = (Graph)((Graph[])directState.get(0))[1];
+            graph1.updateChart();
+            graph2.updateChart();
+
             dataset.setDataArray((ArrayList<Field>)state.get(1));
         } catch(Exception e) {
             e.printStackTrace();
             return;
         }
-        updateSpreadsheet();
     }
     
     //Opens the importing window
@@ -300,7 +336,9 @@ public class Layout extends JFrame {
     }
 
     private void updateCharts() {
-        XYSeriesCollection dataset1 = new XYSeriesCollection();
+        graph1.updateCharts(tableModel);
+        graph2.updateCharts(tableModel);
+        /* XYSeriesCollection dataset1 = new XYSeriesCollection();
         XYSeriesCollection dataset2 = new XYSeriesCollection();
         
         for (int col = 0; col < tableModel.getColumnCount(); col++) {
@@ -319,17 +357,18 @@ public class Layout extends JFrame {
                 }
             }
         }
-        
         chart1.getXYPlot().setDataset(dataset1);
         chart2.getXYPlot().setDataset(dataset2);
         
-        applyColorPalette(chart1);
-        applyColorPalette(chart2);
-        
+
+        //TODO: POSSIBLE BREAK POINT; make sure the color is properly set
+        applyColorPalette(graph1.getChart());
+        applyColorPalette(graph2.getChart());
+        */
         output.setText("Data updated: " + java.time.LocalDateTime.now());
     }
 
-    private void applyColorPalette(JFreeChart chart) {
+    /* private void applyColorPalette(JFreeChart chart) {
         XYPlot plot = chart.getXYPlot();
         XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
         for (int i = 0; i < plot.getSeriesCount(); i++) {
@@ -337,14 +376,12 @@ public class Layout extends JFrame {
             renderer.setSeriesShapesVisible(i, true);
         }
         plot.setRenderer(renderer);
-    }
+    } */
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             Layout layout = new Layout();
             layout.setVisible(true);
-            layout.loadSavedWorkspace();
-
         });
         
     }
