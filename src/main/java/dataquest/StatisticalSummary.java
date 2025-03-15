@@ -52,7 +52,7 @@ public class StatisticalSummary {
 
     public static String getSummary(List<Double> data) {
         return String.format(
-            "Mean: %.2f\nMedian: %.2f\nStandard Deviation: %.2f\nMin: %.2f\nMax: %.2f\nQ1: %.2f\nQ3: %.2f\nCount: %d",
+            "Mean: %.2f\nMedian: %.2f\nStandard Deviation: %.2f\nMin: %.2f\nMax: %.2f\nQ1: %.2f\nQ3: %.2f\nCount: %d\n",
             getMean(data), getMedian(data), getStandardDeviation(data),
             getMin(data), getMax(data), getQuartile(data, 1), getQuartile(data, 3), getCount(data)
         );

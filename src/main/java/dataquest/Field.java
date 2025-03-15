@@ -71,6 +71,89 @@ public class Field implements Serializable{
             return false;
         }
     }
+    // returns true if contains 8 or less unique values
+    public boolean isCategorical() {
+        String [] levels = getLevels();
+        if (levels.length > 1) {
+            return true;
+        }
+        return false;
+    }
+    
+    // returns the string of each level in the field, or empty array if there are more than eight levels
+    public String[] getLevels() {
+        ArrayList<String> levelsList = new ArrayList<>();
+        String[] levels = new String[]{};
+        switch (type.toLowerCase()) {
+            // check for unique, non-empty strings
+            case "string":
+                for (String s : stringArray) {
+                    if (!levelsList.contains(s.strip()) && !s.strip().equals("")) {
+                        levelsList.add(s);
+                        if (levelsList.size() > 8) {
+                            return levels;
+                        }
+                    }
+                }
+            // check if integer, then add unique integers to the levels list
+            case "float":
+                for (int i=0;i<typedArray.size();i++) {
+                    if (typedArray.get(i) instanceof Float) {
+                        float value = (float) typedArray.get(i);
+                        float valueFloor = (float) Math.floor(value);
+                        int realValue;
+                        if (Math.abs(value-valueFloor)< 0.0001) {
+                            realValue = (int) valueFloor;
+                        }
+                        else if (Math.abs((valueFloor+1)-value) < 0.0001) {
+                            realValue = (int) valueFloor+1;
+                        }
+                        else {
+                            return levels;
+                        }
+                        String level = realValue + "";
+                            if (!levelsList.contains(level)) {
+                                levelsList.add(level);
+                                if (levelsList.size()>8) {
+                                    return levels;
+                                }
+                            }
+                    }
+                }
+            // find both cases, then return, or return the singular case
+            case "boolean":
+                for (int i=0;i<typedArray.size();i++) {
+                    if (typedArray.get(i) instanceof Boolean) {
+                        boolean value = (boolean) typedArray.get(i);
+                        String level = value + "";
+                        if(!levelsList.contains(level)) {
+                            levelsList.add(level);
+                            if (levelsList.size() > 1) {
+                                return levelsList.toArray(new String[2]);
+                            }
+                        }
+                    }
+                }
+            default:
+                System.out.println("Error finding levels of " + name + ": invalid type declared.");
+        }
+        levels = levelsList.toArray(new String[levelsList.size()]);
+        if (levels.length <= 1) {
+            System.out.println("Error finding levels of " + name + ": too few levels to read.");
+        }
+        return levels;
+    }
+
+    // returns all values equal to the string passed
+    public ArrayList<Integer> getIndexOfLevel(String level) {
+        ArrayList<Integer> indexes = new ArrayList<>();
+        for (int i=0;i<stringArray.size(); i++) {
+            if (level.equalsIgnoreCase(stringArray.get(i))) {
+                indexes.add(i);
+            }
+        }
+        return indexes;
+    }
 
     //Passed the new type and returns if it succeeds in identifying the type 
     //If a cell cannot be set to the new type, the index in typedArray is set to null
@@ -246,7 +329,6 @@ public class Field implements Serializable{
                 break;
             case "Replace With Median":
                 omitMissing();  // gets rid of replaced missing values before calculating median
-                System.out.println(typedArray.toString());
                 double median = StatisticalSummary.getMedian(this.getValues());
                 replaceMissing(median); // change to median when done
                 break;

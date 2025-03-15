@@ -51,7 +51,7 @@ public class Layout extends JFrame {
     private JFreeChart chart1, chart2;
     private ChartPanel chartPanel1, chartPanel2;
     private Color[] colorPalette;
-    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton;
+    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton, statisticalSummaryButton;
 
     private Dataset dataset;
 
@@ -87,11 +87,12 @@ public class Layout extends JFrame {
         addColumnButton = new JButton("Add Column");
         importingButton = new JButton("Import Dataset");
         handleMissingButton = new JButton("Handle Missing");
+        statisticalSummaryButton = new JButton("Statistical Summary");
         buttonPanel.add(addRowButton);
         buttonPanel.add(addColumnButton);
         buttonPanel.add(importingButton);
         buttonPanel.add(handleMissingButton);
-
+        buttonPanel.add(statisticalSummaryButton);
         
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3; gbc.weighty = 0.1;
         add(buttonPanel, gbc);
@@ -175,6 +176,12 @@ public class Layout extends JFrame {
                 ChoiceMenu.missingValueMenu(this);
                 updateSpreadsheet();
                 System.out.println("Missing handled successfully.");
+            }
+        });
+        statisticalSummaryButton.addActionListener(e -> {
+            if(dataset.dataArray != null) {
+                String textOutput = ChoiceMenu.statisticalSummaryMenu(this);
+                output.append(textOutput);
             }
         });
         tableModel.addTableModelListener(e -> updateCharts());

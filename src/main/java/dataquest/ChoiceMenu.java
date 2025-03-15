@@ -22,6 +22,21 @@ public class ChoiceMenu {
         methods that make pop-ups are private to encourage code reusability
     */
 
+   public static String statisticalSummaryMenu(JFrame parent) {
+        Field[] fields = Dataset.getNumericFields();
+        if (fields.length==0) {
+            return "No numerical fields available for statistical summary.";
+        }
+        String [] fieldNames = new String[fields.length];
+        for (int i=0;i<fields.length;i++) {
+            fieldNames[i] = fields[i].getName();
+        }
+        String selected = showComboPopup(parent, "Statistical Summary", "Choose a field", fieldNames);
+        Field summaryField = Dataset.dataArray.get(Dataset.indexOfField(selected));
+        String textOutput = StatisticalSummary.getSummary(summaryField.getValues());
+        return textOutput;
+   }
+
     // menu for handling missing values
     public static void missingValueMenu(JFrame parent) {
         Field[] fields = Dataset.getNumericFields();
