@@ -14,11 +14,26 @@ public class Field implements Serializable{
             missing pattern is in Dataset. values matching that pattern will get added to isMissing
             values that are unable to be parsed will also be added to isMissing
         */
-    public boolean missingOmitted = false; // checks if statistics should omit missing values or use them
     Field(String fieldName) {
         this.name = fieldName;
     }
 
+    // proper way to get numerical data
+    ArrayList<Double> getValues() {
+        ArrayList<Double> values = new ArrayList<>();
+        if(type != "float") {
+            return values;
+        }  
+        for (int i=0; i<typedArray.size(); i++) {
+            Object v = typedArray.get(i);
+            // removes nulls as well as handles errors
+            // if v is null, v will not be added
+            if (v instanceof Number) {     
+                values.add(((Number) v).doubleValue());
+            }
+        }
+        return values;
+    }
     void setFieldName(String newName) {
         name = newName;
     }
@@ -39,6 +54,10 @@ public class Field implements Serializable{
         return name;
     }
 
+    public void setName( String name) {
+        this.name = name;
+    }
+
     String getCellString(int valIndex){
         if(valIndex >= stringArray.size()){return "ERROR: Index out of bounds";}
         return stringArray.get(valIndex);
@@ -51,6 +70,89 @@ public class Field implements Serializable{
         else {
             return false;
         }
+    }
+    // returns true if contains 8 or less unique values
+    public boolean isCategorical() {
+        String [] levels = getLevels();
+        if (levels.length > 1) {
+            return true;
+        }
+        return false;
+    }
+    
+    // returns the string of each level in the field, or empty array if there are more than eight levels
+    public String[] getLevels() {
+        ArrayList<String> levelsList = new ArrayList<>();
+        String[] levels = new String[]{};
+        switch (type.toLowerCase()) {
+            // check for unique, non-empty strings
+            case "string":
+                for (String s : stringArray) {
+                    if (!levelsList.contains(s.strip()) && !s.strip().equals("")) {
+                        levelsList.add(s);
+                        if (levelsList.size() > 8) {
+                            return levels;
+                        }
+                    }
+                }
+            // check if integer, then add unique integers to the levels list
+            case "float":
+                for (int i=0;i<typedArray.size();i++) {
+                    if (typedArray.get(i) instanceof Float) {
+                        float value = (float) typedArray.get(i);
+                        float valueFloor = (float) Math.floor(value);
+                        int realValue;
+                        if (Math.abs(value-valueFloor)< 0.0001) {
+                            realValue = (int) valueFloor;
+                        }
+                        else if (Math.abs((valueFloor+1)-value) < 0.0001) {
+                            realValue = (int) valueFloor+1;
+                        }
+                        else {
+                            return levels;
+                        }
+                        String level = realValue + "";
+                            if (!levelsList.contains(level)) {
+                                levelsList.add(level);
+                                if (levelsList.size()>8) {
+                                    return levels;
+                                }
+                            }
+                    }
+                }
+            // find both cases, then return, or return the singular case
+            case "boolean":
+                for (int i=0;i<typedArray.size();i++) {
+                    if (typedArray.get(i) instanceof Boolean) {
+                        boolean value = (boolean) typedArray.get(i);
+                        String level = value + "";
+                        if(!levelsList.contains(level)) {
+                            levelsList.add(level);
+                            if (levelsList.size() > 1) {
+                                return levelsList.toArray(new String[2]);
+                            }
+                        }
+                    }
+                }
+            default:
+                System.out.println("Error finding levels of " + name + ": invalid type declared.");
+        }
+        levels = levelsList.toArray(new String[levelsList.size()]);
+        if (levels.length <= 1) {
+            System.out.println("Error finding levels of " + name + ": too few levels to read.");
+        }
+        return levels;
+    }
+
+    // returns all values equal to the string passed
+    public ArrayList<Integer> getIndexOfLevel(String level) {
+        ArrayList<Integer> indexes = new ArrayList<>();
+        for (int i=0;i<stringArray.size(); i++) {
+            if (level.equalsIgnoreCase(stringArray.get(i))) {
+                indexes.add(i);
+            }
+        }
+        return indexes;
     }
 
     //Passed the new type and returns if it succeeds in identifying the type 
@@ -185,6 +287,27 @@ public class Field implements Serializable{
         return true;
     }
 
+    // for manual entry
+    public boolean setCell(int index, String newValue) {
+        // if index is exactly at the end of the array, append the new cell.
+        if (index == stringArray.size()) {
+            return addCell(newValue);
+        }
+        // if the cell already exists, update it.
+        else if (index < stringArray.size()) {
+            boolean success = updateCell(index, newValue);
+            isMissing.set(index, !success); 
+            return success;
+        }
+        else {
+            while (stringArray.size() < index) {
+                addCell("");  // add empty cells to fill the gap.
+            }
+            return addCell(newValue);
+        }
+    }
+
+
     //Removes a cell by index; returns true if the cell successfully deletes and false if the index is out of range
     boolean deleteCell(int oldValueIndex){
         if(oldValueIndex >= stringArray.size()){return false;}
@@ -200,23 +323,23 @@ public class Field implements Serializable{
         // to do
         switch(method) {
             case "Replace With Mean":
-                replaceMissing(5); // change to mean when done
-                missingOmitted = false;
+                omitMissing();  // gets rid of replaced missing values before calculating mean
+                double mean = StatisticalSummary.getMean(this.getValues());
+                replaceMissing(mean); 
                 break;
             case "Replace With Median":
-                replaceMissing(5); // change to median when done
-                missingOmitted = false;
+                omitMissing();  // gets rid of replaced missing values before calculating median
+                double median = StatisticalSummary.getMedian(this.getValues());
+                replaceMissing(median); // change to median when done
                 break;
             case "Forward Fill":
                 forwardFill();
-                missingOmitted = false;
                 break;
             case "Backward Fill":
                 backwardFill();
-                missingOmitted = false;
                 break;
             case "Omit Missing":
-                missingOmitted = true;
+                omitMissing();
                 break;
             default:
                 throw new IllegalArgumentException("Invalid missing value method: " + method);
@@ -230,6 +353,14 @@ public class Field implements Serializable{
             if(isMissing.get(i)) {
                 updateCell(i, stringValue);
                 System.out.println("Updated at " + i + " with "+ stringValue);
+            }
+        }
+    }
+    public void omitMissing() {
+        for (int i=0; i<typedArray.size(); i++) {
+            if(isMissing.get(i)) {
+                stringArray.set(i, null);
+                typedArray.set(i, null);
             }
         }
     }

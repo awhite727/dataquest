@@ -1,7 +1,11 @@
 package dataquest;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.event.WindowAdapter;
@@ -19,8 +23,15 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -38,7 +49,7 @@ public class Layout extends JFrame {
     //private JFreeChart chart1, chart2;
     private ChartPanel chartPanel1, chartPanel2;
     //private Color[] colorPalette;
-    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton;
+    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton, statisticalSummaryButton;
 
     private Dataset dataset;
     private Graph graph1;
@@ -85,11 +96,12 @@ public class Layout extends JFrame {
         addColumnButton = new JButton("Add Column");
         importingButton = new JButton("Import Dataset");
         handleMissingButton = new JButton("Handle Missing");
+        statisticalSummaryButton = new JButton("Statistical Summary");
         buttonPanel.add(addRowButton);
         buttonPanel.add(addColumnButton);
         buttonPanel.add(importingButton);
         buttonPanel.add(handleMissingButton);
-
+        buttonPanel.add(statisticalSummaryButton);
         
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3; gbc.weighty = 0.1;
         add(buttonPanel, gbc);
@@ -97,6 +109,11 @@ public class Layout extends JFrame {
         // Create spreadsheet
         tableModel = new DefaultTableModel(5, 3);
         spreadsheet = new JTable(tableModel);
+        JTableHeader header = spreadsheet.getTableHeader();
+        // allows for editing column names
+        header.setReorderingAllowed(false);
+        header.setDefaultRenderer(new EditableHeaderRenderer(header.getDefaultRenderer()));
+        header.addMouseListener(new HeaderEditorListener(spreadsheet));
 
         // Disable JTable auto-resizing to force horizontal scrolling
         spreadsheet.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
@@ -173,13 +190,35 @@ public class Layout extends JFrame {
                 System.out.println("Missing handled successfully.");
             }
         });
+        statisticalSummaryButton.addActionListener(e -> {
+            if(dataset.dataArray != null) {
+                String textOutput = ChoiceMenu.statisticalSummaryMenu(this);
+                output.append(textOutput);
+            }
+        });
         tableModel.addTableModelListener(e -> updateCharts());
+        tableModel.addTableModelListener(new TableModelListener() {
+            @Override
+            public void tableChanged(TableModelEvent e) {
+                if (e.getType() == TableModelEvent.UPDATE) {
+                    int row = e.getFirstRow();
+                    int column = e.getColumn();
+                    if (row >=0 && column >= 0) {
+                        Object updatedValue = tableModel.getValueAt(row, column);
+                        if (updatedValue != null) {
+                            updateValue(updatedValue, row, column);
+                        }
+                        System.out.println("Value changed at [" + row + ", " + column + "] to: " + updatedValue);
+                    }
+                }
+            }
+        });
+    }
 
-        if (dataset == null) {
-            dataset = new Dataset();
-        } else {
-            updateSpreadsheet();
-        }
+    if (dataset == null) {
+        dataset = new Dataset();
+    } else {
+        updateSpreadsheet();
     }
 
     /* private JFreeChart createEmptyChart(String title) {
@@ -303,10 +342,23 @@ public class Layout extends JFrame {
     
     private void updateSpreadsheet() {
         ArrayList<Field> data = dataset.getDataArray();
-        if(data == null){return;} //Handles if workspace saved an empty Dataset
-        int rows = data.get(0).getTypedArray().size();
+        if(data == null){return;} // handles empty dataset
+        //int rows = data.get(0).getTypedArray().size();
+        int rows = 0;
+        // for non-rectangular dataArrays, gets the largest row size
+        for (int i = 0; i < data.size(); i++ ) {
+            int rowSize = data.get(i).getTypedArray().size();
+            if (rowSize > rows) {
+                rows = rowSize;
+            }
+        }
         int columns = data.size();
-        tableModel = new DefaultTableModel(rows, columns);
+        // save listeners before recreating tableModel
+        TableModelListener[] listeners = tableModel.getTableModelListeners();
+        for (TableModelListener listener : listeners) {
+            tableModel.removeTableModelListener(listener);
+        }
+        tableModel = new DefaultTableModel(rows, columns); // Ensure extra row & column
         spreadsheet.setModel(tableModel); // update model
         // cache columns to reduce method calls
         ArrayList<ArrayList<?>> cachedColumns = new ArrayList<>();
@@ -317,10 +369,16 @@ public class Layout extends JFrame {
         // populate table, data must be populated by row
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < columns; j++) {
-                tableModel.setValueAt(cachedColumns.get(j).get(i), i, j);
+                ArrayList<?> column = cachedColumns.get(j);
+                Object value = (i < column.size()) ? column.get(i) : null; // handles non-rectangular datasets
+                tableModel.setValueAt(value, i, j);
             }
         }
         tableModel.setColumnIdentifiers(dataset.getFields());
+        // readd listeners after tableModel has been recreated
+        for (TableModelListener listener : listeners) {
+            tableModel.addTableModelListener(listener);
+        }
     }
 
     private void addRow() {
@@ -334,6 +392,48 @@ public class Layout extends JFrame {
     private void addColumn(String name) {
         tableModel.addColumn(name + (tableModel.getColumnCount() + 1));
     }
+
+    // manual entry 
+    private void updateValue(Object value, int row, int col) {
+        if (dataset.dataArray == null) {
+            dataset.dataArray = new ArrayList<>();
+        }
+
+        // Ensure dataset has enough columns
+        while (dataset.dataArray.size() <= col) {
+            dataset.dataArray.add(new Field(tableModel.getColumnName(dataset.dataArray.size())));
+        }
+
+        // Ensure correct field type
+        Field field = dataset.dataArray.get(col);
+        if (field.getType() == null) {
+            field.setType(Dataset.getPattern(value.toString()));
+        }
+        field.setCell(row, value.toString().strip());
+
+        // temporarily remove listener before updating model
+        // without removing listeners, infinite recursion occurs
+        TableModelListener[] listeners = tableModel.getTableModelListeners();
+        for (TableModelListener listener : listeners) {
+            tableModel.removeTableModelListener(listener);
+        }
+
+        tableModel.setValueAt(value, row, col);
+
+        // re-add listeners
+        for (TableModelListener listener : listeners) {
+            tableModel.addTableModelListener(listener);
+        }
+
+        // Ensure an extra empty row and column
+        if (tableModel.getRowCount() <= row + 1) {
+            addRow();
+        }
+        if (tableModel.getColumnCount() <= col + 1) {
+            addColumn();
+        }
+    }
+
 
     private void updateCharts() {
         graph1.updateCharts(tableModel);
@@ -376,7 +476,78 @@ public class Layout extends JFrame {
             renderer.setSeriesShapesVisible(i, true);
         }
         plot.setRenderer(renderer);
-    } */
+    }
+
+    // custom renderer to make headers look normal even while editing
+    static class EditableHeaderRenderer implements TableCellRenderer {
+        private final TableCellRenderer defaultRenderer;
+
+        public EditableHeaderRenderer(TableCellRenderer defaultRenderer) {
+            this.defaultRenderer = defaultRenderer;
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            return defaultRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        }
+    }
+
+    // listener to handle header editing
+    static class HeaderEditorListener extends MouseAdapter {
+        private final JTable table;
+        private final JTextField editor = new JTextField();
+        private int editingColumn = -1;
+
+        public HeaderEditorListener(JTable table) {
+            this.table = table;
+
+            editor.addActionListener(e -> stopEditing());
+            editor.addFocusListener(new FocusAdapter() {
+                @Override
+                public void focusLost(FocusEvent e) {
+                    stopEditing();
+                }
+            });
+        }
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            JTableHeader header = table.getTableHeader();
+            int column = header.columnAtPoint(e.getPoint());
+
+            if (column != -1) {
+                startEditing(column);
+            }
+        }
+
+        private void startEditing(int column) {
+            editingColumn = column;
+            JTableHeader header = table.getTableHeader();
+            TableColumnModel colModel = table.getColumnModel();
+            TableColumn col = colModel.getColumn(column);
+
+            editor.setText(col.getHeaderValue().toString());
+            editor.setBounds(header.getHeaderRect(column));
+            header.add(editor);
+            editor.requestFocus();
+            editor.selectAll();
+        }
+
+        private void stopEditing() {
+            if (editingColumn != -1) {
+                JTableHeader header = table.getTableHeader();
+                TableColumnModel colModel = table.getColumnModel();
+                TableColumn col = colModel.getColumn(editingColumn);
+
+                String newName = editor.getText();
+                col.setHeaderValue(newName);
+                header.repaint();
+                header.remove(editor);
+                Dataset.dataArray.get(editingColumn).setName(newName); // sets name of field
+                editingColumn = -1;
+            }
+        }
+    }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
