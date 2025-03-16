@@ -21,7 +21,8 @@ public class Field implements Serializable{
     // proper way to get numerical data
     ArrayList<Double> getValues() {
         ArrayList<Double> values = new ArrayList<>();
-        if(type != "float") {
+        if(!type.equals("float")) {
+            System.out.println("ERROR: Not a float\n\t" + type + "\n\n\n");
             return values;
         }  
         for (int i=0; i<typedArray.size(); i++) {
