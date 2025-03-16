@@ -191,7 +191,7 @@ public class Layout extends JFrame {
             }
         });
         statisticalSummaryButton.addActionListener(e -> {
-            if(dataset.dataArray != null) {
+            if(Dataset.dataArray != null) {
                 String textOutput = ChoiceMenu.statisticalSummaryMenu(this);
                 output.append(textOutput);
             }
@@ -213,7 +213,7 @@ public class Layout extends JFrame {
                 }
             }
         });
-    }
+    
 
     if (dataset == null) {
         dataset = new Dataset();
@@ -230,7 +230,7 @@ public class Layout extends JFrame {
         plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
         return chart;
     } */
-
+    }
     private void loadSavedWorkspace() {
         //TODO: Include a loading bar; takes a bit to load in
         System.out.println("Loading");
@@ -477,7 +477,7 @@ public class Layout extends JFrame {
         }
         plot.setRenderer(renderer);
     }
-
+*/
     // custom renderer to make headers look normal even while editing
     static class EditableHeaderRenderer implements TableCellRenderer {
         private final TableCellRenderer defaultRenderer;
