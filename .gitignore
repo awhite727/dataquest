@@ -1,1 +1,5 @@
 *.class
+src/main/resources/SaveState.ser
+target/classes/SaveState.ser
+/target/classes/dataquest
+/target/classes/dataquest

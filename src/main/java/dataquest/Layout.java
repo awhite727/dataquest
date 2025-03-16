@@ -1,5 +1,4 @@
 package dataquest;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -33,14 +32,7 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
-import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
-import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
-
 
 public class Layout extends JFrame {
     private JTable spreadsheet;
@@ -231,6 +223,7 @@ public class Layout extends JFrame {
         return chart;
     } */
     }
+    @SuppressWarnings("unchecked")
     private void loadSavedWorkspace() {
         //TODO: Include a loading bar; takes a bit to load in
         System.out.println("Loading");
@@ -389,23 +382,19 @@ public class Layout extends JFrame {
         tableModel.addColumn("Column " + (tableModel.getColumnCount() + 1));
     }
 
-    private void addColumn(String name) {
-        tableModel.addColumn(name + (tableModel.getColumnCount() + 1));
-    }
-
     // manual entry 
     private void updateValue(Object value, int row, int col) {
-        if (dataset.dataArray == null) {
-            dataset.dataArray = new ArrayList<>();
+        if (Dataset.dataArray == null) {
+            Dataset.dataArray = new ArrayList<>();
         }
 
         // Ensure dataset has enough columns
-        while (dataset.dataArray.size() <= col) {
-            dataset.dataArray.add(new Field(tableModel.getColumnName(dataset.dataArray.size())));
+        while (Dataset.dataArray.size() <= col) {
+            Dataset.dataArray.add(new Field(tableModel.getColumnName(Dataset.dataArray.size())));
         }
 
         // Ensure correct field type
-        Field field = dataset.dataArray.get(col);
+        Field field = Dataset.dataArray.get(col);
         if (field.getType() == null) {
             field.setType(Dataset.getPattern(value.toString()));
         }
