@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -19,7 +18,7 @@ import jxl.Sheet;
 import jxl.Workbook;
 import jxl.read.biff.BiffException; 
 
-class Dataset implements Serializable {
+class Dataset {
     public static ArrayList<Field> dataArray = null;
     private static Pattern booleanPattern = null;
     private static Pattern numericPattern = null;
@@ -31,6 +30,12 @@ class Dataset implements Serializable {
     //Checks if the dataArray exists should be handled in Layout
     ArrayList<Field> getDataArray() {
         return dataArray;
+    }
+
+    //Sets the dataArray based on a saved workspace
+    //Currently only necessary for the way Serialization is handled as of 03/06/2025
+    void setDataArray(ArrayList<Field> saved){
+        dataArray = new ArrayList<>(saved);
     }
 
     //Returns a String[] with all of the field names 

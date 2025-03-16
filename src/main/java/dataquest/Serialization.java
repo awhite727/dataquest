@@ -5,21 +5,26 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 
-
-//NOTE: Can eventually be put directly into Layout; left separate for readability/editability
-//NOTE: Currently saves the Layout class, and then Layout loads the info back into the correct places
 //Anything added to the array in Layout but not actually added to Layout will not be saved
-public class Serialization {
-
-    //Attempts to save the Layout to SaveState.ser
-    //If successful, just closes. If not, prints an error
-    public void saveProject(ArrayList<Object> object) {
+public class Serialization implements Serializable{
+    ArrayList<Object> savedWorkspace = new ArrayList<>();
+    
+    //Attempts to save the all the information to SaveState.ser
+    //TODO: Include any other information needed to be saved
+    //If need to save something non-static, add to the workspace from Layout
+    //And make those classes implement Serializable 
+    public void saveProject(ArrayList<Object> workspace) {
         String savePath = "src\\main\\resources\\SaveState.ser";
         try {
+            savedWorkspace.add(workspace);
+            //Add any more elements here
+            savedWorkspace.add(new ArrayList<Field>(Dataset.dataArray));
+            
             ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(savePath));
-            out.writeObject(object);
+            out.writeObject(savedWorkspace);
             out.close();
             System.out.println("Successfully saved");
         }
@@ -35,7 +40,10 @@ public class Serialization {
         String filename = "src\\main\\resources\\SaveState.ser";
         try {
             ObjectInputStream in = new ObjectInputStream(new FileInputStream(filename));
-            ArrayList<Object> deserialized = (ArrayList) in.readObject();
+            
+            @SuppressWarnings("unchecked")
+            ArrayList<Object> deserialized = (ArrayList<Object>) in.readObject();
+            
             in.close();
             if(deserialized instanceof ArrayList){ 
                 System.out.println("Workspace successfully opened");
