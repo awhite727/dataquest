@@ -1,5 +1,4 @@
 package dataquest;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -33,13 +32,7 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
-import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
-import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
 
 
 public class Layout extends JFrame {
@@ -49,11 +42,13 @@ public class Layout extends JFrame {
     //private JFreeChart chart1, chart2;
     private ChartPanel chartPanel1, chartPanel2;
     //private Color[] colorPalette;
-    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton, statisticalSummaryButton;
+    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton, statisticalSummaryButton, boxplotButton;
 
     private Dataset dataset;
     private Graph graph1;
     private Graph graph2;
+    private Visualization visual1;
+    private Visualization visual2;
 
     public Layout() {
         setTitle("DataQuest");
@@ -63,12 +58,13 @@ public class Layout extends JFrame {
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         dataset = new Dataset();
         loadSavedWorkspace();
+        /*
         if (graph1 == null) {
             graph1 = new Graph();
         } 
         if (graph2 ==null){
             graph2 = new Graph();
-        } 
+        } */
 
         addWindowListener(new WindowAdapter() {
             @Override
@@ -97,11 +93,13 @@ public class Layout extends JFrame {
         importingButton = new JButton("Import Dataset");
         handleMissingButton = new JButton("Handle Missing");
         statisticalSummaryButton = new JButton("Statistical Summary");
+        boxplotButton = new JButton("Boxplot");
         buttonPanel.add(addRowButton);
         buttonPanel.add(addColumnButton);
         buttonPanel.add(importingButton);
         buttonPanel.add(handleMissingButton);
         buttonPanel.add(statisticalSummaryButton);
+        buttonPanel.add(boxplotButton);
         
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3; gbc.weighty = 0.1;
         add(buttonPanel, gbc);
@@ -194,6 +192,13 @@ public class Layout extends JFrame {
             if(Dataset.dataArray != null) {
                 String textOutput = ChoiceMenu.statisticalSummaryMenu(this);
                 output.append(textOutput);
+            }
+        });
+        boxplotButton.addActionListener(e -> {
+            if(Dataset.dataArray!= null) {
+                visual1 = ChoiceMenu.boxplotMenu(this);
+                JPanel chart1 = visual1.createChart();
+                chartPanel1.add(chart1);
             }
         });
         tableModel.addTableModelListener(e -> updateCharts());
