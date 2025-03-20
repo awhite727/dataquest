@@ -41,7 +41,7 @@ public class Layout extends JFrame {
     //private JFreeChart chart1, chart2;
     private ChartPanel chartPanel1, chartPanel2;
     //private Color[] colorPalette;
-    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton, statisticalSummaryButton;
+    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton, statisticalSummaryButton,histogramButton;
 
     private Dataset dataset;
     private Graph graph1;
@@ -89,11 +89,13 @@ public class Layout extends JFrame {
         importingButton = new JButton("Import Dataset");
         handleMissingButton = new JButton("Handle Missing");
         statisticalSummaryButton = new JButton("Statistical Summary");
+        histogramButton = new JButton("Histogram");
         buttonPanel.add(addRowButton);
         buttonPanel.add(addColumnButton);
         buttonPanel.add(importingButton);
         buttonPanel.add(handleMissingButton);
         buttonPanel.add(statisticalSummaryButton);
+        buttonPanel.add(histogramButton);
         
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3; gbc.weighty = 0.1;
         add(buttonPanel, gbc);
@@ -186,6 +188,12 @@ public class Layout extends JFrame {
             if(Dataset.dataArray != null) {
                 String textOutput = ChoiceMenu.statisticalSummaryMenu(this);
                 output.append(textOutput);
+            }
+        });
+        histogramButton.addActionListener(e-> {
+            if(Dataset.dataArray != null) {
+                String textOutput = ChoiceMenu.histogramMenu(this);
+                if(textOutput != null) output.append(textOutput+"---\n");
             }
         });
         tableModel.addTableModelListener(e -> updateCharts());

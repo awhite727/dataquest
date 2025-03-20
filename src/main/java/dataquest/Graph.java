@@ -77,6 +77,13 @@ public class Graph implements Serializable {
         System.out.println("updateChart reached");
         chart = ChartFactory.createXYLineChart(title, xLabel, yLabel, data);
         applyColorPalette();
+        
+        //TODO: replace with the saved background elements
+        XYPlot plot = chart.getXYPlot();
+        plot.setBackgroundPaint(Color.WHITE);
+        plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
+        plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
+
         return chart;       
     }
 

@@ -4,6 +4,7 @@ package dataquest;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -152,4 +153,162 @@ public class ChoiceMenu {
         popup.setVisible(true);
         return selectedValues;
     }
+
+    // called by other methods, displays a popup with specified choices and returns the results
+    // Allowed questionTypes: 
+        /* "label" - no specified question; just for display text
+         * "combo" - dropdown box
+         * "radio" - bubbles
+         */
+    // for each element in questionList index 0 assumed to be the question name; if none to be used use ""
+    // returns String[] of the results in the index; labels are returned as null
+    //NOTE: Currently all questions automatically optional
+    //If not included it will just return null
+    private static String[] showGenericPopup(JFrame parent, String tabName, ArrayList<String> questionType, ArrayList<String[]> questionList) {
+        ArrayList<Object> components = new ArrayList<>();
+        JDialog popup = new JDialog(parent, tabName, true);
+        popup.setSize(350, 250);
+        popup.setLayout(new FlowLayout());
+        
+        System.out.println("Types: " + questionType);
+
+        for (int i = 0; i < questionType.size(); i++) {
+            String qType = questionType.get(i);
+            String[] question = questionList.get(i);
+            try {
+                if(question.length < 1) {
+                    components.add(null);
+                    throw new Exception("ERROR: questionList.get("+i+") has a length of " + question.length);
+                }
+                //Print label
+                /* System.out.println("Adding label: " + question[0]);
+                components.add(new JLabel(question[0]));
+                System.out.println("\t" + ((JLabel) components.get(components.size()-1)).getText());
+                popup.add((Component)components.get(components.size()-1)); */
+
+                //If it's a label it shouldn't have any other elements in the String[] so continue
+                //If it's not a label and it only had the title, print error and continue
+                //If it's not a label and it has at least 1 option, run checks of what type of question it is
+                if (qType.equals("label")){
+                    components.add(null);
+                    popup.add(new JLabel(question[0]));
+                    continue;
+                }
+                else if(question.length < 2){ 
+                    components.add(null);
+                    throw new Exception ("ERROR: questionList.get("+i+") has length of " + question.length + " and is labelled as a " + qType);
+                }
+                else if(qType.equals("combo")) {
+                    popup.add(new JLabel(question[0]));
+                    components.add(new JComboBox<>(Arrays.copyOfRange(question, 1, question.length)));
+                    popup.add((Component)components.get(components.size()-1));
+                } else if(qType.equals("radio")) {
+                    String[] radioOptions = Arrays.copyOfRange(question, 1, question.length);
+                    ButtonGroup radioGroup = new ButtonGroup();
+                    JPanel radioPanel = new JPanel();
+                    radioPanel.add(new JLabel(question[0]));
+                    JRadioButton[] radioButtons = new JRadioButton[radioOptions.length];
+                    radioPanel.setLayout(new BoxLayout(radioPanel, BoxLayout.Y_AXIS)); // vertical stacking
+                    for (int j = 0; j < radioOptions.length; j++) {
+                        radioButtons[j] = new JRadioButton(radioOptions[j]);
+                        radioGroup.add(radioButtons[j]);
+                        radioButtons[j].setAlignmentX(Component.RIGHT_ALIGNMENT); // align to the right so buttons are in a line
+                        radioPanel.add(radioButtons[j]);
+                    }
+                    components.add(radioButtons);
+                    popup.add(radioPanel);
+                    
+                } else {
+                    throw new Exception("ERROR: Unknown type " + qType);
+                }
+            } catch (ArrayIndexOutOfBoundsException outError) {
+                System.out.println("ERROR: Index out of bounds; Check the values being passed to showGenericPopup");
+                outError.printStackTrace();
+            } catch (Exception e) { //For generic expected errors
+                System.out.println(e);
+                e.printStackTrace();
+            }
+            
+        }
+        
+        //Make confirm button and action listener
+        String[] selectedValues = new String[questionType.size()];
+        JButton confirmButton = new JButton("Confirm");
+        confirmButton.addActionListener(e -> {
+            try {
+                for (int i = 0; i < questionType.size(); i++) {
+                    String qType = questionType.get(i); 
+                    Object box = components.get(i); //WILL HAVE ERROR
+                    if (qType.equals("label")) {
+                        continue;
+                    } else if (qType.equals("combo")) {
+                        try {
+                            selectedValues[i] = (String) ((JComboBox<String>) box).getSelectedItem();
+                        } catch (ClassCastException classCastError) {
+                            System.out.println("ERROR: Could not cast components.get(" + i + ") to a JComboBox<String>");
+                        }
+                    } else if(qType.equals("radio")) {
+                        try {
+                            JRadioButton[] radioButtons = (JRadioButton[]) box;
+                            for (JRadioButton radioButton : radioButtons) {
+                                if (radioButton.isSelected()) {
+                                    selectedValues[i] = radioButton.getText();
+                                    break;
+                                }
+                            }
+                        } catch (ClassCastException classCastError) {
+                            System.out.println("ERROR: Could not cast components.get(" + i + ") to a JRadioButton[]");
+                        }
+                    }
+                }
+            } catch (ArrayIndexOutOfBoundsException collectError) {
+                System.out.println("ERROR: showGenericPopup");
+                collectError.printStackTrace();
+            }
+            popup.dispose();
+        });
+
+        popup.add(confirmButton);
+        popup.setLocationRelativeTo(parent);
+        popup.setVisible(true);
+        return selectedValues;
+    }
+
+
+    public static String histogramMenu(JFrame parent) {
+        Field[] fields = Dataset.getNumericFields();
+        String binSize = "Bin Size"; //just to prevent naming errors
+        String numBins = "Number of Bins"; //just to prevent naming errors
+        if (fields.length==0) {
+            return "No numerical fields available for histogram.";
+        }
+        String [] fieldNames = new String[fields.length+1];
+        fieldNames[0] = "Field";
+        for (int i=0;i<fields.length;i++) {
+            fieldNames[i+1] = fields[i].getName();
+        }
+        String[] options = new String[]{"Shape Using", binSize, numBins};
+        
+        String[] selected = showComboAndRadioPopup(parent, "Histogram", "Field", "Shape Using", fieldNames, options);
+        //String[] selected = showGenericPopup(parent, "Histogram", new ArrayList<String>(Arrays.asList("combo","radio")),new ArrayList<String[]>(Arrays.asList(fieldNames,options)));
+        System.out.println("Selected size: " + selected.length);
+        for (String s : selected) {
+            System.out.println("\t" + s);
+        }
+        if(selected[0] == null || selected[1]==null) return null;
+        Field summaryField = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
+        Histogram histogram = new Histogram(summaryField);
+        String textOutput = "";
+        if(selected[1].equals(binSize)) {
+            textOutput = histogram.binFromSize(1);
+        }
+        else if(selected[1].equals(numBins)) {
+            textOutput = histogram.binFromNum(10);
+        } else{ //shouldn't be called but just in case
+            textOutput = "ERROR: Shape determination not defined. Using default\n";
+            textOutput += histogram.binFromNum(10);
+        } 
+        return textOutput;
+        //return "";
+   }
 }
