@@ -236,6 +236,7 @@ public class Layout extends JFrame {
         return chart;
     } */
     }
+    @SuppressWarnings("unchecked")
     private void loadSavedWorkspace() {
         //TODO: Include a loading bar; takes a bit to load in
         System.out.println("Loading");
@@ -394,23 +395,19 @@ public class Layout extends JFrame {
         tableModel.addColumn("Column " + (tableModel.getColumnCount() + 1));
     }
 
-    private void addColumn(String name) {
-        tableModel.addColumn(name + (tableModel.getColumnCount() + 1));
-    }
-
     // manual entry 
     private void updateValue(Object value, int row, int col) {
-        if (dataset.dataArray == null) {
-            dataset.dataArray = new ArrayList<>();
+        if (Dataset.dataArray == null) {
+            Dataset.dataArray = new ArrayList<>();
         }
 
         // Ensure dataset has enough columns
-        while (dataset.dataArray.size() <= col) {
-            dataset.dataArray.add(new Field(tableModel.getColumnName(dataset.dataArray.size())));
+        while (Dataset.dataArray.size() <= col) {
+            Dataset.dataArray.add(new Field(tableModel.getColumnName(Dataset.dataArray.size())));
         }
 
         // Ensure correct field type
-        Field field = dataset.dataArray.get(col);
+        Field field = Dataset.dataArray.get(col);
         if (field.getType() == null) {
             field.setType(Dataset.getPattern(value.toString()));
         }
