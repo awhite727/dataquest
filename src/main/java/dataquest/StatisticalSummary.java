@@ -10,12 +10,18 @@ public class StatisticalSummary {
     // gets t star for two-tailed t table
     // if one-tailed t table is needed, divide alpha by two before passing
     public static double getTStar(double alpha, int sampleSize) {
+        if (alpha <= 0) {
+            return 0;
+        }
         int df = sampleSize - 1;
         double tStar = new TDistribution(df).inverseCumulativeProbability(1 - alpha / 2);
         return tStar;
     }
 
     public static double getZStar(double alpha) {
+        if (alpha <= 0) {
+            return 0;
+        }
         double zStar = new NormalDistribution().inverseCumulativeProbability(1- alpha / 2);
         return zStar;
     }

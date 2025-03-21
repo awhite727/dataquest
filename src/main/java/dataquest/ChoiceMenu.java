@@ -83,13 +83,18 @@ public class ChoiceMenu {
         else {
             String[] levelNames = new String[levels.length + 1];
             levelNames[0] = "None";
-            for (int i = 1; i<levels.length; i++) {
+            for (int i = 1; i<levels.length+1; i++) {
                 levelNames[i] = levels[i-1].getName();
             }
             String[] selected = showTwoComboPopup(parent, "Boxplot", "Choose field for boxplot", 
                 "(Optional) Choose field for categories", fieldNames, levelNames);
             boxplotFieldName = selected[0];
-            categoryField = Dataset.dataArray.get(Dataset.indexOfField(selected[1]));
+            if (selected[1].equalsIgnoreCase("none")) {
+                categoryField = null;
+            }
+            else {
+                categoryField = Dataset.dataArray.get(Dataset.indexOfField(selected[1]));
+            }
         }
         boxplotField = Dataset.dataArray.get(Dataset.indexOfField(boxplotFieldName));
         Boxplot boxplot = new Boxplot("Boxplot", null, boxplotField, categoryField);

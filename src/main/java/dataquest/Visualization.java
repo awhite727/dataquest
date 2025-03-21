@@ -4,7 +4,6 @@ import java.awt.Color;
 
 import javax.swing.JPanel;
 
-
 /*
     All graphs extend from visualization
     methods that call from layout need to be in visualization so all graphs contain them
