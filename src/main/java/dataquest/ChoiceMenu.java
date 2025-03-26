@@ -75,6 +75,44 @@ public class ChoiceMenu {
         missingField.handleMissingValues(missingMethod);
     }
 
+    public static Boxplot boxplotMenu(JFrame parent) {
+        Field[] fields = Dataset.getNumericFields();
+        Field[] levels = Dataset.getCategoricalFields();
+        if (fields.length==0) {
+            System.out.println("No numerical fields to display.");
+            return null;
+        }
+        String[] fieldNames = new String[fields.length];
+        for (int i = 0; i<fields.length; i++) {
+            fieldNames[i] = fields[i].getName();
+        }
+        String boxplotFieldName;
+        Field boxplotField;
+        Field categoryField = null;
+        if (levels.length==0) {
+            boxplotFieldName = showComboPopup(parent, "Boxplot", "Choose a field", fieldNames);
+        }
+        else {
+            String[] levelNames = new String[levels.length + 1];
+            levelNames[0] = "None";
+            for (int i = 1; i<levels.length+1; i++) {
+                levelNames[i] = levels[i-1].getName();
+            }
+            String[] selected = showTwoComboPopup(parent, "Boxplot", "Choose field for boxplot", 
+                "(Optional) Choose field for categories", fieldNames, levelNames);
+            boxplotFieldName = selected[0];
+            if (selected[1].equalsIgnoreCase("none")) {
+                categoryField = null;
+            }
+            else {
+                categoryField = Dataset.dataArray.get(Dataset.indexOfField(selected[1]));
+            }
+        }
+        boxplotField = Dataset.dataArray.get(Dataset.indexOfField(boxplotFieldName));
+        Boxplot boxplot = new Boxplot("Boxplot", null, boxplotField, categoryField);
+        return boxplot;
+    }
+
     // called by other methods for simple combo box choices
     // pass the layout, the title, the subtitle, and the options
     // returns the choice selected as a string
@@ -109,6 +147,42 @@ public class ChoiceMenu {
         popup.setVisible(true);
         return selectedOption[0];
     }
+
+    private static String[] showTwoComboPopup(JFrame parent, String title, String label1, String label2, String[] options1, String[] options2) {
+        JDialog popup = new JDialog(parent, "Choice Menu", true);
+        popup.setSize(300, 200);
+        popup.setLayout(new FlowLayout());
+        
+        JLabel titleLabel = new JLabel(title);
+        popup.add(titleLabel);
+
+        // check for this before passing to this method, or code will probably crash
+        if (options1.length == 0 || options2.length==0) {
+            System.out.println("Error creating pop-up: no combo options to display.");
+            return null;
+        }
+        JComboBox<String> comboBox1 = new JComboBox<>(options1);
+        JComboBox<String> comboBox2 = new JComboBox<>(options2);
+        JLabel comboLabel1 = new JLabel(label1);
+        JLabel comboLabel2 = new JLabel(label2);
+        popup.add(comboBox1);
+        popup.add(comboLabel1);
+        popup.add(comboBox2);
+        popup.add(comboLabel2);
+        
+        String[] selectedOptions = {null, null};
+        JButton confirmButton = new JButton("Confirm");
+        confirmButton.addActionListener(e -> {
+            selectedOptions[0] = (String) comboBox1.getSelectedItem();
+            selectedOptions[1] = (String) comboBox2.getSelectedItem();
+            popup.dispose();
+        });
+        popup.add(confirmButton);
+        
+        popup.setLocationRelativeTo(parent);
+        popup.setVisible(true);
+        return selectedOptions;
+        }
 
     // called by other methods, displays a combo box and a radio option and returns the chosen of both
     // of the return, index 0 is combo choice and index 1 is radio choice

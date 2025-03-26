@@ -96,6 +96,7 @@ public class Field implements Serializable{
                         }
                     }
                 }
+                break;
             // check if integer, then add unique integers to the levels list
             case "float":
                 for (int i=0;i<typedArray.size();i++) {
@@ -121,6 +122,7 @@ public class Field implements Serializable{
                             }
                     }
                 }
+                break;
             // find both cases, then return, or return the singular case
             case "boolean":
                 for (int i=0;i<typedArray.size();i++) {
@@ -135,9 +137,12 @@ public class Field implements Serializable{
                         }
                     }
                 }
+                break;
             default:
                 System.out.println("Error finding levels of " + name + ": invalid type declared.");
+                System.out.println(name + ": " + type);
         }
+        //System.out.println(levelsList.toString());
         levels = levelsList.toArray(new String[levelsList.size()]);
         if (levels.length <= 1) {
             System.out.println("Error finding levels of " + name + ": too few levels to read.");

@@ -59,6 +59,17 @@ class Dataset {
         Field[] fields = fieldsList.toArray(new Field[fieldsList.size()]);
         return fields;
     }
+    static Field[] getCategoricalFields() {
+        ArrayList<Field> fieldsList = new ArrayList<>();
+        for (int i=0; i<dataArray.size(); i++) {
+            Field f = dataArray.get(i);
+            if (f.isCategorical()) {
+                fieldsList.add(f);
+            }
+        }
+        Field[] fields = fieldsList.toArray(new Field[fieldsList.size()]);
+        return fields;
+    }
 
     //Takes the fieldName and returns the index within dataArray; returns -1 if the field does not exist
     static int indexOfField(String fieldName){

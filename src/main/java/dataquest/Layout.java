@@ -1,5 +1,7 @@
 package dataquest;
+import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.FocusAdapter;
@@ -17,6 +19,7 @@ import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -32,20 +35,26 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
-import org.jfree.chart.ChartPanel;
 
 public class Layout extends JFrame {
     private JTable spreadsheet;
     private DefaultTableModel tableModel;
     private JTextArea output;
     //private JFreeChart chart1, chart2;
-    private ChartPanel chartPanel1, chartPanel2;
+    //private ChartPanel chartPanel1, chartPanel2;
     //private Color[] colorPalette;
-    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton, statisticalSummaryButton, histogramButton;
+    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton, statisticalSummaryButton, histogramButton, boxplotButton;
 
     private Dataset dataset;
     private Graph graph1;
     private Graph graph2;
+    private Visualization visual1;
+    private Visualization visual2;
+    private JPanel visualPanel1;
+    private JPanel visualPanel2;
+
+    private final int visualPanelWidth = 400;
+    private final int visualPanelHeight = 300;
 
     public Layout() {
         setTitle("DataQuest");
@@ -54,12 +63,13 @@ public class Layout extends JFrame {
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         dataset = new Dataset();
         loadSavedWorkspace();
+        /*
         if (graph1 == null) {
             graph1 = new Graph();
         } 
         if (graph2 ==null){
             graph2 = new Graph();
-        } 
+        } */
 
         addWindowListener(new WindowAdapter() {
             @Override
@@ -88,13 +98,18 @@ public class Layout extends JFrame {
         importingButton = new JButton("Import Dataset");
         handleMissingButton = new JButton("Handle Missing");
         statisticalSummaryButton = new JButton("Statistical Summary");
+
         histogramButton = new JButton("Histogram");
+        boxplotButton = new JButton("Boxplot");
+
         buttonPanel.add(addRowButton);
         buttonPanel.add(addColumnButton);
         buttonPanel.add(importingButton);
         buttonPanel.add(handleMissingButton);
         buttonPanel.add(statisticalSummaryButton);
+
         buttonPanel.add(histogramButton);
+        buttonPanel.add(boxplotButton);
         
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3; gbc.weighty = 0.1;
         add(buttonPanel, gbc);
@@ -163,14 +178,27 @@ public class Layout extends JFrame {
         // Create empty charts
         //chart1 = createEmptyChart("Wavy Grpah-1");
         //chart2 = createEmptyChart("Wavy Graph-2");
-
         
-        chartPanel1 = new ChartPanel(graph1.getChart());
+        /*chartPanel1 = new ChartPanel(graph1.getChart());
         chartPanel2 = new ChartPanel(graph2.getChart());
         gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 1; gbc.weighty = 0.5;
         add(chartPanel1, gbc);
         gbc.gridx = 1;
-        add(chartPanel2, gbc);
+        add(chartPanel2, gbc); */
+
+        visualPanel1 = new JPanel();
+        visualPanel1.setLayout(new BorderLayout()); // most charts need to be centered
+        visualPanel1.setPreferredSize(new Dimension(visualPanelWidth, visualPanelHeight));
+        visualPanel1.add(new JLabel("Visualization 1"));    // placeholder label for default look
+        visualPanel2 = new JPanel();
+        visualPanel2.setLayout(new BorderLayout()); // most charts need to be centered
+        visualPanel2.setPreferredSize(new Dimension(visualPanelWidth, visualPanelHeight));
+        visualPanel2.add(new JLabel("Visualization 2"));
+        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 1; gbc.weighty = 0.5;
+        add(visualPanel1, gbc);
+        gbc.gridx = 1;
+        add(visualPanel2, gbc);
+
 
         // Add listeners
         addRowButton.addActionListener(e -> addRow());
@@ -193,6 +221,20 @@ public class Layout extends JFrame {
             if(Dataset.dataArray != null) {
                 String textOutput = ChoiceMenu.histogramMenu(this);
                 if(textOutput != null) output.append(textOutput+"---\n");
+            }
+          //TODO: create actual graph
+        });
+        boxplotButton.addActionListener(e -> {
+            if (Dataset.dataArray != null) {
+                visual1 = ChoiceMenu.boxplotMenu(this);
+                JPanel newPanel = visual1.createChart();
+
+                // remove old panel and add new one
+                visualPanel1.removeAll();
+                visualPanel1.add(newPanel, BorderLayout.CENTER);
+
+                visualPanel1.revalidate();
+                visualPanel1.repaint();
             }
         });
         tableModel.addTableModelListener(e -> updateCharts());
