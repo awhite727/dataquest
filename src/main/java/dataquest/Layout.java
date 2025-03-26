@@ -43,7 +43,7 @@ public class Layout extends JFrame {
     //private JFreeChart chart1, chart2;
     //private ChartPanel chartPanel1, chartPanel2;
     //private Color[] colorPalette;
-    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton, statisticalSummaryButton, boxplotButton;
+    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton, statisticalSummaryButton, histogramButton, boxplotButton;
 
     private Dataset dataset;
     private Graph graph1;
@@ -60,7 +60,6 @@ public class Layout extends JFrame {
         setTitle("DataQuest");
         setSize(800, 600);
         //setIconImage(new ImageIcon("src\\main\\resources\\icon.png").getImage()); //Just changes icon at the bottom when it's running to whatever icon.png we have in resources
-        //setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         dataset = new Dataset();
         loadSavedWorkspace();
@@ -99,12 +98,17 @@ public class Layout extends JFrame {
         importingButton = new JButton("Import Dataset");
         handleMissingButton = new JButton("Handle Missing");
         statisticalSummaryButton = new JButton("Statistical Summary");
+
+        histogramButton = new JButton("Histogram");
         boxplotButton = new JButton("Boxplot");
+
         buttonPanel.add(addRowButton);
         buttonPanel.add(addColumnButton);
         buttonPanel.add(importingButton);
         buttonPanel.add(handleMissingButton);
         buttonPanel.add(statisticalSummaryButton);
+
+        buttonPanel.add(histogramButton);
         buttonPanel.add(boxplotButton);
         
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3; gbc.weighty = 0.1;
@@ -212,6 +216,13 @@ public class Layout extends JFrame {
                 String textOutput = ChoiceMenu.statisticalSummaryMenu(this);
                 output.append(textOutput);
             }
+        });
+        histogramButton.addActionListener(e-> {
+            if(Dataset.dataArray != null) {
+                String textOutput = ChoiceMenu.histogramMenu(this);
+                if(textOutput != null) output.append(textOutput+"---\n");
+            }
+          //TODO: create actual graph
         });
         boxplotButton.addActionListener(e -> {
             if (Dataset.dataArray != null) {
@@ -344,8 +355,11 @@ public class Layout extends JFrame {
         try {
             if(file.getName().equals("")){//nothing selected
                 return;
-            }
-            else if(file.getName().endsWith(".csv")) {
+            } else if(file.getName().endsWith(".txt")) {
+                System.out.println("txt");
+                //TODO: Call choice menu to determine the delim
+                dataset.csvReading(file, ",");
+            } else if(file.getName().endsWith(".csv")) {
                 System.out.println("csv");
                 dataset.csvReading(file); 
             } else if(file.getName().endsWith(".xlsx")) {
