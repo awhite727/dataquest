@@ -1,7 +1,7 @@
 package dataquest;
 
 import java.util.ArrayList;
-
+//TODO: Make sure that it works multiple times in a row with different fields
 public class Histogram {
     Field field; 
     ArrayList<Double> values;
@@ -10,7 +10,6 @@ public class Histogram {
         values = field.getValues();
     }
     //sets the number of bins if size of a bin is defined
-    //calls 
     String binFromSize(double size) {
         double min = StatisticalSummary.getMin(values);
         double max = StatisticalSummary.getMax(values);

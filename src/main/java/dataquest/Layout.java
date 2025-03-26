@@ -41,7 +41,7 @@ public class Layout extends JFrame {
     //private JFreeChart chart1, chart2;
     private ChartPanel chartPanel1, chartPanel2;
     //private Color[] colorPalette;
-    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton, statisticalSummaryButton,histogramButton;
+    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton, statisticalSummaryButton, histogramButton;
 
     private Dataset dataset;
     private Graph graph1;
@@ -51,7 +51,6 @@ public class Layout extends JFrame {
         setTitle("DataQuest");
         setSize(800, 600);
         //setIconImage(new ImageIcon("src\\main\\resources\\icon.png").getImage()); //Just changes icon at the bottom when it's running to whatever icon.png we have in resources
-        //setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         dataset = new Dataset();
         loadSavedWorkspace();
@@ -314,8 +313,11 @@ public class Layout extends JFrame {
         try {
             if(file.getName().equals("")){//nothing selected
                 return;
-            }
-            else if(file.getName().endsWith(".csv")) {
+            } else if(file.getName().endsWith(".txt")) {
+                System.out.println("txt");
+                //TODO: Call choice menu to determine the delim
+                dataset.csvReading(file, ",");
+            } else if(file.getName().endsWith(".csv")) {
                 System.out.println("csv");
                 dataset.csvReading(file); 
             } else if(file.getName().endsWith(".xlsx")) {

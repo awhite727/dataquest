@@ -61,7 +61,6 @@ class Dataset {
     }
 
     //Takes the fieldName and returns the index within dataArray; returns -1 if the field does not exist
-    //TODO: Not called by Dataset or Field; delete if viewing elements does not need 
     static int indexOfField(String fieldName){
         for (Field field : dataArray) {
             if(fieldName.equals(field.getName())){
@@ -141,24 +140,29 @@ class Dataset {
         dataArray.add(new Field(fieldName));
     }
     
+    //TODO: Temporary method to make reversing any errors easier; remove later
+    void csvReading(File file) throws IOException{
+        csvReading(file, ",");
+    }
 
     //Takes in the imported file and fills out the dataArray
-    void csvReading(File file) throws IOException{
+    void csvReading(File file, String delim) throws IOException{
         BufferedReader csvReader = new BufferedReader(new FileReader(file));
         String row = csvReader.readLine();
         dataArray = new ArrayList<>();
         String[] rowSplit;
         String[] fieldNames;
         int incorrectCount = 0; 
+        String regex = delim + "(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)";
         if (row == null) {csvReader.close();return;}
         
-        fieldNames = row.split(",");
+        fieldNames = row.split(regex);
         for (String string : fieldNames) {
             dataArray.add(new Field(string));
         }
         row = csvReader.readLine();
         while(row != null) {
-            rowSplit = row.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+            rowSplit = row.split(regex);
             if(rowSplit.length != fieldNames.length) {
                     System.out.println("ERROR: Unable to unpack row " + row);
                     incorrectCount++;
