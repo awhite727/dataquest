@@ -63,6 +63,29 @@ public class ChoiceMenu {
         missingField.handleMissingValues(missingMethod);
     }
 
+    public static String linearRegression(JFrame parent) {
+        Field[] fields = Dataset.getNumericFields();
+        if (fields.length <= 1) {
+            return "Not enough numeric fields to perform linear regression.";
+        }
+        String [] fieldNames = new String[fields.length];
+        for (int i=0; i<fields.length; i++) {
+            fieldNames[i] = fields[i].getName();
+        }
+        // pass to choice menu
+        String targetName = "";
+        String[] parameterNames = new String[2];
+        // get fields
+        Field target = Dataset.dataArray.get(Dataset.indexOfField(targetName));
+        Field[] parameters = new Field[parameterNames.length];
+        for (int i =0; i<parameterNames.length; i++) {
+            parameters[i] = Dataset.dataArray.get(Dataset.indexOfField(parameterNames[i]));
+        }
+
+        String output = StatisticalSummary.getLinearRegression(target, parameters);
+        return output;
+    }
+
     public static Boxplot boxplotMenu(JFrame parent) {
         Field[] fields = Dataset.getNumericFields();
         Field[] levels = Dataset.getCategoricalFields();

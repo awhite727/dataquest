@@ -5,6 +5,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -39,7 +42,7 @@ class Dataset {
     }
 
     //Returns a String[] with all of the field names 
-    String[] getFields() {
+    static String[] getFields() {
         String [] fields = new String[dataArray.size()];
         for (int i = 0; i < dataArray.size(); i++) {
             fields[i] = dataArray.get(i).getName();
@@ -80,6 +83,36 @@ class Dataset {
             }
         }
         return -1;
+    }
+
+    // takes a list of fields, and outputs a list of list of doubles
+    // ensure that all fields passed are numerical
+    static ArrayList<ArrayList<Double>> matchFields(Field[] fields) {
+        Set<Integer> missingIndex = new HashSet<>();
+        for (Field f : fields) {
+            if (!f.getType().equalsIgnoreCase("float")) {
+                throw new IllegalArgumentException("Fields must be numerical: " + f.getName());
+            }
+            List<Integer> missing = f.getMissing();    // gets all missing indexes in this field
+            missingIndex.addAll(missing);   // adds all new missing indexes
+        }
+        ArrayList<ArrayList<Double>> values = new ArrayList();
+        for (Field f: fields) {
+            ArrayList<Double> valuesWithoutMissing = new ArrayList();
+            for (int i=0; i<fields[0].getTypedArray().size(); i++) {
+                if (!missingIndex.contains(i)) {    // skips if at least one field has a missing at that value
+                    Object value = f.getTypedAtIndex(i);
+                    if (value instanceof Number number) {
+                        valuesWithoutMissing.add(number.doubleValue());
+                    }
+                    else {
+                        throw new IllegalArgumentException("Values must be numerical: " + f.getName() + ", " + value);
+                    }
+                }
+            }
+            values.add(valuesWithoutMissing);
+        }
+        return values;
     }
 
     //sets the allowed Patterns and returns an array with the compiled patterns
