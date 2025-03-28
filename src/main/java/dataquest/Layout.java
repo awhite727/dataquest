@@ -43,7 +43,7 @@ public class Layout extends JFrame {
     //private JFreeChart chart1, chart2;
     //private ChartPanel chartPanel1, chartPanel2;
     //private Color[] colorPalette;
-    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton, statisticalSummaryButton, histogramButton, boxplotButton;
+    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton, statisticalSummaryButton, histogramButton, boxplotButton, linearRegressionButton;
 
     private Dataset dataset;
     //private Graph graph1;
@@ -101,6 +101,7 @@ public class Layout extends JFrame {
 
         histogramButton = new JButton("Histogram");
         boxplotButton = new JButton("Boxplot");
+        linearRegressionButton = new JButton("Linear Regression");
 
         buttonPanel.add(addRowButton);
         buttonPanel.add(addColumnButton);
@@ -110,6 +111,7 @@ public class Layout extends JFrame {
 
         buttonPanel.add(histogramButton);
         buttonPanel.add(boxplotButton);
+        buttonPanel.add(linearRegressionButton);
         
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3; gbc.weighty = 0.1;
         add(buttonPanel, gbc);
@@ -235,6 +237,12 @@ public class Layout extends JFrame {
 
                 visualPanel1.revalidate();
                 visualPanel1.repaint();
+            }
+        });
+        linearRegressionButton.addActionListener (e -> {
+            if (Dataset.dataArray != null) {
+                String info = ChoiceMenu.linearRegression(this);
+                output.append(info);
             }
         });
         tableModel.addTableModelListener(e -> updateCharts());

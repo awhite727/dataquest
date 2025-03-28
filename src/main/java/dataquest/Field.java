@@ -56,7 +56,7 @@ public class Field implements Serializable{
     }
 
     Object getTypedAtIndex(int index) {
-        if(typedArray.size() > index || index < 0) {
+        if(typedArray.size() < index || index < 0) {
             return null;
         }
         return typedArray.get(index);
@@ -75,7 +75,7 @@ public class Field implements Serializable{
     public ArrayList<Integer> getMissing() {
         ArrayList<Integer> indexes = new ArrayList();
         for (int i = 0; i<typedArray.size(); i++) {
-            if (typedArray.get(i) != null) {
+            if (typedArray.get(i) == null) {
                 indexes.add(i);
             }
         }

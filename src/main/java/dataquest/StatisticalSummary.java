@@ -75,9 +75,11 @@ public class StatisticalSummary {
             output.append("\tSimple Linear Regression\n");
             output.append("Dependent variable: " + target.getName() + "\n");
             output.append("Independent variable: " + parameters[0].getName() + "\n");
-            output.append("Equation: y=" + model.getIntercept() + " + " + model.getSlope() + "x\n");
-            output.append("Significance: " + model.getSignificance());
-            output.append("\tR-Squared: " + model.getRSquare()  + "\n");
+            output.append("Equation: y = " + String.format("%.4f", model.getIntercept()) + 
+                        " + " + String.format("%.4f", model.getSlope()) + "x\n");
+            output.append("Significance: " + String.format("%.4f", model.getSignificance()) + "\n");
+            output.append("\tR-Squared: " + String.format("%.4f", model.getRSquare()) + "\n");
+
             return output.toString();
         }
         // multiple linear regression output
@@ -86,22 +88,24 @@ public class StatisticalSummary {
             StringBuilder output = new StringBuilder();
             output.append("\tMultiple Linear Regression\n");
             output.append("Target field: " + target.getName() + "\n");
-            output.append("Parameters: " + parameters[0]);
+            output.append("Parameters: " + parameters[0].getName());
             for (int i=1; i<parameters.length; i++) {
-                output.append(", " + parameters[i].getName());
                 if (i%3 == 0) {
-                    output.append("\n" + "\t");
+                    output.append("," + "\n" + "\t" + parameters[i].getName());
+                }
+                else {
+                    output.append(", " + parameters[i].getName());
                 }
             }
             double[] betas = model.estimateRegressionParameters();
-            output.append("Equation: " + betas[0]);
-            for (int i=1; i<betas.length; i++) {
-                output.append(" + " + betas[i] + "x" + i);
-                if (i%5 == 0) {
+            output.append("\nEquation: " + String.format("%.4f", betas[0]));
+            for (int i = 1; i < betas.length; i++) {
+                output.append(" + " + String.format("%.4f", betas[i]) + "x" + i);
+                if (i % 5 == 0) {
                     output.append("\n" + "\t");
                 }
             }
-            output.append("\nR-Squared: " + model.calculateRSquared() + "\n");
+            output.append("\nR-Squared: " + String.format("%.4f", model.calculateRSquared()) + "\n");
             return output.toString();
         }
     }
@@ -148,18 +152,21 @@ public class StatisticalSummary {
         }
 
         // convert lists to arrays
-        int numPredictors = indVars.get(0).size();
-        double[][] indValues = new double[indVars.size()][numPredictors];
-        for (int i = 0; i < indVars.size(); i++) {
-            List<Double> predictors = indVars.get(i);
-            for (int j = 0; j < numPredictors; j++) {
-                indValues[i][j] = predictors.get(j);
+        int numPredictors = indVars.size();
+        int numObservations = indVars.get(0).size();
+        double[][] indValues = new double[numObservations][numPredictors];
+        for (int i = 0; i < numPredictors; i++) {
+            List<Double> predictor = indVars.get(i);
+            for (int j = 0; j < numObservations; j++) {
+                indValues[j][i] = predictor.get(j);
             }
         }
+
         double[] depValues = new double[depVar.size()];
-        for (int i=0; i<depVar.size(); i++) {
+        for (int i = 0; i < depVar.size(); i++) {
             depValues[i] = depVar.get(i);
         }
+
         // populate model
         OLSMultipleLinearRegression model = new OLSMultipleLinearRegression();
         model.newSampleData(depValues, indValues);

@@ -105,7 +105,7 @@ class Dataset {
                         valuesWithoutMissing.add(number.doubleValue());
                     }
                     else {
-                        throw new IllegalArgumentException("Values must be numerical: " + f.getName() + ", " + value);
+                        throw new IllegalArgumentException("Values must be numerical: " + f.getName() + "\nValue: " + value + "\nIndex: " + i);
                     }
                 }
             }
