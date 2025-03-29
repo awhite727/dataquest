@@ -1,9 +1,13 @@
 package dataquest;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.apache.commons.math3.distribution.TDistribution;
+import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
+
 
 public class StatisticalSummary {
 
@@ -47,6 +51,128 @@ public class StatisticalSummary {
         return Math.sqrt(variance);
     }
 
+    // takes the fields of the linear regression and outputs a string of information about the model
+    public static String getLinearRegression(Field target, Field[] parameters) {
+        if (target == null || parameters == null || parameters.length ==0) {
+            return "There was a problem computing the linear regression";
+        }
+        Field[] variables = new Field[parameters.length + 1];
+        variables[0] = target;
+        for (int i=1; i< variables.length; i++) {
+            variables[i] = parameters[i-1];
+        }
+        ArrayList<ArrayList<Double>> values = Dataset.matchFields(variables);
+        if (values.get(0).size() <= 1) {
+            return "Too many missing values to compute linear regression.";
+        }
+        ArrayList<Double> depVar = values.get(0);
+        values.remove(0); // gives dependent variables
+        // simple linear regression output
+        if (values.size() == 1) {
+            ArrayList<Double> indVar = values.get(0);
+            SimpleRegression model = findSimpleLinearRegression(indVar, depVar);
+            StringBuilder output = new StringBuilder();
+            output.append("\tSimple Linear Regression\n");
+            output.append("Dependent variable: " + target.getName() + "\n");
+            output.append("Independent variable: " + parameters[0].getName() + "\n");
+            output.append("Equation: y = " + String.format("%.4f", model.getIntercept()) + 
+                        " + " + String.format("%.4f", model.getSlope()) + "x\n");
+            output.append("Significance: " + String.format("%.4f", model.getSignificance()) + "\n");
+            output.append("\tR-Squared: " + String.format("%.4f", model.getRSquare()) + "\n");
+
+            return output.toString();
+        }
+        // multiple linear regression output
+        else {
+            OLSMultipleLinearRegression  model = findMultipleLinearRegression(values, depVar);
+            StringBuilder output = new StringBuilder();
+            output.append("\tMultiple Linear Regression\n");
+            output.append("Target field: " + target.getName() + "\n");
+            output.append("Parameters: " + parameters[0].getName());
+            for (int i=1; i<parameters.length; i++) {
+                if (i%3 == 0) {
+                    output.append("," + "\n" + "\t" + parameters[i].getName());
+                }
+                else {
+                    output.append(", " + parameters[i].getName());
+                }
+            }
+            double[] betas = model.estimateRegressionParameters();
+            output.append("\nEquation: " + String.format("%.4f", betas[0]));
+            for (int i = 1; i < betas.length; i++) {
+                output.append(" + " + String.format("%.4f", betas[i]) + "x" + i);
+                if (i % 5 == 0) {
+                    output.append("\n" + "\t");
+                }
+            }
+            output.append("\nR-Squared: " + String.format("%.4f", model.calculateRSquared()) + "\n");
+            return output.toString();
+        }
+    }
+    // indVar: independent variable
+    // depVar: dependent variable
+    // returns model
+    public static SimpleRegression findSimpleLinearRegression(ArrayList<Double> indVar, ArrayList<Double> depVar) {
+        if (indVar == null || indVar.size() <= 1 || depVar == null || depVar.size() <= 1) {
+            System.out.println("Invalid arguments");
+            throw new IllegalArgumentException();
+        }
+        if (indVar.size() != depVar.size()) {
+            System.out.println("Error: Variables must match in size.");
+            System.out.println("Independent size: " + indVar.size());
+            System.out.println("Dependent size: " + depVar.size());
+            throw new IllegalArgumentException();
+        }
+
+        // populate model
+        SimpleRegression model = new SimpleRegression();
+        for (int i=0; i<indVar.size(); i++) {
+            model.addData(indVar.get(i), depVar.get(i));
+        }
+
+        return model;
+    }
+
+    // indVars: independent variables
+    // depVar: dependent variables
+    // returns model
+    public static OLSMultipleLinearRegression findMultipleLinearRegression(ArrayList<ArrayList<Double>> indVars, List<Double> depVar) {
+        if(indVars == null || indVars.size() <= 1 || depVar == null || depVar.size() <= 1) {
+            System.out.println("Invalid arguments");
+            throw new IllegalArgumentException();
+        }
+        int size = depVar.size();
+        for (List<Double> indVar: indVars) {
+            if (indVar.size() != size) {
+                System.out.println("Error: Variables must match in size");
+                System.out.println("Independent size: " + indVar.size());
+                System.out.println("Dependent size: " + size);
+                throw new IllegalArgumentException();
+            }
+        }
+
+        // convert lists to arrays
+        int numPredictors = indVars.size();
+        int numObservations = indVars.get(0).size();
+        double[][] indValues = new double[numObservations][numPredictors];
+        for (int i = 0; i < numPredictors; i++) {
+            List<Double> predictor = indVars.get(i);
+            for (int j = 0; j < numObservations; j++) {
+                indValues[j][i] = predictor.get(j);
+            }
+        }
+
+        double[] depValues = new double[depVar.size()];
+        for (int i = 0; i < depVar.size(); i++) {
+            depValues[i] = depVar.get(i);
+        }
+
+        // populate model
+        OLSMultipleLinearRegression model = new OLSMultipleLinearRegression();
+        model.newSampleData(depValues, indValues);
+        return model;
+    }
+
     public static double getMin(List<Double> data) {
         return data.stream().mapToDouble(Double::doubleValue).min().orElse(0.0);
     }
@@ -81,4 +207,5 @@ public class StatisticalSummary {
             getMin(data), getMax(data), getQuartile(data, 1), getQuartile(data, 3), getCount(data)
         );
     }
+
 }

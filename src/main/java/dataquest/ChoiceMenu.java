@@ -75,6 +75,45 @@ public class ChoiceMenu {
         missingField.handleMissingValues(missingMethod);
     }
 
+    public static String linearRegression(JFrame parent) {
+        Field[] fields = Dataset.getNumericFields();
+        if (fields.length <= 1) {
+            return "Not enough numeric fields to perform linear regression.";
+        }
+        String[] radioFieldNames = new String[fields.length + 1];
+        String[] checkFieldNames = new String[fields.length + 1];
+        radioFieldNames[0] = "Target field: ";
+        checkFieldNames[0] = "Predictors: ";
+        for (int i=0; i<fields.length; i++) {
+            String name = fields[i].getName();
+            radioFieldNames[i+1] = name;
+            checkFieldNames[i+1] = name;
+        }
+
+        // pass to choice menu
+        String tabName = "Linear Regression";
+        ArrayList<String> questionType = new ArrayList<>(Arrays.asList("radio", "check"));
+        ArrayList<String[]> questionList = new ArrayList<>(Arrays.asList(radioFieldNames, checkFieldNames));
+        
+        String[] selected = showGenericPopup(parent, tabName, questionType, questionList);
+        if (selected.length <= 1) {
+            return "Invalid selection";
+        }
+        String targetName = selected[0];
+        String[] parameterNames = selected[1].split(",");
+        
+        
+        // get field
+        Field target = Dataset.dataArray.get(Dataset.indexOfField(targetName));
+        Field[] parameters = new Field[parameterNames.length];
+        for (int i =0; i<parameterNames.length; i++) {
+            parameters[i] = Dataset.dataArray.get(Dataset.indexOfField(parameterNames[i]));
+        }
+
+        String output = StatisticalSummary.getLinearRegression(target, parameters);
+        return output;
+    }
+
     public static Boxplot boxplotMenu(JFrame parent) {
         Field[] fields = Dataset.getNumericFields();
         Field[] levels = Dataset.getCategoricalFields();
@@ -255,14 +294,15 @@ public class ChoiceMenu {
         ArrayList<Object> mainComponents = new ArrayList<>();
         ArrayList<Component> allComponents = new ArrayList<>();
         JDialog popup = new JDialog(parent, tabName, true);
-        popup.setSize(350, 250);
+        Dimension minSize = new Dimension(350, 250);
+        popup.setMinimumSize(minSize);
         //popup.setLayout(new FlowLayout(FlowLayout.LEFT));
         //Note: Could use a GroupLayout to get the vertical and horizontal aligns right??
             //https://docs.oracle.com/javase/tutorial/uiswing/layout/group.html
         //GroupLayout popupLayout = new GroupLayout(popup);
         //popup.setLayout(popupLayout);
         JPanel container = new JPanel();
-        container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
+        container.setLayout(new BoxLayout(container, BoxLayout.X_AXIS));
         container.setAlignmentX(Component.LEFT_ALIGNMENT);
         //container.setLayout(new FlowLayout(FlowLayout.LEFT));
         popup.add(container);
@@ -418,6 +458,7 @@ public class ChoiceMenu {
             container.add(c);
             System.out.println("Added: "  + c + "\n");
         }
+        popup.pack();
         popup.setLocationRelativeTo(parent);
         popup.setVisible(true);
         return selectedValues;

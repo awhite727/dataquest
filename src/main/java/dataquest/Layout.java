@@ -43,11 +43,11 @@ public class Layout extends JFrame {
     //private JFreeChart chart1, chart2;
     //private ChartPanel chartPanel1, chartPanel2;
     //private Color[] colorPalette;
-    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton, statisticalSummaryButton, histogramButton, boxplotButton;
+    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton, statisticalSummaryButton, histogramButton, boxplotButton, linearRegressionButton;
 
     private Dataset dataset;
-    private Graph graph1;
-    private Graph graph2;
+    //private Graph graph1;
+    //private Graph graph2;
     private Visualization visual1;
     private Visualization visual2;
     private JPanel visualPanel1;
@@ -79,8 +79,8 @@ public class Layout extends JFrame {
                     //TODO: Add loading bar; takes a good bit
                     System.out.println("Loading");
                     ArrayList<Object> workspace = new ArrayList<>();
-                    Graph[] graphs = new Graph[]{graph1,graph2};
-                    workspace.add(graphs);
+                    //Graph[] graphs = new Graph[]{graph1,graph2};
+                    //workspace.add(graphs);
                     Serialization ser = new Serialization();
                     ser.saveProject(workspace);
                 } if(exitChoice == JOptionPane.YES_OPTION || exitChoice == JOptionPane.NO_OPTION) {
@@ -101,6 +101,7 @@ public class Layout extends JFrame {
 
         histogramButton = new JButton("Histogram");
         boxplotButton = new JButton("Boxplot");
+        linearRegressionButton = new JButton("Linear Regression");
 
         buttonPanel.add(addRowButton);
         buttonPanel.add(addColumnButton);
@@ -110,6 +111,7 @@ public class Layout extends JFrame {
 
         buttonPanel.add(histogramButton);
         buttonPanel.add(boxplotButton);
+        buttonPanel.add(linearRegressionButton);
         
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3; gbc.weighty = 0.1;
         add(buttonPanel, gbc);
@@ -237,6 +239,12 @@ public class Layout extends JFrame {
                 visualPanel1.repaint();
             }
         });
+        linearRegressionButton.addActionListener (e -> {
+            if (Dataset.dataArray != null) {
+                String info = ChoiceMenu.linearRegression(this);
+                output.append(info);
+            }
+        });
         tableModel.addTableModelListener(e -> updateCharts());
         tableModel.addTableModelListener(new TableModelListener() {
             @Override
@@ -288,16 +296,16 @@ public class Layout extends JFrame {
                     Graph[] graphs = (Graph[])object;
                     for (int i = 0; i < graphs.length; i++){
                     }
-                    graph1 = graphs[0];
-                    graph2 = graphs[1];
+                    //graph1 = graphs[0];
+                    //graph2 = graphs[1];
                 } else {
                     System.out.println(object.getClass());
                 }
             }
-            graph1 = (Graph)((Graph[])directState.get(0))[0];
-            graph2 = (Graph)((Graph[])directState.get(0))[1];
-            graph1.updateChart();
-            graph2.updateChart();
+            //graph1 = (Graph)((Graph[])directState.get(0))[0];
+            //graph2 = (Graph)((Graph[])directState.get(0))[1];
+            //graph1.updateChart();
+            //graph2.updateChart();
 
             dataset.setDataArray((ArrayList<Field>)state.get(1));
         } catch(Exception e) {
@@ -384,7 +392,7 @@ public class Layout extends JFrame {
         updateSpreadsheet();
     }
 
-    
+    // call if dataset is updated
     private void updateSpreadsheet() {
         ArrayList<Field> data = dataset.getDataArray();
         if(data == null){return;} // handles empty dataset
@@ -403,7 +411,7 @@ public class Layout extends JFrame {
         for (TableModelListener listener : listeners) {
             tableModel.removeTableModelListener(listener);
         }
-        tableModel = new DefaultTableModel(rows, columns); // Ensure extra row & column
+        tableModel = new DefaultTableModel(rows + 1, columns + 1); // Ensure extra row & column
         spreadsheet.setModel(tableModel); // update model
         // cache columns to reduce method calls
         ArrayList<ArrayList<?>> cachedColumns = new ArrayList<>();
@@ -419,8 +427,16 @@ public class Layout extends JFrame {
                 tableModel.setValueAt(value, i, j);
             }
         }
-        tableModel.setColumnIdentifiers(dataset.getFields());
-        // readd listeners after tableModel has been recreated
+        // set the correct names for the table
+        String[] identifiers = Dataset.getFields();
+        String[] identifiersWithBlank = new String[identifiers.length + 1];
+        for (int i=0; i<identifiers.length;i++) {
+            identifiersWithBlank[i] = identifiers[i];
+        }
+        String blankColumn = "Column " + identifiersWithBlank.length;
+        identifiersWithBlank[identifiersWithBlank.length-1] = blankColumn;
+        tableModel.setColumnIdentifiers(identifiersWithBlank);
+        // read listeners after tableModel has been recreated
         for (TableModelListener listener : listeners) {
             tableModel.addTableModelListener(listener);
         }
@@ -430,8 +446,31 @@ public class Layout extends JFrame {
         tableModel.addRow(new Object[tableModel.getColumnCount()]);
     }
 
+    // be sure to call this if you are adding a column, never add directly
     private void addColumn() {
+        int columnCount = tableModel.getColumnCount();
+        String[] columnNames = new String[columnCount + 1];
+
+        // gets names of columns
+        if (Dataset.dataArray !=  null) {
+            String[] fieldNames = Dataset.getFields();
+            for (int i=0; i< fieldNames.length; i++) {
+                columnNames[i] = fieldNames[i];
+            }
+            for (int i= fieldNames.length; i<columnNames.length -1; i++) {
+                columnNames[i] = tableModel.getColumnName(i);
+            }
+        }
+        else {
+            for (int i = 0; i < columnCount; i++) {
+                columnNames[i] = tableModel.getColumnName(i);
+            }
+        }
+
+        // Add a new column name
+        columnNames[columnCount] = "Column " + (columnCount + 1);
         tableModel.addColumn("Column " + (tableModel.getColumnCount() + 1));
+        tableModel.setColumnIdentifiers(columnNames);
     }
 
     // manual entry 
@@ -442,6 +481,9 @@ public class Layout extends JFrame {
 
         // Ensure dataset has enough columns
         while (Dataset.dataArray.size() <= col) {
+            if (Dataset.getPattern(value.toString()).equals("missing")) {   // if a blank value is accidentally added to a new column
+                return;
+            }
             Dataset.dataArray.add(new Field(tableModel.getColumnName(Dataset.dataArray.size())));
         }
 
@@ -450,7 +492,7 @@ public class Layout extends JFrame {
         if (field.getType() == null) {
             field.setType(Dataset.getPattern(value.toString()));
         }
-        field.setCell(row, value.toString().strip());
+        boolean success = field.setCell(row, value.toString().strip());
 
         // temporarily remove listener before updating model
         // without removing listeners, infinite recursion occurs
@@ -458,8 +500,9 @@ public class Layout extends JFrame {
         for (TableModelListener listener : listeners) {
             tableModel.removeTableModelListener(listener);
         }
-
-        tableModel.setValueAt(value, row, col);
+        if (success) {
+            tableModel.setValueAt(value, row, col);
+        }
 
         // re-add listeners
         for (TableModelListener listener : listeners) {
@@ -477,8 +520,8 @@ public class Layout extends JFrame {
 
 
     private void updateCharts() {
-        graph1.updateCharts(tableModel);
-        graph2.updateCharts(tableModel);
+        //graph1.updateCharts(tableModel);
+        //graph2.updateCharts(tableModel);
         /* XYSeriesCollection dataset1 = new XYSeriesCollection();
         XYSeriesCollection dataset2 = new XYSeriesCollection();
         
@@ -506,7 +549,7 @@ public class Layout extends JFrame {
         applyColorPalette(graph1.getChart());
         applyColorPalette(graph2.getChart());
         */
-        output.setText("Data updated: " + java.time.LocalDateTime.now());
+        //output.setText("Data updated: " + java.time.LocalDateTime.now());
     }
 
     /* private void applyColorPalette(JFreeChart chart) {

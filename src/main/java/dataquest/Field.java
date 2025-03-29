@@ -55,6 +55,13 @@ public class Field implements Serializable{
         return name;
     }
 
+    Object getTypedAtIndex(int index) {
+        if(typedArray.size() < index || index < 0) {
+            return null;
+        }
+        return typedArray.get(index);
+    }
+
     public void setName( String name) {
         this.name = name;
     }
@@ -62,6 +69,17 @@ public class Field implements Serializable{
     String getCellString(int valIndex){
         if(valIndex >= stringArray.size()){return "ERROR: Index out of bounds";}
         return stringArray.get(valIndex);
+    }
+
+    // returns indexes where missing values haven't been handled yet
+    public ArrayList<Integer> getMissing() {
+        ArrayList<Integer> indexes = new ArrayList();
+        for (int i = 0; i<typedArray.size(); i++) {
+            if (typedArray.get(i) == null) {
+                indexes.add(i);
+            }
+        }
+        return indexes;
     }
 
     public boolean containsMissing() {
@@ -268,10 +286,18 @@ public class Field implements Serializable{
     //Does not allow updating unless it matches the specified type
     boolean updateCell(int oldValueIndex, String newValue){
         if(oldValueIndex > typedArray.size()){return false;}
+
+        if(newValue.isEmpty()) { 
+            stringArray.set(oldValueIndex, newValue);
+            typedArray.set(oldValueIndex, null);
+            isMissing.set(oldValueIndex, true);
+            return true;
+        }
         
         if(type.equals("String")) {
             typedArray.set(oldValueIndex,newValue);
             stringArray.set(oldValueIndex,newValue);
+            isMissing.set(oldValueIndex, false);
         }
         else {
             String realType = Dataset.getPattern(newValue);
@@ -282,9 +308,11 @@ public class Field implements Serializable{
             if(realType.equals("float")) {
                 typedArray.set(oldValueIndex,Float.valueOf(newValue));
                 stringArray.set(oldValueIndex,newValue);
+                isMissing.set(oldValueIndex, false);
             } else if(type.equals("boolean")) {
                 typedArray.set(oldValueIndex,Boolean.valueOf(newValue));
                 stringArray.set(oldValueIndex,newValue);
+                isMissing.set(oldValueIndex, false);
             } else {
                 System.out.println("ERROR: new data type " + realType + " not handled in Field.updateCell(int oldValueIndex, String newValue)");
                 return false;
@@ -296,13 +324,16 @@ public class Field implements Serializable{
     // for manual entry
     public boolean setCell(int index, String newValue) {
         // if index is exactly at the end of the array, append the new cell.
+        String valueType = Dataset.getPattern(newValue);
+        if (!valueType.equals(type) && !valueType.equals("missing")) {
+            return false;
+        }
         if (index == stringArray.size()) {
             return addCell(newValue);
         }
         // if the cell already exists, update it.
         else if (index < stringArray.size()) {
             boolean success = updateCell(index, newValue);
-            isMissing.set(index, !success); 
             return success;
         }
         else {
