@@ -6,4 +6,5 @@ dataquest\Layout$2.class
 dataquest\Layout$EditableHeaderRenderer.class
 dataquest\Visualization.class
 dataquest\Layout$HeaderEditorListener.class
+dataquest\Boxplot$CustomBoxAndWhiskerRenderer.class
 dataquest\Layout$4.class
