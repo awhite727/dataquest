@@ -48,9 +48,9 @@ public class Layout extends JFrame {
     //private ChartPanel chartPanel1, chartPanel2;
     //private Color[] colorPalette;
     private JButton addRowButton, addColumnButton, importingButton, 
-        handleMissingButton, statisticalSummaryButton, 
-        histogramButton, boxplotButton, linearRegressionButton,
-        meanDiffButton;
+        handleMissingButton, statisticalSummaryButton,
+        histogramButton, boxplotButton;//, linearRegressionButton,
+        //meanDiffButton;
 
     private Dataset dataset;
     //private Graph graph1;
@@ -302,7 +302,7 @@ public class Layout extends JFrame {
                 visualPanel1.repaint();
             }
         });
-        linearRegressionButton.addActionListener (e -> {
+        /*linearRegressionButton.addActionListener (e -> {
             if (Dataset.dataArray != null) {
                 String info = ChoiceMenu.linearRegression(this);
                 output.append(info);
@@ -313,7 +313,7 @@ public class Layout extends JFrame {
                 String info = ChoiceMenu.meanDiffMenu(this);
                 output.append(info);
             }
-        });
+        }); */
 
         tableModel.addTableModelListener(e -> updateCharts());
         tableModel.addTableModelListener(new TableModelListener() {
