@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -91,30 +94,70 @@ public class Layout extends JFrame {
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
 
+        // create menu
+        JMenuBar menuBar = new JMenuBar();
+
+        // Create menus
+        JMenu fileMenu = new JMenu("File");
+        JMenu spreadsheetMenu = new JMenu("Spreadsheet");
+        JMenu statsMenu = new JMenu("Statistics");
+        JMenu visualsMenu = new JMenu("Visualizations");
+
+        JMenuItem openItem = new JMenuItem("Open");
+        JMenuItem saveItem = new JMenuItem("Save");
+        JMenuItem importItem = new JMenuItem("Import");
+        fileMenu.add(openItem);
+        fileMenu.add(saveItem);
+        fileMenu.addSeparator();
+        fileMenu.add(importItem);
+
+        JMenuItem rowItem = new JMenuItem("Add row");
+        JMenuItem columnItem = new JMenuItem("Add column");
+        JMenuItem missingItem = new JMenuItem("Handle missing values");
+        spreadsheetMenu.add(rowItem);
+        spreadsheetMenu.add(columnItem);
+        spreadsheetMenu.addSeparator();     
+        spreadsheetMenu.add(missingItem);
+
+        JMenuItem summaryItem = new JMenuItem("Statistical summary");
+        JMenuItem meanCompareItem = new JMenuItem("Mean comparison");
+        JMenuItem linearRegressionItem = new JMenuItem("Linear regression");
+        statsMenu.add(summaryItem);
+        statsMenu.add(meanCompareItem);
+        statsMenu.add(linearRegressionItem);
+
+        menuBar.add(fileMenu);
+        menuBar.add(spreadsheetMenu);
+        menuBar.add(statsMenu);
+
+        setJMenuBar(menuBar);
+
         // Create buttons
+        
         JPanel buttonPanel = new JPanel();
-        addRowButton = new JButton("Add Row");
-        addColumnButton = new JButton("Add Column");
-        importingButton = new JButton("Import Dataset");
-        handleMissingButton = new JButton("Handle Missing");
-        statisticalSummaryButton = new JButton("Statistical Summary");
+        //addRowButton = new JButton("Add Row");
+        //addColumnButton = new JButton("Add Column");
+        //importingButton = new JButton("Import Dataset");
+        //handleMissingButton = new JButton("Handle Missing");
+        //statisticalSummaryButton = new JButton("Statistical Summary");
 
         histogramButton = new JButton("Histogram");
         boxplotButton = new JButton("Boxplot");
-        linearRegressionButton = new JButton("Linear Regression");
+        //linearRegressionButton = new JButton("Linear Regression");
 
-        buttonPanel.add(addRowButton);
-        buttonPanel.add(addColumnButton);
-        buttonPanel.add(importingButton);
-        buttonPanel.add(handleMissingButton);
-        buttonPanel.add(statisticalSummaryButton);
+        //buttonPanel.add(addRowButton);
+        //buttonPanel.add(addColumnButton);
+        //buttonPanel.add(importingButton);
+        //buttonPanel.add(handleMissingButton);
+        //buttonPanel.add(statisticalSummaryButton);
 
         buttonPanel.add(histogramButton);
         buttonPanel.add(boxplotButton);
-        buttonPanel.add(linearRegressionButton);
+        //buttonPanel.add(linearRegressionButton);
         
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3; gbc.weighty = 0.1;
         add(buttonPanel, gbc);
+        
 
         // Create spreadsheet
         tableModel = new DefaultTableModel(5, 3);
@@ -203,20 +246,26 @@ public class Layout extends JFrame {
 
 
         // Add listeners
-        addRowButton.addActionListener(e -> addRow());
-        addColumnButton.addActionListener(e -> addColumn());
-        importingButton.addActionListener(e -> importAssist());
-        handleMissingButton.addActionListener(e -> {
+        importItem.addActionListener(e -> importAssist());
+        rowItem.addActionListener(e -> addRow());
+        columnItem.addActionListener(e -> addColumn());
+        missingItem.addActionListener(e -> {
             if(Dataset.dataArray != null) {
                 ChoiceMenu.missingValueMenu(this);
                 updateSpreadsheet();
                 System.out.println("Missing handled successfully.");
             }
         });
-        statisticalSummaryButton.addActionListener(e -> {
+        summaryItem.addActionListener(e -> {
             if(Dataset.dataArray != null) {
                 String textOutput = ChoiceMenu.statisticalSummaryMenu(this);
                 output.append(textOutput);
+            }
+        });
+        linearRegressionItem.addActionListener (e -> {
+            if (Dataset.dataArray != null) {
+                String info = ChoiceMenu.linearRegression(this);
+                output.append(info);
             }
         });
         histogramButton.addActionListener(e-> {
@@ -237,12 +286,6 @@ public class Layout extends JFrame {
 
                 visualPanel1.revalidate();
                 visualPanel1.repaint();
-            }
-        });
-        linearRegressionButton.addActionListener (e -> {
-            if (Dataset.dataArray != null) {
-                String info = ChoiceMenu.linearRegression(this);
-                output.append(info);
             }
         });
         tableModel.addTableModelListener(e -> updateCharts());
