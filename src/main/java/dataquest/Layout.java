@@ -1,5 +1,6 @@
 package dataquest;
 import java.awt.BorderLayout;
+import java.awt.Choice;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
@@ -46,7 +47,10 @@ public class Layout extends JFrame {
     //private JFreeChart chart1, chart2;
     //private ChartPanel chartPanel1, chartPanel2;
     //private Color[] colorPalette;
-    private JButton addRowButton, addColumnButton, importingButton, handleMissingButton, statisticalSummaryButton, histogramButton, boxplotButton, linearRegressionButton;
+    private JButton addRowButton, addColumnButton, importingButton, 
+        handleMissingButton, statisticalSummaryButton, 
+        histogramButton, boxplotButton, linearRegressionButton,
+        meanDiffButton;
 
     private Dataset dataset;
     //private Graph graph1;
@@ -144,7 +148,7 @@ public class Layout extends JFrame {
         histogramButton = new JButton("Histogram");
         boxplotButton = new JButton("Boxplot");
         //linearRegressionButton = new JButton("Linear Regression");
-
+        //meanDiffButton = new JButton("Mean comparison");
         //buttonPanel.add(addRowButton);
         //buttonPanel.add(addColumnButton);
         //buttonPanel.add(importingButton);
@@ -154,6 +158,7 @@ public class Layout extends JFrame {
         buttonPanel.add(histogramButton);
         buttonPanel.add(boxplotButton);
         //buttonPanel.add(linearRegressionButton);
+        //buttonPanel.add(meanDiffButton);
         
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3; gbc.weighty = 0.1;
         add(buttonPanel, gbc);
@@ -270,8 +275,17 @@ public class Layout extends JFrame {
         });
         histogramButton.addActionListener(e-> {
             if(Dataset.dataArray != null) {
-                String textOutput = ChoiceMenu.histogramMenu(this);
-                if(textOutput != null) output.append(textOutput+"---\n");
+                //String textOutput = ChoiceMenu.histogramMenu(this);
+                //if(textOutput != null) output.append(textOutput+"---\n");
+                visual1 = ChoiceMenu.histogramMenu(this);
+                if(visual1!= null){
+                    JPanel newPanel = visual1.createChart();
+                    visualPanel1.removeAll();
+                    //newPanel.add(new JLabel("Testing Layout"));
+                    visualPanel1.add(newPanel, BorderLayout.CENTER);
+                    visualPanel1.revalidate();
+                    visualPanel1.repaint();
+                }
             }
           //TODO: create actual graph
         });
@@ -288,6 +302,19 @@ public class Layout extends JFrame {
                 visualPanel1.repaint();
             }
         });
+        linearRegressionButton.addActionListener (e -> {
+            if (Dataset.dataArray != null) {
+                String info = ChoiceMenu.linearRegression(this);
+                output.append(info);
+            }
+        });
+        meanDiffButton.addActionListener(e -> {
+            if (Dataset.dataArray != null) {
+                String info = ChoiceMenu.meanDiffMenu(this);
+                output.append(info);
+            }
+        });
+
         tableModel.addTableModelListener(e -> updateCharts());
         tableModel.addTableModelListener(new TableModelListener() {
             @Override
@@ -409,7 +436,8 @@ public class Layout extends JFrame {
             } else if(file.getName().endsWith(".txt")) {
                 System.out.println("txt");
                 //TODO: Call choice menu to determine the delim
-                dataset.csvReading(file, ",");
+                String delim = ChoiceMenu.importingDelimMenu(this);
+                if(delim != null) dataset.csvReading(file, delim);
             } else if(file.getName().endsWith(".csv")) {
                 System.out.println("csv");
                 dataset.csvReading(file); 

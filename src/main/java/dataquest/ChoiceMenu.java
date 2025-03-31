@@ -5,27 +5,22 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridLayout;
 import java.awt.TextField;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
-import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
-import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
-import javax.swing.JTextField;
-import javax.swing.text.DefaultFormatterFactory;
-import javax.swing.text.NumberFormatter;
+
+import org.apache.poi.hpsf.Array;
 
 public class ChoiceMenu {
 
@@ -33,8 +28,18 @@ public class ChoiceMenu {
         new tests should have their own method that passes prompts and questions to a pop-up method
         methods that make pop-ups are private to encourage code reusability
     */
+    public static String importingDelimMenu(JFrame parent) {
+        ArrayList<String[]> delim = new ArrayList<String[]>(1);
+        delim.add(new String[]{"File deliminator: "});
 
-   public static String statisticalSummaryMenu(JFrame parent) {
+        String[] selected=  Popup.showGenericPopup(parent, "Deliminator", new ArrayList<String>(Arrays.asList("text")), 
+        delim, new ArrayList<>());
+        if(selected[0].length() > 1) {
+            System.out.println("NOTICE: Your deliminator is made of more than 1 character and will therefore only separate on an exact match of the full string.");
+        }
+        return selected[0];
+    }
+    public static String statisticalSummaryMenu(JFrame parent) {
         Field[] fields = Dataset.getNumericFields();
         if (fields.length==0) {
             return "No numerical fields available for statistical summary.";
@@ -95,7 +100,7 @@ public class ChoiceMenu {
         ArrayList<String> questionType = new ArrayList<>(Arrays.asList("radio", "check"));
         ArrayList<String[]> questionList = new ArrayList<>(Arrays.asList(radioFieldNames, checkFieldNames));
         
-        String[] selected = showGenericPopup(parent, tabName, questionType, questionList);
+        String[] selected = Popup.showGenericPopup(parent, tabName, questionType, questionList, new ArrayList<String[]>());//showGenericPopup(parent, tabName, questionType, questionList);
         if (selected.length <= 1) {
             return "Invalid selection";
         }
@@ -464,57 +469,101 @@ public class ChoiceMenu {
         return selectedValues;
     }
 
-
-    public static String histogramMenu(JFrame parent) {
+    //TODO: Add official error notifications 
+    public static Histogram histogramMenu(JFrame parent) {
         Field[] fields = Dataset.getNumericFields();
-        final String binSize = "Bin Size"; //just to prevent naming errors
-        final String numBins = "Number of Bins"; //just to prevent naming errors
+        final String binSize; //just to prevent naming errors
+        final String numBins; //just to prevent naming errors
         if (fields.length==0) {
-            return "No numerical fields available for histogram.";
+            System.out.println("No numerical fields available for histogram.");
+            return null;
         }
+        //preparing for generic popup
+        binSize = "Bin Size";
+        numBins = "Number of Bins";
         String [] fieldNames = new String[fields.length+1];
         fieldNames[0] = "Field: ";
         for (int i=0;i<fields.length;i++) {
             fieldNames[i+1] = fields[i].getName();
         }
-        String[] options = new String[]{"Shape Using", binSize, numBins};
-        
-        //String[] selected = showComboAndRadioPopup(parent, "Histogram", "Field", "Shape Using", fieldNames, options);
-        String[] selected = showGenericPopup(parent, "Histogram", new ArrayList<String>(Arrays.asList("combo","radio","text")),new ArrayList<String[]>(Arrays.asList(fieldNames,options, new String[]{"Input: "})));
+        String[] shapeBy = new String[]{"Shape Using: ", binSize, numBins};
+        ArrayList<String[]> errors = new ArrayList<>();
+
+        String[] selected = Popup.showGenericPopup(parent, "Histogram",
+            new ArrayList<String>(Arrays.asList("combo","radio","text")), 
+            new ArrayList<String[]>(Arrays.asList(fieldNames,shapeBy, new String[]{"Input: "})),
+            errors);
         System.out.println("Selected size: " + selected.length);
         for (String s : selected) {
             System.out.println("\t" + s);
         }
-        if(selected[0] == null || selected[1]==null) return null; //TODO: Add error notification if XOR null
+        if(selected[0].equals("") || selected[1]==null) return null; //TODO: Add error notification if XOR null
         
         Field summaryField = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
-        Histogram histogram = new Histogram(summaryField);
-        String histogramOutput = "";
+        Histogram histogram = new Histogram("TEMP Histogram", null, summaryField);
         double textResponse = -1;
         try {
             textResponse = Double.valueOf(selected[2]);
             if(textResponse <= 0) throw new Exception();
             
         } catch (Exception e) {
-            //TODO: Add official error notification 
             System.out.println("ERROR: Not a valid text entry. Defaulting to 10 bins");
-            return histogram.binFromNum(10); 
+            histogram.setBins(true,10);
+            return histogram;
         }
 
-        if(selected[1].equals(binSize))
-            return histogram.binFromSize(textResponse);
-        else if(selected[1].equals(numBins)) {
+        if(selected[1].equals(binSize)) {
+            histogram.setBins(false,textResponse);
+        } else if(selected[1].equals(numBins)) {
             try {
                 int num = (int)textResponse;
-                return histogram.binFromNum(num);
+                histogram.setBins(true,num);
             } catch (Exception e) {
-                System.out.println("ERROR: Not a valid text entry. Defaulting to 10 bins");
-                return histogram.binFromNum(10);
+                System.out.println("ERROR: Not valid: Assuming size");
+                histogram.setBins(false,textResponse);
             }
-        } else{ //shouldn't be called but just in case
-            histogramOutput = "ERROR: Shape determination not defined. Defaulting to 10 bins\n";
-            histogramOutput += histogram.binFromNum(10);
+        } else { //shouldn't be called but just in case
+            System.out.println("ERROR: Shape using undefined");
         } 
-        return histogramOutput;
+        return histogram;
+   }
+
+   public static String meanDiffMenu(JFrame parent) {
+    String title = "MeanDiff";
+    Field[] fields = Dataset.getNumericFields();
+    if (fields.length < 2) {
+        System.out.println("ERROR: Not enough numerical fields available for mean comparison.");
+        return null;
+    }
+    /* 
+    //Prepare for popup
+    String [] fieldA = new String[fields.length+1];
+    String [] fieldB = new String[fields.length+1];
+    fieldA[0] = "First Field: ";
+    fieldB[0] = "Second Field: ";
+    for (int i=0;i<fields.length;i++) {
+        fieldA[i+1] = fields[i].getName();
+        fieldB[i+1] = fields[i].getName();
+    }
+
+    String[] alpha = new String[]{"Alpha: "};
+    String[] tail = new String[]{"Tail: ", "Two-sided","one-sided left", "one-sided right"};
+    ArrayList<String[]> errors = new ArrayList<>();
+
+    String[] selected = Popup.showGenericPopup(parent, "Mean Comparison",
+            new ArrayList<String>(Arrays.asList("combo","combo","text","radio")), 
+            new ArrayList<String[]>(Arrays.asList(fieldA, fieldB, alpha, tail)),
+            errors);
+    
+    //if(selected[0].equals("") || selected[1]==null) return null; //TODO: Add error notification if XOR null
+        
+    //Field fieldAChoice = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
+    //Field fieldBChoice = Dataset.dataArray.get(Dataset.indexOfField(selected[1]));
+
+    //MeanDiff meanDiff = new MeanDiff(title, null, fieldAChoice, fieldBChoice, "tail");
+    //PooledTwoSample meanDiff = new PooledTwoSample(fields[0],fields[1]);
+    //String result = meanDiff.printTestWordy(.05, 10000); */
+    Welch welch = new Welch(fields[1], fields[0], -1, 0, 'c');
+    return "Result: " + welch.getSignificance();
    }
 }
