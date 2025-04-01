@@ -2,6 +2,7 @@ package dataquest;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.FocusAdapter;
@@ -17,6 +18,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -157,6 +160,36 @@ public class Layout extends JFrame {
         
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3; gbc.weighty = 0.1;
         add(buttonPanel, gbc);
+
+        JPanel visualButtons = new JPanel(new BorderLayout());
+        JPanel buttonContainer = new JPanel();
+        buttonContainer.setLayout(new BoxLayout(buttonContainer, BoxLayout.X_AXIS));
+
+        JPanel visualButtons1 = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 0));
+        JPanel visualButtons2 = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 0));
+
+        JButton visualButton1 = new JButton("+");
+        JButton editButton1 = new JButton("Edit");
+        JButton visualButton2 = new JButton("+");
+        JButton editButton2 = new JButton("Edit");
+
+        visualButtons1.add(visualButton1);
+        visualButtons1.add(editButton1);
+
+        visualButtons2.add(editButton2);
+        visualButtons2.add(visualButton2);
+
+        // Make visualButtons1 and visualButtons2 expand horizontally
+        buttonContainer.add(visualButtons1);
+        buttonContainer.add(Box.createHorizontalGlue());  // Pushes panels apart
+        buttonContainer.add(visualButtons2);
+
+        visualButtons.add(buttonContainer, BorderLayout.CENTER);
+
+        
+        gbc.gridx=0; gbc.gridy=2; gbc.gridwidth = 2; gbc.weighty = 0.1; gbc.fill = GridBagConstraints.HORIZONTAL;
+        add(visualButtons, gbc);
+
         
 
         // Create spreadsheet
@@ -239,7 +272,7 @@ public class Layout extends JFrame {
         visualPanel2.setLayout(new BorderLayout()); // most charts need to be centered
         visualPanel2.setPreferredSize(new Dimension(visualPanelWidth, visualPanelHeight));
         visualPanel2.add(new JLabel("Visualization 2"));
-        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 1; gbc.weighty = 0.5;
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 1; gbc.weighty = 0.5;
         add(visualPanel1, gbc);
         gbc.gridx = 1;
         add(visualPanel2, gbc);
@@ -287,6 +320,12 @@ public class Layout extends JFrame {
                 visualPanel1.revalidate();
                 visualPanel1.repaint();
             }
+        });
+        visualButton1.addActionListener(e -> {
+            setVisual(1);
+        });
+        visualButton2.addActionListener(e -> {
+            setVisual(2);
         });
         tableModel.addTableModelListener(e -> updateCharts());
         tableModel.addTableModelListener(new TableModelListener() {
@@ -561,6 +600,32 @@ public class Layout extends JFrame {
         }
     }
 
+    private void setVisual(int panel) {
+        Visualization visual = ChoiceMenu.visualMenu(this);
+        if (visual == null) { // possible user error when selecting
+            return;
+        }
+        if (panel == 1) {
+            visual1 = visual;   // saves for later
+            JPanel newPanel = visual.createChart();
+            // remove old panel and add new one
+            visualPanel1.removeAll();
+            visualPanel1.add(newPanel, BorderLayout.CENTER);
+
+            visualPanel1.revalidate();
+            visualPanel1.repaint();        
+            }
+        else {
+            visual2 = visual;   // saves for later
+            JPanel newPanel = visual.createChart();
+            // remove old panel and add new one
+            visualPanel2.removeAll();
+            visualPanel2.add(newPanel, BorderLayout.CENTER);
+
+            visualPanel2.revalidate();
+            visualPanel2.repaint();  
+        }
+    }
 
     private void updateCharts() {
         //graph1.updateCharts(tableModel);

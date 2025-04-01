@@ -34,6 +34,39 @@ public class ChoiceMenu {
         methods that make pop-ups are private to encourage code reusability
     */
 
+   // set to void to avoid compilation errors, will return Visualization once finished.
+   public static Visualization visualMenu(JFrame parent) {
+        String[] visualOptions = {"Choose a visualization: ", "Boxplot", "Histogram", "Scatterplot", "T-Distribution"};
+
+        String tabName = "Visualization";
+        ArrayList<String> questionType = new ArrayList<>(Arrays.asList("radio"));
+        ArrayList<String[]> questionList = new ArrayList<>();
+        questionList.add(visualOptions);
+        
+        String[] selected = showGenericPopup(parent, tabName, questionType, questionList);
+        Visualization output;
+        switch (selected[0]) {
+            case "Boxplot":
+                if (Dataset.dataArray != null) {
+                    output = boxplotMenu(parent);
+                    break;
+                }
+            /*
+            case "Histogram":
+                break;
+            case "Scatterplot":
+                break;
+            case "T-Distribution":
+                break;
+                */
+            default:
+                System.out.println("Error creating visualization of type: " + selected[0]);
+                return null;
+        }
+        return output;
+
+   }
+
    public static String statisticalSummaryMenu(JFrame parent) {
         Field[] fields = Dataset.getNumericFields();
         if (fields.length==0) {
