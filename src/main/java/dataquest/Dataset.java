@@ -196,7 +196,8 @@ class Dataset {
         dataArray = new ArrayList<>();
         String[] rowSplit;
         String[] fieldNames;
-        int incorrectCount = 0; 
+        int incorrectCount = 0;
+        if (delim.equals("")){System.out.println("ERROR: No delim detected"); csvReader.close(); return;}
         String regex = delim + "(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)";
         if (row == null) {csvReader.close();return;}
         
@@ -215,12 +216,13 @@ class Dataset {
             }
             for (int i = 0; i < rowSplit.length; i++) {
                 //Field.addCell() handles cases where the first row has empty cells
-                if(dataArray.get(i).getType() == null && !rowSplit[i].strip().isEmpty()){
-                    String type = getPattern(rowSplit[i].strip());
-                    dataArray.get(i).setType(type); //Error message printed in Field)
+                if(dataArray.get(i).getType() == null){
+                    String type = getPattern(rowSplit[i]);
+                    if(!type.equals("missing"))
+                        dataArray.get(i).setType(type); //Error message printed in Field)
                 }
                 //attempt to add the cell to the field; if it fails, returns an error 
-                if(dataArray.get(i).addCell(rowSplit[i].strip())){
+                if(dataArray.get(i).addCell(rowSplit[i])){
                     continue;
                 } else {
                     incorrectCount++;
@@ -249,7 +251,8 @@ class Dataset {
     public void xlsxReading(File file) throws IOException{
         XSSFWorkbook wb;
         XSSFSheet sheet;
-        DataFormatter df = new DataFormatter();
+        DataFormatter df = new DataFormatter(); //have emulatecsv = true if we want to prevent trimming
+        df.setUseCachedValuesForFormulaCells(true);
         String type = "";
         dataArray = new ArrayList<>();
         int incorrectCount = 0;
@@ -273,7 +276,7 @@ class Dataset {
         for (Row row : sheet){
             for (int j=0; j < numFields; j++) {
                 Cell cell = row.getCell(j);
-                String cellString = df.formatCellValue(cell).strip();
+                String cellString = df.formatCellValue(cell);
                 if(row.equals(fields)) {
                     if(!cell.getCellType().toString().equalsIgnoreCase("STRING")){
                         System.out.println("NOTICE: Cell " + df.formatCellValue(cell) + "is not a String. Is this intended to be a data cell?");
@@ -281,9 +284,10 @@ class Dataset {
                     dataArray.add(new Field(cellString));
                     continue;
                 } 
-                if(dataArray.get(j).getType() == null && !cellString.isEmpty()){
+                if(dataArray.get(j).getType() == null){
                     type = getPattern(cellString);
-                    dataArray.get(j).setType(type); //Error message printed in Field
+                    if(!type.equals("missing"))
+                        dataArray.get(j).setType(type); //Error message printed in Field
                 }
                 if(!dataArray.get(j).addCell(cellString)){
                     incorrectCount++;
@@ -322,14 +326,15 @@ class Dataset {
             int numRows = sheet.getRows();
             for (int i=0; i < numFields; i++){
                 for(int j=0; j < numRows; j++){
-                    String cellString = sheet.getCell(i, j).getContents().strip();
+                    String cellString = sheet.getCell(i, j).getContents();
                     if(j==0){
                         dataArray.add(new Field(cellString));
                         continue;
                     }
-                    if(dataArray.get(i).getType() == null && !cellString.isEmpty()){
+                    if(dataArray.get(i).getType() == null){
                         type = getPattern(cellString);
-                        dataArray.get(i).setType(type); //Error message printed in Field
+                        if(!type.equals("missing"))
+                            dataArray.get(i).setType(type); //Error message printed in Field
                     }
                     if(!dataArray.get(i).addCell(cellString)){
                         incorrectCount++;
