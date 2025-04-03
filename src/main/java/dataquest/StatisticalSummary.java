@@ -3,6 +3,7 @@ package dataquest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.apache.commons.math3.distribution.TDistribution;
@@ -13,7 +14,10 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 
 public class StatisticalSummary {
+    /* public static void main(String[] args) {
+        System.out.println(getTStar(0.1, 20,18));
 
+    } */
     // gets t star for two-tailed t table
     // if one-tailed t table is needed, divide alpha by two before passing
     public static double getTStar(double alpha, int sampleSize) {
@@ -21,6 +25,14 @@ public class StatisticalSummary {
             return 0;
         }
         int df = sampleSize - 1;
+        double tStar = new TDistribution(df).inverseCumulativeProbability(1 - alpha / 2);
+        return tStar;
+    }
+
+    public static double getTStar(double alpha, double df){
+        if (alpha <= 0) {
+            return 0;
+        }
         double tStar = new TDistribution(df).inverseCumulativeProbability(1 - alpha / 2);
         return tStar;
     }
@@ -33,6 +45,11 @@ public class StatisticalSummary {
         return zStar;
     }
 
+    /* public static double getTStarWithDF(double alpha, double df) {
+        if(alpha <=0) return 0;
+        double tstar = new TDistribution(df).inverseCumulativeProbability(alpha);
+        return tstar;
+    } */
 
     public static double getMean(List<Double> data) {
         return data.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
@@ -249,7 +266,9 @@ public class StatisticalSummary {
     }
 
     public static int getCount(List<Double> data) {
-        return data.size();
+        int count = data.stream().filter(e -> e != null).collect(Collectors.toList()).size();
+        //return data.size();
+        return count;
     }
 
     public static String getSummary(List<Double> data) {
