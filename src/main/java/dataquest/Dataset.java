@@ -73,6 +73,18 @@ class Dataset {
         Field[] fields = fieldsList.toArray(new Field[fieldsList.size()]);
         return fields;
     }
+    // returns all fields with between three and ten levels
+    static Field[] getCategoricalAnovaFields() {
+        ArrayList<Field> fieldsList = new ArrayList<>();
+        for (int i=0; i<dataArray.size(); i++) {
+            Field f = dataArray.get(i);
+            String[] levels = f.getLevels();
+            if (levels.length > 2 && levels.length < 11) {
+                fieldsList.add(f);
+            }
+        }
+        return fieldsList.toArray(new Field[fieldsList.size()]);
+    }
 
     //Takes the fieldName and returns the index within dataArray; returns -1 if the field does not exist
     static int indexOfField(String fieldName){

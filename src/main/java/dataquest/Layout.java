@@ -3,6 +3,7 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.FocusAdapter;
@@ -61,6 +62,8 @@ public class Layout extends JFrame {
 
     private final int visualPanelWidth = 400;
     private final int visualPanelHeight = 300;
+
+    private final Font menuFont = new Font("sans-serif", Font.PLAIN, 15);
 
     public Layout() {
         setTitle("DataQuest");
@@ -125,14 +128,17 @@ public class Layout extends JFrame {
         JMenuItem summaryItem = new JMenuItem("Statistical summary");
         JMenuItem meanCompareItem = new JMenuItem("Mean comparison");
         JMenuItem linearRegressionItem = new JMenuItem("Linear regression");
+        JMenuItem anovaItem = new JMenuItem("One Way ANOVA Test");
         statsMenu.add(summaryItem);
         statsMenu.add(meanCompareItem);
         statsMenu.add(linearRegressionItem);
+        statsMenu.add(anovaItem);
 
         menuBar.add(fileMenu);
         menuBar.add(spreadsheetMenu);
         menuBar.add(statsMenu);
 
+        customizeMenu(menuBar); // customizes the menu bar and its components
         setJMenuBar(menuBar);
 
         // Create buttons
@@ -242,6 +248,9 @@ public class Layout extends JFrame {
         // Create output area
         output = new JTextArea();
         output.setEditable(false);
+        output.setWrapStyleWord(true);
+        output.setFont(output.getFont().deriveFont(15f)); // will only change size to 12pt
+
         gbc.gridx = 1; gbc.gridy = 0;
         add(new JScrollPane(output), gbc);
 
@@ -298,6 +307,12 @@ public class Layout extends JFrame {
         linearRegressionItem.addActionListener (e -> {
             if (Dataset.dataArray != null) {
                 String info = ChoiceMenu.linearRegression(this);
+                output.append(info);
+            }
+        });
+        anovaItem.addActionListener(e -> {
+            if (Dataset.dataArray != null) {
+                String info = ChoiceMenu.anovaMenu(this);
                 output.append(info);
             }
         });
@@ -670,6 +685,31 @@ public class Layout extends JFrame {
         plot.setRenderer(renderer);
     }
 */
+    // helper method for setting fonts of menu components and other things later
+    private void customizeMenu(Component component) {
+        if (component instanceof JMenu) {
+            JMenu menu = (JMenu) component;
+            menu.setFont(menuFont);
+            for (int i = 0; i < menu.getItemCount(); i++) {
+                JMenuItem item = menu.getItem(i);
+                if (item != null) {
+                    customizeMenu(item);
+                }
+            }
+        } else if (component instanceof JMenuBar) {
+            JMenuBar menuBar = (JMenuBar) component;
+            for (int i = 0; i < menuBar.getMenuCount(); i++) {
+                JMenu menu = menuBar.getMenu(i);
+                if (menu != null) {
+                    customizeMenu(menu);
+                }
+            }
+        }
+         else if (component instanceof JMenuItem) {
+            component.setFont(menuFont);
+        } 
+    }
+
     // custom renderer to make headers look normal even while editing
     static class EditableHeaderRenderer implements TableCellRenderer {
         private final TableCellRenderer defaultRenderer;

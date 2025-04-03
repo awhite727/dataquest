@@ -185,6 +185,33 @@ public class ChoiceMenu {
         return boxplot;
     }
 
+    public static String anovaMenu(JFrame parent) {
+        Field[] fields = Dataset.getNumericFields();
+        Field[] levels = Dataset.getCategoricalAnovaFields();
+        if (fields.length==0) {
+            return "No numerical fields for calculation";
+        }
+        if (levels.length == 0) {
+            return "No categorical fields for splitting";
+        }
+        // case where the numerical and categorical field are the same field
+        if (fields.length == 1 && levels.length == 1 && fields[0].getName().equals(levels[0].getName())) {
+            return "Not enough fields for calculation";
+        }
+        String[] fieldNames = new String[fields.length];
+        for (int i = 0; i<fields.length; i++) {
+            fieldNames[i] = fields[i].getName();
+        }
+        String[] levelNames = new String[levels.length];
+        for (int i=0; i<levels.length; i++) {
+            levelNames[i] = levels[i].getName();
+        }
+        String[] selected = showTwoComboPopup(parent, "ANOVA", "Test field", "Level", fieldNames, levelNames);
+        Field numField = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
+        Field levField = Dataset.dataArray.get(Dataset.indexOfField(selected[1]));
+        return StatisticalSummary.getAnova(numField, levField);
+    }
+
     // called by other methods for simple combo box choices
     // pass the layout, the title, the subtitle, and the options
     // returns the choice selected as a string
