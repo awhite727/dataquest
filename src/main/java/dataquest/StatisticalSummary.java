@@ -27,10 +27,11 @@ public class StatisticalSummary {
     }
 
     public static double getTStar(double alpha, double df){
-        if (alpha <= 0) {
+        if (alpha <= 0 || df <= 0) {
             return 0;
         }
         double tStar = new TDistribution(df).inverseCumulativeProbability(1 - alpha / 2);
+        System.out.println("TStar: " + tStar);
         return tStar;
     }
 
@@ -68,6 +69,12 @@ public class StatisticalSummary {
         return Math.sqrt(variance);
     }
 
+    public static double getSampleSD(List<Double> data) {
+        double mean = getMean(data);
+        double variance = data.stream().mapToDouble(x -> Math.pow(x - mean, 2)).sum();
+        variance = variance/(getCount(data) - 1);
+        return Math.sqrt(variance);
+    }
     // takes the fields of the linear regression and outputs a string of information about the model
     public static String getLinearRegression(Field target, Field[] parameters) {
         if (target == null || parameters == null || parameters.length ==0) {

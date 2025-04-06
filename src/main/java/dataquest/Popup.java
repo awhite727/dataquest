@@ -8,7 +8,10 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.TextArea;
 import java.awt.TextField;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -20,14 +23,25 @@ import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JRootPane;
 import javax.swing.JScrollPane;
+import javax.swing.JViewport;
 import javax.swing.SizeRequirements;
 
 //TODO: Use class to break down each element into a private set and get of the Component
 //setComponent should run any necessary checks for that component then return the Component
 //getComponent show run necessary submission checks for that component then return the associated String
+//TODO: Fix automatic width sizing
+//TODO: Add error handling 
+//TODO: Add next/previous/submit
+//TODO: Add tabbed pane 
+//TODO: Add text wrapping 
+    //-- JLabel.setText("<html>Text</html>")/new JLabel("<html>" + text + "</html>")
+    //Special characters need to be escaped first, like \<
+    //https://stackoverflow.com/questions/2420742/make-a-jlabel-wrap-its-text-by-setting-a-max-width 
 public class Popup { 
     Popup(){}
     //NOTE: If we want to include generic error handling prior to submission, best way to do this I can think of would be to handle by passing another ArrayList<String[]> errors
@@ -45,6 +59,7 @@ public class Popup {
          * "radio" - bubbles -- returns null if nothing selected
          * "text" - textbox -- returns empty string if nothing added
          * "check" - checkbox (radio but allowing multiple to be selected) -- returns empty string if nothing added
+         * "comparison" - special combo that allows a label before and after the combo; format as label, all combo items, label
          */
     // questionList format:  
     /* index 0 - question name; if none to be used use empty string
@@ -99,11 +114,13 @@ public class Popup {
                 } else if(qType.equals("text")){
                     JPanel textPanel = new JPanel(new GridLayout(2,1)); 
                     //JPanel textPanel = new JPanel( new GridBagLayout() );
-                    textPanel.setBackground(Color.RED);
+                    //textPanel.setBackground(Color.RED);
                     textPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
                     textPanel.add(new JLabel(question[0]));
                     //textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.X_AXIS)); 
                     TextField field = new TextField();
+                    
+                    
                     //field.setPreferredSize();
                     field.setSize(new Dimension(50, 30));
                     mainComponents.add(field);
@@ -113,22 +130,38 @@ public class Popup {
                         new Insets( 0, 0, 0, 0 ), 0, 0 ) ); */
                     allComponents.add(textPanel);
                 }
-                else if(question.length < 2){ 
+                else if((question.length < 2)||(qType.equals("comparison") && question.length < 3)){ 
                     mainComponents.add(null);
                     throw new Exception ("ERROR: questionList.get("+i+") has length of " + question.length + " and is labelled as a " + qType);
                 }
-                else if(qType.equals("combo")) {
+                else if(qType.equals("combo") || qType.equals("comparison")) {
                     JPanel comboPanel = new JPanel();
                     comboPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-                    comboPanel.add(new JLabel(question[0]));
                     comboPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-                    question[0] = ""; 
+                    //System.out.println(question[0]);
+                    comboPanel.add(new JLabel(question[0]));
+                    question[0] = "";
+                    String compareTemp = "";
+                    if(qType.equals("comparison")) {
+                        compareTemp = question[question.length-1];
+                        question = Arrays.copyOfRange(question, 0, question.length-1);
+                    }
                     //JComboBox<String> comboBox = new JComboBox<>(Arrays.copyOfRange(question, 1, question.length));
                     JComboBox<String> comboBox = new JComboBox<>(question);
-                    
-                    comboPanel.setBackground(Color.RED); //TODO: Remove, just to show issue for now
+                    //comboBox.setPreferredSize(new Dimension(200,comboBox.getPreferredSize().height));
+                    comboBox.setMinimumSize(new Dimension(100,comboBox.getPreferredSize().height));
                     comboPanel.add(comboBox);
                     mainComponents.add(comboBox);
+
+                    if(qType.equals("comparison")) {
+                        comboPanel.add(new JLabel(compareTemp));
+                    }
+                    if(qType.equals("comparison")) {
+                        
+                    }
+
+
+                    //comboPanel.setBackground(Color.RED); //TODO: Allow text to grow when resizing window?
                     allComponents.add(comboPanel);
                 } else if(qType.equals("radio")) {
                     String[] radioOptions = Arrays.copyOfRange(question, 1, question.length);
@@ -188,10 +221,10 @@ public class Popup {
 
         allComponents.add(confirmButton);
 
-        System.out.println("Total components: " + allComponents.size());
+        //System.out.println("Total components: " + allComponents.size());
         for (Component c : allComponents) {
             container.add(c);
-            System.out.println("Added: "  + c + "\n");
+            //System.out.println("Added: "  + c + "\n");
         }
         popup.setLocationRelativeTo(parent);
         Dimension containerSize = container.getPreferredSize();
@@ -202,6 +235,22 @@ public class Popup {
         
         popup.setMinimumSize(containerSize);
         popup.setVisible(true);
+
+        //System.out.println("\n\n\n\n\n\n~~~~~~\n\n\n\n\n");
+        /*Component[] component = ((JPanel)((JViewport)((JScrollPane)((JPanel)((JLayeredPane)((JRootPane)popup.getComponent(0)).getComponent(1)).getComponent(0)).getComponent(0)).getComponent(0)).getComponent(0)).getComponents();
+        for (Component c : component) {
+            System.out.println("Popup: " + c.getClass().getName());
+            if((c instanceof JPanel) && (((JPanel)c).getComponentCount() > 2)){
+                System.out.println("\tComparison: " );
+                for (Component c2 : ((JPanel)c).getComponents()) {
+                    if(c2 instanceof JLabel){
+                        System.out.println("\t->"+((JLabel)c2).getText());
+                    }
+                }
+            }
+        } */
+
+
         return selectedValues;
     }
 

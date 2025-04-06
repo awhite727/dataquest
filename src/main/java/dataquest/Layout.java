@@ -147,8 +147,8 @@ public class Layout extends JFrame {
 
         histogramButton = new JButton("Histogram");
         boxplotButton = new JButton("Boxplot");
-        //linearRegressionButton = new JButton("Linear Regression");
-        //meanDiffButton = new JButton("Mean comparison");
+        linearRegressionButton = new JButton("Linear Regression");
+        meanDiffButton = new JButton("Mean comparison");
         //buttonPanel.add(addRowButton);
         //buttonPanel.add(addColumnButton);
         //buttonPanel.add(importingButton);
@@ -157,8 +157,8 @@ public class Layout extends JFrame {
 
         buttonPanel.add(histogramButton);
         buttonPanel.add(boxplotButton);
-        //buttonPanel.add(linearRegressionButton);
-        //buttonPanel.add(meanDiffButton);
+        buttonPanel.add(linearRegressionButton);
+        buttonPanel.add(meanDiffButton);
         
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3; gbc.weighty = 0.1;
         add(buttonPanel, gbc);
@@ -214,6 +214,8 @@ public class Layout extends JFrame {
         // Create output area
         output = new JTextArea();
         output.setEditable(false);
+        output.setLineWrap(true); //to automatically wrap long strings
+        output.setWrapStyleWord(true); //to break by full words
         gbc.gridx = 1; gbc.gridy = 0;
         add(new JScrollPane(output), gbc);
 
@@ -431,9 +433,11 @@ public class Layout extends JFrame {
          //file selection canceled 
       }
         try {
-            if(file.getName().equals("")){//nothing selected
+            if(file.getName().equals("")){//nothing selected or it'
                 return;
-            } else if(file.getName().endsWith(".txt")) {
+            } 
+            //String extension = file.getName().split(".")[1];//NOTE: Apparently capital extensions are valid, so can be used to prevent capital issues; however I'm worried this may lead to more issues than benefits
+            if(file.getName().endsWith(".txt")) { //TODO: Apparently capital txt isn't handled with this but is valid?
                 System.out.println("txt");
                 //TODO: Call choice menu to determine the delim
                 String delim = ChoiceMenu.importingDelimMenu(this);

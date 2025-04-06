@@ -20,8 +20,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 
-import org.apache.poi.hpsf.Array;
-
 public class ChoiceMenu {
 
     /* menu methods are statically called from layout
@@ -29,15 +27,44 @@ public class ChoiceMenu {
         methods that make pop-ups are private to encourage code reusability
     */
     public static String importingDelimMenu(JFrame parent) {
-        ArrayList<String[]> delim = new ArrayList<String[]>(1);
-        delim.add(new String[]{"File deliminator: "});
-
-        String[] selected=  Popup.showGenericPopup(parent, "Deliminator", new ArrayList<String>(Arrays.asList("text")), 
-        delim, new ArrayList<>());
-        if(selected[0].length() > 1) {
-            System.out.println("NOTICE: Your deliminator is made of more than 1 character and will therefore only separate on an exact match of the full string.");
+        final ArrayList<String> questionType = new ArrayList<String>(Arrays.asList("radio","text"));
+        ArrayList<String[]> questionList = new ArrayList<String[]>(2);
+        questionList.add(new String[]{"File deliminator: ","Comma", "Semicolon", "Space", "New line", "Tab","Custom"});
+        questionList.add(new String[]{""});
+        String[] selected=  Popup.showGenericPopup(parent, "Deliminator", questionType, 
+        questionList, new ArrayList<>());
+        if(selected[0] == null) return null;
+        if((!selected[0].equals("Custom")) && selected[1].length() > 0) {
+            System.out.println("ERROR: Custom deliminator used but " + selected[0] + " deliminator selected.");
+            System.out.println("\t" + selected[1].length());
+            return null;
         }
-        return selected[0];
+        switch (selected[0]) {
+            case "Comma":
+                return ",";
+            case "Semicolon":
+                return ";";
+            case "Space":
+                return " ";
+            case "New line":
+                return "\n";
+            case "Tab":
+                return "\t";
+            case "Custom":
+                if(selected[1].length() < 1) {
+                    System.out.println("ERROR: No custom deliminator assigned.");
+                    return null;
+                }
+                else if(selected[1].length() > 1) {
+                    System.out.println("NOTICE: Your custom deliminator is made of more than 1 character and will therefore only separate on an exact match of the full string.");
+                    return selected[1];
+                }
+            default:
+                System.out.println("ERROR: Unexpected error in importingDelimMenu");
+                return null;
+        }
+        
+        //return selected[0];
     }
     public static String statisticalSummaryMenu(JFrame parent) {
         Field[] fields = Dataset.getNumericFields();
@@ -528,7 +555,7 @@ public class ChoiceMenu {
         return histogram;
    }
 
-   public static String meanDiffMenu(JFrame parent) {
+   /* public static String meanDiffMenu(JFrame parent) {
     String title = "MeanDiff";
     Field[] fields = Dataset.getNumericFields();
     if (fields.length < 2) {
@@ -562,8 +589,76 @@ public class ChoiceMenu {
 
     //MeanDiff meanDiff = new MeanDiff(title, null, fieldAChoice, fieldBChoice, "tail");
     //PooledTwoSample meanDiff = new PooledTwoSample(fields[0],fields[1]);
-    //String result = meanDiff.printTestWordy(.05, 10000); */
+    //String result = meanDiff.printTestWordy(.05, 10000);
     Welch welch = new Welch(fields[1], fields[0], -1, 0, 'c');
     return "Result: " + welch.getSignificance();
-   }
+    } */
+
+    public static String meanDiffMenu(JFrame parent) {
+        final String tabName = "Comparison of Means";
+        Field[] fields = Dataset.getNumericFields();
+        if (fields.length < 2) {
+            System.out.println("ERROR: Not enough numerical fields available for mean comparison.");
+            return null;
+        }
+        ArrayList<String> questionType = new ArrayList<>();
+        ArrayList<String[]> questionList = new ArrayList<>();
+        ArrayList<String[]> errors = new ArrayList<>(0);
+        //Prepare for popup
+        String [] fieldA = new String[fields.length+1];
+        String [] fieldB = new String[fields.length+1];
+        fieldA[0] = "First Field: ";
+        fieldB[0] = "Second Field: ";
+        for (int i=0;i<fields.length;i++) {
+            fieldA[i+1] = fields[i].getName();
+            fieldB[i+1] = fields[i].getName();
+        } //TODO: note that tabbedPane might be handy for popups or something maybe for like the graph menus? 
+
+        //Fields
+        questionType.add("combo");
+        questionList.add(fieldA);
+        questionType.add("combo");
+        questionList.add(fieldB);
+
+        //Type of test
+        questionType.add("radio");
+        questionList.add(new String[]{"Use population variance?","Yes (z-test)", "No (t-test)"});
+        questionType.add("text");
+        questionList.add(new String[]{"If yes, what is the population SD of Field A (leave blank to assume sample sd is population sd): "});
+        questionType.add("text");
+        questionList.add(new String[]{"If yes, what is the population SD of Field B (leave blank to assume sample sd is population sd): "});
+        questionType.add("radio");
+        questionList.add(new String[]{"If no, assume variance is equal?","Yes (pooled two-sample t-test)","No (Welch two-sample t-test)"});
+        /* questionType.add("text");
+        questionList.add(new String[]{"Comparison value"}); */
+
+        //Hypothesis 
+        questionType.add("label");
+        questionList.add(new String[]{"H\u2080:"}); // \u2080 is unicode for subscript 0
+        questionType.add("comparison");
+        questionList.add(new String[]{"Field A - Field B    ","<",">","\u2260","    0"}); //\u2260 is uncode for !=         
+        //questionType.add("label");
+        //questionList.add(new String[]{"H\u2090:"}); // \u2080 is unicode for subscript a (none for capital A)
+        //questionType.add("comparison");
+        //questionList.add(new String[]{"Field A - Field B   ","<",">","=", "   0"});
+
+        String selected[] = Popup.showGenericPopup(parent, tabName, questionType, questionList, errors);
+
+        //Check validity, if anything null return 
+        /* for (String string : selected) {
+            if (string == null) return "";
+        } */
+       if(selected[0] == null || selected[1] == null) {
+        System.out.println("ERROR: Nulls");
+        return "";
+       }
+        Field fieldOne = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
+        Field fieldTwo = Dataset.dataArray.get(Dataset.indexOfField(selected[1]));
+
+        MeanDiff md = new MeanDiff(fieldOne, fieldTwo, 0.05,-1, '-');
+        md.setZ();
+        return md.printTestWordy();
+
+        //return "";
+    }
 }
