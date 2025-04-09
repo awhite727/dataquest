@@ -56,10 +56,13 @@ public class ChoiceMenu {
                     output = boxplotMenu(parent);
                     break;
                 }
+            case "Scatterplot":
+                if (Dataset.dataArray!=null) {
+                    output = scatterplotMenu(parent);
+                    break;
+                }
             /*
             case "Histogram":
-                break;
-            case "Scatterplot":
                 break;
             case "T-Distribution":
                 break;
@@ -186,6 +189,54 @@ public class ChoiceMenu {
         boxplotField = Dataset.dataArray.get(Dataset.indexOfField(boxplotFieldName));
         Boxplot boxplot = new Boxplot("Boxplot", null, boxplotField, categoryField);
         return boxplot;
+    }
+
+    public static Graph scatterplotMenu(JFrame parent) {
+        Field[] fields = Dataset.getNumericFields();
+        if (fields.length < 2) {
+            System.out.println("Not enough numeric fields");
+            return null;
+        }
+        Field[] categoryFields = Dataset.getCategoricalFields();
+        String[] xFieldNames = new String[fields.length + 1];
+        String[] yFieldNames = new String[fields.length + 1];
+        xFieldNames[0] = "X Variable";
+        yFieldNames[1] = "Y Variable";
+        for (int i = 0; i<fields.length; i++) {
+            String name = fields[i].getName();
+            xFieldNames[i + 1] = name;
+            yFieldNames[i + 1] = name;
+        }
+        String [] categoryFieldNames = new String[categoryFields.length + 2];
+        categoryFieldNames[0] = "(Optional) Level";
+        categoryFieldNames[1] = "none";
+        for (int i = 0; i< categoryFields.length; i++) {
+            categoryFieldNames[i+2] = categoryFields[i].getName();
+        }
+        ArrayList<String> questionType = new ArrayList<>(Arrays.asList("combo", "combo", "combo"));
+        ArrayList<String[]> questionList = new ArrayList<>(Arrays.asList(xFieldNames, yFieldNames, categoryFieldNames));
+        String[] selected = Popup.showGenericPopup(parent, "Scatterplot", questionType, questionList, new ArrayList<String[]>());
+
+        //String[] selected = showTwoComboPopup(parent, "Scatterplot", "X Variable", "Y Variable", fieldNames, fieldNames);
+        Field xField = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
+        Field yField = Dataset.dataArray.get(Dataset.indexOfField(selected[1]));
+        String categoryFieldName = selected[2];
+        Graph graph;
+        if (categoryFieldName.equals("none")) {
+            graph = new Graph("Scatterplot", null, xField, yField, null);
+        }
+        else {
+            int index = Dataset.indexOfField(categoryFieldName);
+            if (index != -1) {
+                Field categoryField = Dataset.dataArray.get(index);
+                graph = new Graph("Scatterplot", null, xField, yField, categoryField);
+            }
+            else {
+                System.out.println("Error finding field of name " + categoryFieldName);
+                graph = new Graph("Scatterplot", null, xField, yField, null);
+            }
+        }
+        return graph;
     }
 
     public static String anovaMenu(JFrame parent) {

@@ -1,6 +1,5 @@
 package dataquest;
 import java.awt.BorderLayout;
-import java.awt.Choice;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -57,8 +56,6 @@ public class Layout extends JFrame {
         //meanDiffButton;
 
     private Dataset dataset;
-    //private Graph graph1;
-    //private Graph graph2;
     private Visualization visual1;
     private Visualization visual2;
     private JPanel visualPanel1;
@@ -258,25 +255,6 @@ public class Layout extends JFrame {
 
         gbc.gridx = 1; gbc.gridy = 0;
         add(new JScrollPane(output), gbc);
-
-        // Set color palette
-        /* colorPalette = new Color[]{
-            new Color(0x264653), new Color(0x2A9D8F), new Color(0xE9C46A),
-            new Color(0xF4A261), new Color(0xE76F51), new Color(0x023047),
-            new Color(0x219EBC), new Color(0xFFB703), new Color(0xFB8500)
-        }; */
-
-        //TODO: POSSIBLE BREAK POINT; make sure that updates to Graph chart affect charts here
-        // Create empty charts
-        //chart1 = createEmptyChart("Wavy Grpah-1");
-        //chart2 = createEmptyChart("Wavy Graph-2");
-        
-        /*chartPanel1 = new ChartPanel(graph1.getChart());
-        chartPanel2 = new ChartPanel(graph2.getChart());
-        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 1; gbc.weighty = 0.5;
-        add(chartPanel1, gbc);
-        gbc.gridx = 1;
-        add(chartPanel2, gbc); */
 
         visualPanel1 = new JPanel();
         visualPanel1.setLayout(new BorderLayout()); // most charts need to be centered
@@ -643,6 +621,7 @@ public class Layout extends JFrame {
         }
     }
 
+    // used to set visuals with the + buttons
     private void setVisual(int panel) {
         Visualization visual = ChoiceMenu.visualMenu(this);
         if (visual == null) { // possible user error when selecting
@@ -654,7 +633,7 @@ public class Layout extends JFrame {
             // remove old panel and add new one
             visualPanel1.removeAll();
             visualPanel1.add(newPanel, BorderLayout.CENTER);
-
+            
             visualPanel1.revalidate();
             visualPanel1.repaint();        
             }
