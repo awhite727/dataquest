@@ -555,45 +555,10 @@ public class ChoiceMenu {
         return histogram;
    }
 
-   /* public static String meanDiffMenu(JFrame parent) {
-    String title = "MeanDiff";
-    Field[] fields = Dataset.getNumericFields();
-    if (fields.length < 2) {
-        System.out.println("ERROR: Not enough numerical fields available for mean comparison.");
-        return null;
-    }
-    /* 
-    //Prepare for popup
-    String [] fieldA = new String[fields.length+1];
-    String [] fieldB = new String[fields.length+1];
-    fieldA[0] = "First Field: ";
-    fieldB[0] = "Second Field: ";
-    for (int i=0;i<fields.length;i++) {
-        fieldA[i+1] = fields[i].getName();
-        fieldB[i+1] = fields[i].getName();
-    }
-
-    String[] alpha = new String[]{"Alpha: "};
-    String[] tail = new String[]{"Tail: ", "Two-sided","one-sided left", "one-sided right"};
-    ArrayList<String[]> errors = new ArrayList<>();
-
-    String[] selected = Popup.showGenericPopup(parent, "Mean Comparison",
-            new ArrayList<String>(Arrays.asList("combo","combo","text","radio")), 
-            new ArrayList<String[]>(Arrays.asList(fieldA, fieldB, alpha, tail)),
-            errors);
-    
-    //if(selected[0].equals("") || selected[1]==null) return null; //TODO: Add error notification if XOR null
-        
-    //Field fieldAChoice = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
-    //Field fieldBChoice = Dataset.dataArray.get(Dataset.indexOfField(selected[1]));
-
-    //MeanDiff meanDiff = new MeanDiff(title, null, fieldAChoice, fieldBChoice, "tail");
-    //PooledTwoSample meanDiff = new PooledTwoSample(fields[0],fields[1]);
-    //String result = meanDiff.printTestWordy(.05, 10000);
-    Welch welch = new Welch(fields[1], fields[0], -1, 0, 'c');
-    return "Result: " + welch.getSignificance();
-    } */
-
+   //NOTE: Easiest way to handle difference and hnull
+   //is to have boolean twoSided
+   //and if false, change the difference/order passing Fields to match the onesided 
+   //Makes a lot of checks much easier 
     public static String meanDiffMenu(JFrame parent) {
         final String tabName = "Comparison of Means";
         Field[] fields = Dataset.getNumericFields();
@@ -655,9 +620,15 @@ public class ChoiceMenu {
         Field fieldOne = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
         Field fieldTwo = Dataset.dataArray.get(Dataset.indexOfField(selected[1]));
 
-        MeanDiff md = new MeanDiff(fieldOne, fieldTwo, 0.05,-1, '-');
-        md.setZ();
-        return md.printTestWordy();
+        //TwoSample md = new TwoSample(fieldOne, fieldTwo, 0.2,-100, '-');
+        //md.setPaired();
+        //TODO: pNull must be 0-1
+        //Proportion md = new Proportion(fieldOne, 2, 0.2, .2, Proportion.Direction.GREATER_THAN);
+        Proportion md = new Proportion(fieldOne, fieldTwo, 2, 2, 0.05, 1, Proportion.Direction.EQUAL);
+
+        
+        md.setTwoProportion();
+        return md.printBasic();
 
         //return "";
     }

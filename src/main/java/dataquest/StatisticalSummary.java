@@ -43,11 +43,9 @@ public class StatisticalSummary {
         return zStar;
     }
 
-    /* public static double getTStarWithDF(double alpha, double df) {
-        if(alpha <=0) return 0;
-        double tstar = new TDistribution(df).inverseCumulativeProbability(alpha);
-        return tstar;
-    } */
+    public static double getPValue(double value) {
+        return new NormalDistribution().cumulativeProbability(value);
+    }
 
     public static double getMean(List<Double> data) {
         return data.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
@@ -224,6 +222,14 @@ public class StatisticalSummary {
         int count = data.stream().filter(e -> e != null).collect(Collectors.toList()).size();
         //return data.size();
         return count;
+    }
+
+    public static double getSum(List<Double> data) {
+        double total = 0;
+        for (double val : data) {
+            total+= val;   
+        }
+        return total;
     }
 
     public static String getSummary(List<Double> data) {
