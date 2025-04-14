@@ -51,6 +51,17 @@ public class StatisticalSummary {
         return tstar;
     } */
 
+   // used by TDistribution visualization to get the points
+   public static List<Double> calculateTDistributionPDF(int df, List<Double> xList) {
+        TDistribution tDistribution = new TDistribution(df);
+        List<Double> yList = new ArrayList<>();
+        for (double x: xList) {
+            yList.add(tDistribution.density(x));
+        }
+        return yList;
+        
+   }
+
     public static double getMean(List<Double> data) {
         return data.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
     }

@@ -21,6 +21,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 
 import org.apache.poi.hpsf.Array;
+import org.apache.poi.xwpf.usermodel.BreakClear;
 
 public class ChoiceMenu {
 
@@ -61,10 +62,11 @@ public class ChoiceMenu {
                     output = scatterplotMenu(parent);
                     break;
                 }
+            case "T-Distribution":
+                output = tDistributionMenu(parent);
+                break;
             /*
             case "Histogram":
-                break;
-            case "T-Distribution":
                 break;
                 */
             default:
@@ -237,6 +239,47 @@ public class ChoiceMenu {
             }
         }
         return graph;
+    }
+
+    public static TDistribution tDistributionMenu(JFrame parent) {
+
+        ArrayList<String> questionType = new ArrayList<>(Arrays.asList("text", "radio", "text"));
+        String [] dfQuestion = new String[] {"Degrees of Freedom"};
+        String [] directionQuestion = new String[] {"Direction", "Upper Tail", "Lower Tail", "Two-Tailed", "Confidence Interval"};
+        String [] aQuestion = new String[] {"T-Score"};
+        ArrayList<String[]> questionList = new ArrayList<>(Arrays.asList(dfQuestion, directionQuestion, aQuestion));
+
+        String[] selected = Popup.showGenericPopup(parent, "T-Distribution", questionType, questionList, new ArrayList<String[]>());
+
+        int df = 10;
+        double a  = 0;
+        try {
+            df = Integer.parseInt(selected[0]);
+            a = Double.parseDouble(selected[2]);
+        } catch(NumberFormatException e) {
+            System.out.println("Invalid entry: " + e.getMessage());
+            df = 10;
+            a = 0;
+        }
+        String selectedDirection = selected[1];
+        String direction = "inside";
+        switch (selectedDirection) {
+            case "Upper Tail":
+                direction = ">";
+                break;
+            case "Lower Tail":
+                direction = "<";
+                break;
+            case "Two-Tailed":
+                direction = "outside";
+                break;
+            case "Confidence Interval":
+                direction = "inside";
+                break;
+        }
+
+        TDistribution tDistribution = new TDistribution(null, null, df, direction, a);
+        return tDistribution;
     }
 
     public static String anovaMenu(JFrame parent) {

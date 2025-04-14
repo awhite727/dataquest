@@ -49,7 +49,7 @@ public class Graph extends Visualization implements Serializable {
         yLabel = yField.getName();
         data = new XYSeriesCollection();
         Field[] fields = {xField, yField};
-        if (categoryField == null) {
+        if (categoryField == null) {    // for a single set of points
             ArrayList<ArrayList<Double>> values = Dataset.matchFields(fields);
             XYSeries series = new XYSeries("Data");
             for (int i=0; i<values.get(0).size(); i++) {
@@ -57,21 +57,19 @@ public class Graph extends Visualization implements Serializable {
             }
             data.addSeries(series);
         }
-        // can't directly use matchFields, have to incorporate the level matching as well
-        // the else statement is matchFields, but instead of returning a list, it matches by level and adds to the collection
-        else {
+        else {  // for multiple sets of points split on a category
             String[] levels = categoryField.getLevels();
             Set<Integer> missingIndex = new HashSet<>();
-            for (Field f : fields) {
+            for (Field f : fields) {    // exclude missing rows
                 List<Integer> missing = f.getMissing(); 
                 missingIndex.addAll(missing);  
-            }
+            }   
             for (String level : levels) {
                 List<Integer> indexOfLevel = categoryField.getIndexOfLevel(level);
                 if (indexOfLevel.size() <= 1) {
                     continue;
                 }
-                XYSeries series = new XYSeries(level);
+                XYSeries series = new XYSeries(level);  // each series is a set of values of a level
                 for (int i: indexOfLevel) {
                     if (!missingIndex.contains(i)) {    // skips if at least one field has a missing at that value
                         Object valueX = xField.getTypedAtIndex(i);
@@ -120,7 +118,6 @@ public class Graph extends Visualization implements Serializable {
         }
         else {
             String[] levels = categoryField.getLevels();
-            //Color[] colors = {Color.BLACK, Color.GREEN, Color.MAGENTA, Color.ORANGE,Color.CYAN, Color.YELLOW, Color.BLUE, Color.PINK};
             for (int i=0; i<levels.length; i++) {
                 // set original dataset to points
                 Color color = generateColor(i);
@@ -154,7 +151,6 @@ public class Graph extends Visualization implements Serializable {
     private void computeRegression() {
         if (categoryField == null) {
             double[] coefficients = Regression.getOLSRegression(data, 0); // 0 is the series index
-            // coefficients[0] = intercept, coefficients[1] = slope
 
             XYSeries regressionLine = new XYSeries("Regression Line");
 
