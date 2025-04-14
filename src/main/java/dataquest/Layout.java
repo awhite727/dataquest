@@ -50,8 +50,8 @@ public class Layout extends JFrame {
     //private JFreeChart chart1, chart2;
     //private ChartPanel chartPanel1, chartPanel2;
     //private Color[] colorPalette;
-    private JButton addRowButton, addColumnButton, importingButton, 
-        handleMissingButton, statisticalSummaryButton,
+    private JButton /* addRowButton, addColumnButton, importingButton, 
+        handleMissingButton, statisticalSummaryButton,  */
         histogramButton, boxplotButton;//, linearRegressionButton,
         //meanDiffButton;
 
@@ -127,13 +127,22 @@ public class Layout extends JFrame {
         spreadsheetMenu.add(missingItem);
 
         JMenuItem summaryItem = new JMenuItem("Statistical summary");
-        JMenuItem meanCompareItem = new JMenuItem("Mean comparison");
         JMenuItem linearRegressionItem = new JMenuItem("Linear regression");
         JMenuItem anovaItem = new JMenuItem("One Way ANOVA Test");
+        JMenuItem meanCompareItem = new JMenu("Mean comparison");//new JMenuItem("Mean comparison");
+        JMenuItem proportionItem = new JMenuItem("Proportion test");
         statsMenu.add(summaryItem);
-        statsMenu.add(meanCompareItem);
         statsMenu.add(linearRegressionItem);
         statsMenu.add(anovaItem);
+        statsMenu.add(meanCompareItem);
+            JMenuItem zTwoSample = new JMenuItem("Z two-sample");
+            JMenuItem tTwoSample = new JMenuItem("T two-sample");
+            JMenuItem pairedSample = new JMenuItem("Paired sample");
+            meanCompareItem.add(zTwoSample);
+            meanCompareItem.add(tTwoSample);
+            meanCompareItem.add(pairedSample);
+        statsMenu.add(proportionItem);
+        
 
         menuBar.add(fileMenu);
         menuBar.add(spreadsheetMenu);
@@ -250,9 +259,9 @@ public class Layout extends JFrame {
         // Create output area
         output = new JTextArea();
         output.setEditable(false);
+        //output.setLineWrap(true);
         output.setWrapStyleWord(true);
-        output.setFont(output.getFont().deriveFont(15f)); // will only change size to 12pt
-
+        output.setFont(output.getFont().deriveFont(15f));
         gbc.gridx = 1; gbc.gridy = 0;
         add(new JScrollPane(output), gbc);
 
@@ -299,6 +308,36 @@ public class Layout extends JFrame {
                 output.append(info);
             }
         });
+        /* meanCompareItem.addActionListener(e -> {
+            if (Dataset.dataArray != null) {
+                String info = ChoiceMenu.meanDiffMenu(this);
+                output.append(info);
+            }
+        }); */
+        tTwoSample.addActionListener(e -> {
+            if (Dataset.dataArray != null) {
+                String info = ChoiceMenu.tTwoSampleMenu(this);
+                output.append(info);
+            }
+        });
+        zTwoSample.addActionListener(e -> {
+            if (Dataset.dataArray != null) {
+                String info = ChoiceMenu.zTwoSampleMenu(this);
+                output.append(info);
+            }
+        });
+        pairedSample.addActionListener(e -> {
+            if (Dataset.dataArray != null) {
+                String info = ChoiceMenu.pairedMenu(this);
+                output.append(info);
+            }
+        });
+        proportionItem.addActionListener(e -> {
+            if (Dataset.dataArray != null) {
+                String info = ChoiceMenu.proportionMenu(this);
+                output.append(info);
+            }
+        });
         histogramButton.addActionListener(e-> {
             if(Dataset.dataArray != null) {
                 //String textOutput = ChoiceMenu.histogramMenu(this);
@@ -337,12 +376,6 @@ public class Layout extends JFrame {
         /*linearRegressionButton.addActionListener (e -> {
             if (Dataset.dataArray != null) {
                 String info = ChoiceMenu.linearRegression(this);
-                output.append(info);
-            }
-        });
-        meanDiffButton.addActionListener(e -> {
-            if (Dataset.dataArray != null) {
-                String info = ChoiceMenu.meanDiffMenu(this);
                 output.append(info);
             }
         }); */
@@ -463,9 +496,11 @@ public class Layout extends JFrame {
          //file selection canceled 
       }
         try {
-            if(file.getName().equals("")){//nothing selected
+            if(file.getName().equals("")){//nothing selected or it'
                 return;
-            } else if(file.getName().endsWith(".txt")) {
+            } 
+            //String extension = file.getName().split(".")[1];//NOTE: Apparently capital extensions are valid, so can be used to prevent capital issues; however I'm worried this may lead to more issues than benefits
+            if(file.getName().endsWith(".txt")) { //TODO: Apparently capital txt isn't handled with this but is valid?
                 System.out.println("txt");
                 //TODO: Call choice menu to determine the delim
                 String delim = ChoiceMenu.importingDelimMenu(this);

@@ -30,10 +30,11 @@ public class StatisticalSummary {
     }
 
     public static double getTStar(double alpha, double df){
-        if (alpha <= 0) {
+        if (alpha <= 0 || df <= 0) {
             return 0;
         }
         double tStar = new TDistribution(df).inverseCumulativeProbability(1 - alpha / 2);
+        System.out.println("TStar: " + tStar);
         return tStar;
     }
 
@@ -45,22 +46,33 @@ public class StatisticalSummary {
         return zStar;
     }
 
-    /* public static double getTStarWithDF(double alpha, double df) {
-        if(alpha <=0) return 0;
-        double tstar = new TDistribution(df).inverseCumulativeProbability(alpha);
-        return tstar;
-    } */
+    public static double getPValue(double value) {
+        return new NormalDistribution().cumulativeProbability(value);
+    }
 
-   // used by TDistribution visualization to get the points
-   public static List<Double> calculateTDistributionPDF(int df, List<Double> xList) {
-        TDistribution tDistribution = new TDistribution(df);
-        List<Double> yList = new ArrayList<>();
-        for (double x: xList) {
-            yList.add(tDistribution.density(x));
+    public static double getPValue(double value, Direction direction) {
+        double p = new NormalDistribution().cumulativeProbability(value);
+        switch (direction) {
+            case EQUAL:
+                return p*2;
+            case LESS_THAN:
+                return p;
+            case GREATER_THAN:
+                return 1-p;
         }
-        return yList;
-        
-   }
+        return -1;
+    }
+
+    // used by TDistribution visualization to get the points
+   public static List<Double> calculateTDistributionPDF(int df, List<Double> xList) {
+    TDistribution tDistribution = new TDistribution(df);
+    List<Double> yList = new ArrayList<>();
+    for (double x: xList) {
+        yList.add(tDistribution.density(x));
+    }
+    return yList;
+    
+}
 
     public static double getMean(List<Double> data) {
         return data.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
@@ -131,6 +143,12 @@ public class StatisticalSummary {
         return output.toString();
     }
 
+    public static double getSampleSD(List<Double> data) {
+        double mean = getMean(data);
+        double variance = data.stream().mapToDouble(x -> Math.pow(x - mean, 2)).sum();
+        variance = variance/(getCount(data) - 1);
+        return Math.sqrt(variance);
+    }
     // takes the fields of the linear regression and outputs a string of information about the model
     public static String getLinearRegression(Field target, Field[] parameters) {
         if (target == null || parameters == null || parameters.length ==0) {
@@ -280,6 +298,14 @@ public class StatisticalSummary {
         int count = data.stream().filter(e -> e != null).collect(Collectors.toList()).size();
         //return data.size();
         return count;
+    }
+
+    public static double getSum(List<Double> data) {
+        double total = 0;
+        for (double val : data) {
+            total+= val;   
+        }
+        return total;
     }
 
     public static String getSummary(List<Double> data) {

@@ -30,26 +30,54 @@ public class ChoiceMenu {
         methods that make pop-ups are private to encourage code reusability
     */
     public static String importingDelimMenu(JFrame parent) {
-        ArrayList<String[]> delim = new ArrayList<String[]>(1);
-        delim.add(new String[]{"File deliminator: "});
-        String[] selected=  Popup.showGenericPopup(parent, "Deliminator", new ArrayList<String>(Arrays.asList("text")), 
-        delim, new ArrayList<>());
-        if(selected[0].length() > 1) {
-            System.out.println("NOTICE: Your deliminator is made of more than 1 character and will therefore only separate on an exact match of the full string.");
+        final ArrayList<String> questionType = new ArrayList<String>(Arrays.asList("radio","text"));
+        ArrayList<String[]> questionList = new ArrayList<String[]>(2);
+        questionList.add(new String[]{"File deliminator: ","Comma", "Semicolon", "Space", "New line", "Tab","Custom"});
+        questionList.add(new String[]{""});
+        String[] selected=  Popup.showGenericPopup(parent, "Deliminator", questionType, 
+        questionList, new ArrayList<>());
+        if(selected[0] == null) return null;
+        if((!selected[0].equals("Custom")) && selected[1].length() > 0) {
+            System.out.println("ERROR: Custom deliminator used but " + selected[0] + " deliminator selected.");
+            System.out.println("\t" + selected[1].length());
+            return null;
         }
-        return selected[0];
+        switch (selected[0]) {
+            case "Comma":
+                return ",";
+            case "Semicolon":
+                return ";";
+            case "Space":
+                return " ";
+            case "New line":
+                return "\n";
+            case "Tab":
+                return "\t";
+            case "Custom":
+                if(selected[1].length() < 1) {
+                    System.out.println("ERROR: No custom deliminator assigned.");
+                    return null;
+                }
+                else if(selected[1].length() > 1) {
+                    System.out.println("NOTICE: Your custom deliminator is made of more than 1 character and will therefore only separate on an exact match of the full string.");
+                    return selected[1];
+                }
+            default:
+                System.out.println("ERROR: Unexpected error in importingDelimMenu");
+                return null;
+        }
     }
 
-   // set to void to avoid compilation errors, will return Visualization once finished.
-   public static Visualization visualMenu(JFrame parent) {
+    // set to void to avoid compilation errors, will return Visualization once finished.
+    public static Visualization visualMenu(JFrame parent) {
         String[] visualOptions = {"Choose a visualization: ", "Boxplot", "Histogram", "Scatterplot", "T-Distribution"};
 
         String tabName = "Visualization";
         ArrayList<String> questionType = new ArrayList<>(Arrays.asList("radio"));
         ArrayList<String[]> questionList = new ArrayList<>();
         questionList.add(visualOptions);
-        
-        String[] selected = showGenericPopup(parent, tabName, questionType, questionList);
+
+        String[] selected = Popup.showGenericPopup(parent, tabName, questionType, questionList, new ArrayList<>()); //Popup.genericPopup is more up to date
         Visualization output;
         switch (selected[0]) {
             case "Boxplot":
@@ -74,7 +102,8 @@ public class ChoiceMenu {
                 return null;
         }
         return output;
-   }
+    }
+
     public static String statisticalSummaryMenu(JFrame parent) {
         Field[] fields = Dataset.getNumericFields();
         if (fields.length==0) {
@@ -447,7 +476,7 @@ public class ChoiceMenu {
     // returns String[] of the results in the index; labels are returned as null
     //NOTE: Currently all questions automatically optional
     //If not included it will just return null
-    private static String[] showGenericPopup(JFrame parent, String tabName, ArrayList<String> questionType, ArrayList<String[]> questionList) {
+    /* private static String[] showGenericPopup(JFrame parent, String tabName, ArrayList<String> questionType, ArrayList<String[]> questionList) {
         ArrayList<Object> mainComponents = new ArrayList<>();
         ArrayList<Component> allComponents = new ArrayList<>();
         JDialog popup = new JDialog(parent, tabName, true);
@@ -619,7 +648,7 @@ public class ChoiceMenu {
         popup.setLocationRelativeTo(parent);
         popup.setVisible(true);
         return selectedValues;
-    }
+    } */
 
     //TODO: Add official error notifications 
     public static Histogram histogramMenu(JFrame parent) {
@@ -649,7 +678,7 @@ public class ChoiceMenu {
         for (String s : selected) {
             System.out.println("\t" + s);
         }
-        if(selected[0].equals("") || selected[1]==null) return null; //TODO: Add error notification if XOR null
+        if(selected[0] == null || selected[0].equals("") || selected[1]==null) return null; //TODO: Add error notification if XOR null
         
         Field summaryField = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
         Histogram histogram = new Histogram("TEMP Histogram", null, summaryField);
@@ -680,42 +709,660 @@ public class ChoiceMenu {
         return histogram;
    }
 
-   public static String meanDiffMenu(JFrame parent) {
-    String title = "MeanDiff";
-    Field[] fields = Dataset.getNumericFields();
-    if (fields.length < 2) {
-        System.out.println("ERROR: Not enough numerical fields available for mean comparison.");
-        return null;
-    }
-    /* 
-    //Prepare for popup
-    String [] fieldA = new String[fields.length+1];
-    String [] fieldB = new String[fields.length+1];
-    fieldA[0] = "First Field: ";
-    fieldB[0] = "Second Field: ";
-    for (int i=0;i<fields.length;i++) {
-        fieldA[i+1] = fields[i].getName();
-        fieldB[i+1] = fields[i].getName();
+   //NOTE: Easiest way to handle difference and hnull
+   //is to have boolean twoSided
+   //and if false, change the difference/order passing Fields to match the onesided 
+   //Makes a lot of checks much easier 
+    public static String tTwoSampleMenu(JFrame parent) {
+        final String tabName = "Two Sample T-Test";
+        Field[] fields = Dataset.getNumericFields();
+        if (fields.length < 2) {
+            System.out.println("ERROR: Not enough numerical fields available for mean comparison.");
+            return null;
+        }
+        ArrayList<String> questionType = new ArrayList<>();
+        ArrayList<String[]> questionList = new ArrayList<>();
+        ArrayList<String[]> errors = new ArrayList<>(0);
+        //Prepare for popup
+        String [] fieldA = new String[fields.length+1];
+        String [] fieldB = new String[fields.length+1];
+        fieldA[0] = "First Field: ";
+        fieldB[0] = "Second Field: ";
+        for (int i=0;i<fields.length;i++) {
+            fieldA[i+1] = fields[i].getName();
+            fieldB[i+1] = fields[i].getName();
+        } //TODO: note that tabbedPane might be handy for popups or something maybe for like the graph menus? 
+
+        //Fields
+        questionType.add("combo");
+        questionList.add(fieldA);
+        questionType.add("combo");
+        questionList.add(fieldB);
+
+        //Hypothesis 
+        questionType.add("label");
+        questionList.add(new String[]{"H\u2080:"}); // \u2080 is unicode for subscript 0
+        questionType.add("comparison");
+        questionList.add(new String[]{"Field A - Field B    ","<",">","=","    d"}); //\u2260 is uncode for !=         
+        questionType.add("text");
+        questionList.add(new String[]{"d = "});
+        questionType.add("label");
+        questionList.add(new String[]{"(default: 0)"});
+        questionType.add("label");
+        questionList.add(new String[]{"\n"});
+        questionType.add("text");
+        questionList.add(new String[]{"\u03B1 = "});
+        questionType.add("label");
+        questionList.add(new String[]{"(default: 0.05)"});
+        questionType.add("radio");
+        questionList.add(new String[]{"Assume equal variance?","yes (Student/Pooled t-test)", "no (Welch t-test)"});       
+        questionType.add("label");
+        questionList.add(new String[]{"\n"});
+
+        String selected[] = Popup.showGenericPopup(parent, tabName, questionType, questionList, errors);
+
+        //Check validity, if anything null return 
+        /* for (String string : selected) {
+            if (string == null) return "";
+        } */
+        System.out.println(Arrays.toString(selected));
+        if(selected[0] == "" || selected[1] == "" || selected[3] == "" || selected[9] == null) {
+            System.out.println("ERROR: Nulls");
+            return "";
+        }
+        Field fieldOne = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
+        Field fieldTwo = Dataset.dataArray.get(Dataset.indexOfField(selected[1]));
+        String directionCheck = selected[3];
+        double difference = 0; //selected[4]
+        double alpha = 0.05; //selected[7]
+        String test = selected[9];
+        Direction direction;
+        switch (directionCheck) {
+            case "<":
+                direction = Direction.LESS_THAN;
+                break;
+            case ">":
+                direction = Direction.GREATER_THAN;
+                break;
+            case "=":
+                direction = Direction.EQUAL;
+                break;
+            default:
+                System.out.println("ERROR: Not a valid direction: " + directionCheck);
+                return "";
+        }
+        if(!selected[4].strip().equals("")) {
+            try {
+                difference = Double.parseDouble(selected[4]); //valueOf? 
+
+            } catch (Exception e) {
+                System.out.println("ERROR: d must be a number. Using default 0");
+            }
+        }
+        if(!selected[7].strip().equals("")) {
+            try {
+                alpha = Double.parseDouble(selected[4]); //valueOf? 
+                if(alpha <= 0 || alpha >= 1) {
+                    alpha = 0.05;
+                    throw new Exception();
+                }
+            } catch (Exception e) {
+                System.out.println("ERROR: alpha \u03B1 must be a number 0-1 (exclusive). Using default 0.05");
+            }
+        }
+        TwoSample tt = new TwoSample(fieldOne, fieldTwo, alpha, difference, direction);
+        if(test.equals("yes (Student/Pooled t-test)")) {
+            tt.setPooled();
+        } else if(test.equals("no (Welch t-test)")) {
+            tt.setWelch();
+        } else {
+            System.out.println("ERROR: Test not found");
+            return "";
+        }
+        return tt.printBasic();
     }
 
-    String[] alpha = new String[]{"Alpha: "};
-    String[] tail = new String[]{"Tail: ", "Two-sided","one-sided left", "one-sided right"};
-    ArrayList<String[]> errors = new ArrayList<>();
+    public static String pairedMenu(JFrame parent) {
+        final String tabName = "Paired Sample T-Test";
+        Field[] fields = Dataset.getNumericFields();
+        if (fields.length < 2) {
+            System.out.println("ERROR: Not enough numerical fields available for mean comparison.");
+            return null;
+        }
+        ArrayList<String> questionType = new ArrayList<>();
+        ArrayList<String[]> questionList = new ArrayList<>();
+        ArrayList<String[]> errors = new ArrayList<>(0);
+        //Prepare for popup
+        String [] fieldA = new String[fields.length+1];
+        String [] fieldB = new String[fields.length+1];
+        fieldA[0] = "First Field: ";
+        fieldB[0] = "Second Field: ";
+        for (int i=0;i<fields.length;i++) {
+            fieldA[i+1] = fields[i].getName();
+            fieldB[i+1] = fields[i].getName();
+        } //TODO: note that tabbedPane might be handy for popups or something maybe for like the graph menus? 
 
-    String[] selected = Popup.showGenericPopup(parent, "Mean Comparison",
-            new ArrayList<String>(Arrays.asList("combo","combo","text","radio")), 
-            new ArrayList<String[]>(Arrays.asList(fieldA, fieldB, alpha, tail)),
-            errors);
-    
-    //if(selected[0].equals("") || selected[1]==null) return null; //TODO: Add error notification if XOR null
+        //Fields
+        questionType.add("combo");
+        questionList.add(fieldA);
+        questionType.add("combo");
+        questionList.add(fieldB);
+
+        //Hypothesis 
+        questionType.add("label");
+        questionList.add(new String[]{"H\u2080:"}); // \u2080 is unicode for subscript 0
+        questionType.add("comparison");
+        questionList.add(new String[]{"Field A - Field B    ","<",">","=","    d"}); //\u2260 is uncode for !=         
+        questionType.add("text");
+        questionList.add(new String[]{"d = "});
+        questionType.add("label");
+        questionList.add(new String[]{"(default: 0)"});
+        questionType.add("label");
+        questionList.add(new String[]{"\n"});
+        questionType.add("text");
+        questionList.add(new String[]{"\u03B1 = "});
+        questionType.add("label");
+        questionList.add(new String[]{"(default: 0.05)"});
+        questionType.add("label");
+        questionList.add(new String[]{"\n"});
+
+        String selected[] = Popup.showGenericPopup(parent, tabName, questionType, questionList, errors);
+
+        //Check validity, if anything null return 
+        /* for (String string : selected) {
+            if (string == null) return "";
+        } */
+        System.out.println(Arrays.toString(selected));
+        if(selected[0] == "" || selected[1] == "" || selected[3] == "") {
+            System.out.println("ERROR: Nulls");
+            return "";
+        }
+        Field fieldOne = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
+        Field fieldTwo = Dataset.dataArray.get(Dataset.indexOfField(selected[1]));
+        String directionCheck = selected[3];
+        double difference = 0; //selected[4]
+        double alpha = 0.05; //selected[7]
+
+        Direction direction;
+        switch (directionCheck) {
+            case "<":
+                direction = Direction.LESS_THAN; //TODO: Either test or result backwards; pregnant - glucose rejected
+                break;
+            case ">":
+                direction = Direction.GREATER_THAN;
+                break;
+            case "=":
+                direction = Direction.EQUAL;
+                break;
+            default:
+                System.out.println("ERROR: Not a valid direction: " + directionCheck);
+                return "";
+        }
+        if(!selected[4].strip().equals("")) {
+            try {
+                difference = Double.parseDouble(selected[4]); //valueOf? 
+
+            } catch (Exception e) {
+                System.out.println("ERROR: d must be a number. Using default 0");
+            }
+        }
+        if(!selected[7].strip().equals("")) {
+            try {
+                alpha = Double.parseDouble(selected[4]); //valueOf? 
+                if(alpha <= 0 || alpha >= 1) {
+                    alpha = 0.05;
+                    throw new Exception();
+                }
+            } catch (Exception e) {
+                System.out.println("ERROR: alpha \u03B1 must be a number 0-1 (exclusive). Using default 0.05");
+            }
+        }
+        TwoSample tt = new TwoSample(fieldOne, fieldTwo, alpha, difference, direction);
+        tt.setPaired();
+        return tt.printBasic();
+    }
+
+    //TODO: COMPLETE POPUP
+    public static String zTwoSampleMenu(JFrame parent) {
+        final String tabName = "Two Sample Z-Test";
+        Field[] fields = Dataset.getNumericFields();
+        if (fields.length < 2) {
+            System.out.println("ERROR: Not enough numerical fields available for mean comparison.");
+            return "";
+        }
+        ArrayList<String> questionType = new ArrayList<>();
+        ArrayList<String[]> questionList = new ArrayList<>();
+        ArrayList<String[]> errors = new ArrayList<>(0);
+        //Prepare for popup
+        String [] fieldA = new String[fields.length+1];
+        String [] fieldB = new String[fields.length+1];
+        fieldA[0] = "First Field: ";
+        fieldB[0] = "Second Field: ";
+        for (int i=0;i<fields.length;i++) {
+            fieldA[i+1] = fields[i].getName();
+            fieldB[i+1] = fields[i].getName();
+        }
+
+        //Fields
+        questionType.add("combo");
+        questionList.add(fieldA);
+        questionType.add("combo");
+        questionList.add(fieldB);
+
+        //Get SDs 
+        questionType.add("text");
+        questionList.add(new String[]{"Field A \u03C3 = "}); //population sd sigma
+        questionType.add("text");
+        questionList.add(new String[]{"Field B \u03C3 = "}); //population sd sigma
+        //TODO: If they don't input, say to use t-test if unknown
         
-    //Field fieldAChoice = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
-    //Field fieldBChoice = Dataset.dataArray.get(Dataset.indexOfField(selected[1]));
+        //Hypothesis 
+        questionType.add("label");
+        questionList.add(new String[]{"\n"});
+        questionType.add("label");
+        questionList.add(new String[]{"H\u2080:"}); // \u2080 is unicode for subscript 0
+        questionType.add("comparison");
+        questionList.add(new String[]{"Field A - Field B    ","<",">","=","    d"}); //\u2260 is uncode for !=         
+        
+        questionType.add("text");
+        questionList.add(new String[]{"d = "});
+        questionType.add("label");
+        questionList.add(new String[]{"(default: 0)"});
+        questionType.add("label");
+        questionList.add(new String[]{"\n"});
+        questionType.add("text");
+        questionList.add(new String[]{"\u03B1 = "});
+        questionType.add("label");
+        questionList.add(new String[]{"(default: 0.05)"});
+        questionType.add("label");
+        questionList.add(new String[]{"\n"});
 
-    //MeanDiff meanDiff = new MeanDiff(title, null, fieldAChoice, fieldBChoice, "tail");
-    //PooledTwoSample meanDiff = new PooledTwoSample(fields[0],fields[1]);
-    //String result = meanDiff.printTestWordy(.05, 10000); */
-    Welch welch = new Welch(fields[1], fields[0], -1, 0, 'c');
-    return "Result: " + welch.getSignificance();
-   }
+        String selected[] = Popup.showGenericPopup(parent, tabName, questionType, questionList, errors);
+
+        //Check validity, if anything null return 
+        /* for (String string : selected) {
+            if (string == null) return "";
+        } */
+        System.out.println(Arrays.toString(selected));
+        if(selected[0] == "" || selected[1] == "" || selected[6] =="") {
+            System.out.println("ERROR: Nulls");
+            return "";
+        } else if (selected[2] == "" || selected[3] == "") {
+            System.out.println("ERROR: Population SDs required for a z-test. If unknown, try a two sample t-test");
+        }
+        Field fieldOne = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
+        Field fieldTwo = Dataset.dataArray.get(Dataset.indexOfField(selected[1]));
+        double sdA = -1; //selected[2]
+        double sdB = -1; //selected[3]
+        String directionCheck = selected[6];
+        double difference = 0; //selected[7]
+        double alpha = 0.05; // selected[10];
+        Direction direction;
+        try {
+            sdA = Double.parseDouble(selected[2]); //valueOf? 
+            sdB = Double.parseDouble(selected[3]); //valueOf?
+        } catch (Exception e) {
+            System.out.println("ERROR: SDs must be numbers.");
+            return "";
+        }
+
+        switch (directionCheck) {
+            case "<":
+                direction = Direction.LESS_THAN; //TODO: Either test or result backwards; pregnant - glucose rejected
+                break;
+            case ">":
+                direction = Direction.GREATER_THAN;
+                break;
+            case "=":
+                direction = Direction.EQUAL;
+                break;
+            default:
+                System.out.println("ERROR: Not a valid direction: " + directionCheck);
+                return "";
+        }
+        if(!selected[7].strip().equals("")) {
+            try {
+                difference = Double.parseDouble(selected[7]); //valueOf? 
+
+            } catch (Exception e) {
+                System.out.println("ERROR: d must be a number. Using default 0");
+            }
+        }
+        if(!selected[10].strip().equals("")) {
+            try {
+                alpha = Double.parseDouble(selected[10]); //valueOf? 
+                if(alpha <= 0 || alpha >= 1) {
+                    alpha = 0.05;
+                    throw new Exception();
+                }
+            } catch (Exception e) {
+                System.out.println("ERROR: alpha \u03B1 must be a number 0-1 (exclusive). Using default 0.05");
+            }
+        }
+
+        TwoSample tt = new TwoSample(fieldOne, fieldTwo, sdA, sdB, alpha, difference, direction);
+        tt.setZ();
+        return tt.printBasic();
+    }
+
+    public static String proportionMenu(JFrame parent) {
+        final String tabName = "Proportion z-test";
+        Field[] fields = Dataset.getNumericFields();
+        if (fields.length < 1) {
+            System.out.println("ERROR: No numerical fields available.");
+            return "";
+        } else if(fields.length < 2) {
+            System.out.println("NOTE: Not enough numerical fields available for a two-proportion test.");
+            return oneProportionMenu(parent);
+        }
+        ArrayList<String> questionType = new ArrayList<>();
+        ArrayList<String[]> questionList = new ArrayList<>();
+        ArrayList<String[]> errors = new ArrayList<>(0);
+        questionType.add("radio");
+        questionList.add(new String[]{"What type of proportion test would you like to perform?", "One-Sample", "Two-Sample"});
+
+        String selected[] = Popup.showGenericPopup(parent, tabName, questionType, questionList, errors);
+        if(selected[0] == null) return "";
+        else if(selected[0].equals("One-Sample")) return oneProportionMenu(parent);
+        else if(selected[0].equals("Two-Sample")) return twoProportionMenu(parent);
+        else return "";
+    }
+
+    public static String oneProportionMenu(JFrame parent) {
+        final String tabName = "One Sample Proportion";
+        Field[] fields = Dataset.getNumericFields();
+        if (fields.length < 1) {
+            System.out.println("ERROR: No numerical fields available.");
+            return "";
+        }
+
+        ArrayList<String> questionType = new ArrayList<>();
+        ArrayList<String[]> questionList = new ArrayList<>();
+        ArrayList<String[]> errors = new ArrayList<>(0);
+        //Prepare for popup
+        String [] fieldA = new String[fields.length+1];
+        fieldA[0] = "Field: ";
+        for (int i=0;i<fields.length;i++) {
+            fieldA[i+1] = fields[i].getName();
+        }
+
+        //Fields and success checkers
+        questionType.add("combo");
+        questionList.add(fieldA); 
+        questionType.add("label");
+        questionList.add(new String[]{"\n"});
+        questionType.add("label");
+        questionList.add(new String[]{"Success parameters"});
+        questionType.add("comparison");
+        questionList.add(new String[]{"x    ","<",">","=","    success"}); //\u2260 is uncode for !=         
+        questionType.add("text");
+        questionList.add(new String[]{"success = "});
+
+        
+        //Hypothesis
+        questionType.add("label");
+        questionList.add(new String[]{"\n"}); 
+        questionType.add("label");
+        questionList.add(new String[]{"Hypothesis"});
+        questionType.add("label");
+        questionList.add(new String[]{"H\u2080:"}); // \u2080 is unicode for subscript 0
+        questionType.add("comparison");
+        questionList.add(new String[]{"\u0070\u0302    ","<",">","=","    P\u2080"}); //phat <>= PNull //\u2260 is uncode for !=        
+        
+        questionType.add("text");
+        questionList.add(new String[]{"P\u2080 = "}); // Pnull
+        questionType.add("label");
+        questionList.add(new String[]{"\n"});
+        questionType.add("text");
+        questionList.add(new String[]{"\u03B1 = "}); // alpha
+        questionType.add("label");
+        questionList.add(new String[]{"(default: 0.05)"});
+        questionType.add("label");
+        questionList.add(new String[]{"\n"});
+
+        String selected[] = Popup.showGenericPopup(parent, tabName, questionType, questionList, errors);
+
+
+        System.out.println(Arrays.toString(selected));
+        if(selected[0] == "" || selected[3] == "" || selected[4] == "" || selected[8] == "" || selected[9] == "") {
+            System.out.println("ERROR: Nulls");
+            return "";
+        }
+        Field fieldOne = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
+        String successDirectionCheck = selected[3];
+        double successBound = -1; //selected[4];
+        String nullDirectionCheck = selected[8];
+        double pNull = -1; //selected[9]
+        double alpha = 0.05; //selected[11]
+        
+        Direction successDirection;
+        switch (successDirectionCheck) {
+            case "<":
+                successDirection = Direction.LESS_THAN; //TODO: Either test or result backwards; pregnant - glucose rejected
+                break;
+            case ">":
+                successDirection = Direction.GREATER_THAN;
+                break;
+            case "=":
+                successDirection = Direction.EQUAL;
+                break;
+            default:
+                System.out.println("ERROR: Not a valid direction: " + successDirectionCheck);
+                return "";
+        }
+        try {
+            successBound = Double.parseDouble(selected[4]); //valueOf? 
+        } catch (Exception e) {
+            System.out.println("ERROR: success bound must be a number.");
+            return "";
+        }
+
+        Direction nullDirection;
+        switch (nullDirectionCheck) {
+            case "<":
+                nullDirection = Direction.LESS_THAN; //TODO: Either test or result backwards; pregnant - glucose rejected
+                break;
+            case ">":
+                nullDirection = Direction.GREATER_THAN;
+                break;
+            case "=":
+                nullDirection = Direction.EQUAL;
+                break;
+            default:
+                System.out.println("ERROR: Not a valid direction: " + nullDirectionCheck);
+                return "";
+        }
+        
+        if(!selected[9].strip().equals("")) {
+            try {
+                pNull = Double.parseDouble(selected[9]); //valueOf? 
+                if(pNull < 0 || pNull > 1) throw new Exception();
+            } catch (Exception e) {
+                System.out.println("ERROR: P\u2080 must be a number 0-1.");
+                return "";
+            }
+        }
+        
+
+        if(!selected[11].strip().equals("")) {
+            try {
+                alpha = Double.parseDouble(selected[11]); //valueOf? 
+                if(alpha <= 0 || alpha >= 1) {
+                    alpha = 0.05;
+                    throw new Exception();
+                }
+            } catch (Exception e) {
+                System.out.println("ERROR: alpha \u03B1 must be a number 0-1 (exclusive). Using default 0.05");
+            }
+        }
+        Proportion proportion = new Proportion(fieldOne, successBound, successDirection, alpha, pNull, nullDirection);
+        proportion.setOneProportion();
+        return proportion.printBasic();
+    }
+    public static String twoProportionMenu(JFrame parent) {
+        final String tabName = "Proportion z-test";
+        Field[] fields = Dataset.getNumericFields();
+        if (fields.length < 2) {
+            System.out.println("ERROR: Not enough numerical fields available.");
+            return "";
+        }
+
+        ArrayList<String> questionType = new ArrayList<>();
+        ArrayList<String[]> questionList = new ArrayList<>();
+        ArrayList<String[]> errors = new ArrayList<>(0);
+        //Prepare for popup
+        String [] fieldA = new String[fields.length+1];
+        String [] fieldB = new String[fields.length+1];
+
+        fieldA[0] = "Field A: ";
+        fieldB[0] = "Field B: ";
+
+        for (int i=0;i<fields.length;i++) {
+            fieldA[i+1] = fields[i].getName();
+            fieldB[i+1] = fields[i].getName();
+        }
+
+        //Fields and success checkers
+        questionType.add("combo");
+        questionList.add(fieldA); 
+        questionType.add("combo");
+        questionList.add(fieldB); 
+        questionType.add("label");
+        questionList.add(new String[]{"\n"});
+        questionType.add("label");
+        questionList.add(new String[]{"Success parameters"});
+        questionType.add("comparison");
+        questionList.add(new String[]{"FieldA(x)    ","<",">","=","    success"}); //\u2260 is uncode for !=         
+        questionType.add("text");
+        questionList.add(new String[]{"success = "});
+        questionType.add("comparison");
+        questionList.add(new String[]{"FieldB(x)    ","<",">","=","    success"}); //\u2260 is uncode for !=         
+        questionType.add("text");
+        questionList.add(new String[]{"success = "});
+
+        
+        //Hypothesis
+        questionType.add("label");
+        questionList.add(new String[]{"\n"}); 
+        questionType.add("label");
+        questionList.add(new String[]{"Hypothesis"});
+        questionType.add("label");
+        questionList.add(new String[]{"H\u2080:"}); // \u2080 is unicode for subscript 0
+        questionType.add("comparison");
+        questionList.add(new String[]{"\u0070\u0302    ","<",">","=","    P\u2080"}); //phat <>= PNull //\u2260 is uncode for !=        
+        
+        questionType.add("text");
+        questionList.add(new String[]{"P\u2080 = "}); // Pnull
+        questionType.add("label");
+        questionList.add(new String[]{"\n"});
+        questionType.add("text");
+        questionList.add(new String[]{"\u03B1 = "}); // alpha
+        questionType.add("label");
+        questionList.add(new String[]{"(default: 0.05)"});
+        questionType.add("label");
+        questionList.add(new String[]{"\n"});
+
+        String selected[] = Popup.showGenericPopup(parent, tabName, questionType, questionList, errors);
+
+//+3
+        System.out.println(Arrays.toString(selected)); //TODO: string.equals()? 
+        if(selected[0] == "" || selected[1] == ""|| selected[4] == "" || selected[5] == "" || selected[6] == "" || selected[7] == ""|| selected[11] == "" || selected[12] == "") {
+            System.out.println("ERROR: Nulls");
+            return "";
+        }
+
+        Field fieldOne = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
+        Field fieldTwo = Dataset.dataArray.get(Dataset.indexOfField(selected[1]));
+
+        String successADirectionCheck = selected[4];
+        double successABound = -1; //selected[5];
+        
+        String successBDirectionCheck = selected[6];
+        double successBBound = -1; //selected[7];
+        String nullDirectionCheck = selected[11];
+        double pNull = -1; //selected[12]
+        double alpha = 0.05;//selected[14]
+        
+        Direction successADirection;
+        switch (successADirectionCheck) {
+            case "<":
+                successADirection = Direction.LESS_THAN; //TODO: Either test or result backwards; pregnant - glucose rejected
+                break;
+            case ">":
+                successADirection = Direction.GREATER_THAN;
+                break;
+            case "=":
+                successADirection = Direction.EQUAL;
+                break;
+            default:
+                System.out.println("ERROR: Not a valid direction: " + successADirectionCheck);
+                return "";
+        }
+        try {
+            successABound = Double.parseDouble(selected[5]); //valueOf? 
+        } catch (Exception e) {
+            System.out.println("ERROR: success bound must be a number.");
+            return "";
+        }
+        
+        Direction successBDirection;
+        switch (successBDirectionCheck) {
+            case "<":
+                successBDirection = Direction.LESS_THAN; //TODO: Either test or result backwards; pregnant - glucose rejected
+                break;
+            case ">":
+                successBDirection = Direction.GREATER_THAN;
+                break;
+            case "=":
+                successBDirection = Direction.EQUAL;
+                break;
+            default:
+                System.out.println("ERROR: Not a valid direction: " + successBDirectionCheck);
+                return "";
+        }
+        try {
+            successABound = Double.parseDouble(selected[7]); //valueOf? 
+        } catch (Exception e) {
+            System.out.println("ERROR: success bound must be a number.");
+            return "";
+        }
+
+        try {
+            pNull = Double.parseDouble(selected[12]); //valueOf? 
+            if(pNull < 0 || pNull > 1) throw new Exception();
+        } catch (Exception e) {
+            System.out.println("ERROR: P\u2080 must be a number 0-1.");
+            return "";
+        }
+        Direction nullDirection;
+        switch (nullDirectionCheck) {
+            case "<":
+                nullDirection = Direction.LESS_THAN; //TODO: Either test or result backwards; pregnant - glucose rejected
+                break;
+            case ">":
+                nullDirection = Direction.GREATER_THAN;
+                break;
+            case "=":
+                nullDirection = Direction.EQUAL;
+                break;
+            default:
+                System.out.println("ERROR: Not a valid direction: " + nullDirectionCheck);
+                return "";
+        }
+
+        if(!selected[14].strip().equals("")) {
+            try {
+                alpha = Double.parseDouble(selected[14]); //valueOf? 
+                if(alpha <= 0 || alpha >= 1) {
+                    alpha = 0.05;
+                    throw new Exception();
+                }
+            } catch (Exception e) {
+                System.out.println("ERROR: alpha \u03B1 must be a number 0-1 (exclusive). Using default 0.05");
+            }
+        }
+        Proportion proportion = new Proportion(fieldOne, fieldTwo, successABound, successADirection, successBBound, successBDirection, alpha, pNull, nullDirection);
+        proportion.setTwoProportion();
+        return proportion.printBasic();
+    }
 }
