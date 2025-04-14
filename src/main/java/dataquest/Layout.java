@@ -47,10 +47,8 @@ public class Layout extends JFrame {
     //private JFreeChart chart1, chart2;
     //private ChartPanel chartPanel1, chartPanel2;
     //private Color[] colorPalette;
-    private JButton addRowButton, addColumnButton, importingButton, 
-        handleMissingButton, statisticalSummaryButton, 
-        histogramButton, boxplotButton, linearRegressionButton,
-        meanDiffButton;
+    private JButton 
+        histogramButton, boxplotButton;//, linearRegressionButton;
 
     private Dataset dataset;
     //private Graph graph1;
@@ -124,11 +122,20 @@ public class Layout extends JFrame {
         spreadsheetMenu.add(missingItem);
 
         JMenuItem summaryItem = new JMenuItem("Statistical summary");
-        JMenuItem meanCompareItem = new JMenuItem("Mean comparison");
         JMenuItem linearRegressionItem = new JMenuItem("Linear regression");
+        JMenuItem meanCompareItem = new JMenu("Mean comparison");//new JMenuItem("Mean comparison");
+        JMenuItem proportionItem = new JMenuItem("Proportion test");
         statsMenu.add(summaryItem);
-        statsMenu.add(meanCompareItem);
         statsMenu.add(linearRegressionItem);
+        statsMenu.add(meanCompareItem);
+            JMenuItem zTwoSample = new JMenuItem("Z two-sample");
+            JMenuItem tTwoSample = new JMenuItem("T two-sample");
+            JMenuItem pairedSample = new JMenuItem("Paired sample");
+            meanCompareItem.add(zTwoSample);
+            meanCompareItem.add(tTwoSample);
+            meanCompareItem.add(pairedSample);
+        statsMenu.add(proportionItem);
+        
 
         menuBar.add(fileMenu);
         menuBar.add(spreadsheetMenu);
@@ -147,8 +154,8 @@ public class Layout extends JFrame {
 
         histogramButton = new JButton("Histogram");
         boxplotButton = new JButton("Boxplot");
-        linearRegressionButton = new JButton("Linear Regression");
-        meanDiffButton = new JButton("Mean comparison");
+        //linearRegressionButton = new JButton("Linear Regression");
+        //meanDiffButton = new JButton("Mean comparison");
         //buttonPanel.add(addRowButton);
         //buttonPanel.add(addColumnButton);
         //buttonPanel.add(importingButton);
@@ -157,8 +164,8 @@ public class Layout extends JFrame {
 
         buttonPanel.add(histogramButton);
         buttonPanel.add(boxplotButton);
-        buttonPanel.add(linearRegressionButton);
-        buttonPanel.add(meanDiffButton);
+        //buttonPanel.add(linearRegressionButton);
+        //buttonPanel.add(meanDiffButton);
         
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3; gbc.weighty = 0.1;
         add(buttonPanel, gbc);
@@ -275,6 +282,36 @@ public class Layout extends JFrame {
                 output.append(info);
             }
         });
+        /* meanCompareItem.addActionListener(e -> {
+            if (Dataset.dataArray != null) {
+                String info = ChoiceMenu.meanDiffMenu(this);
+                output.append(info);
+            }
+        }); */
+        tTwoSample.addActionListener(e -> {
+            if (Dataset.dataArray != null) {
+                String info = ChoiceMenu.tTwoSampleMenu(this);
+                output.append(info);
+            }
+        });
+        zTwoSample.addActionListener(e -> {
+            if (Dataset.dataArray != null) {
+                String info = ChoiceMenu.zTwoSampleMenu(this);
+                output.append(info);
+            }
+        });
+        pairedSample.addActionListener(e -> {
+            if (Dataset.dataArray != null) {
+                String info = ChoiceMenu.pairedMenu(this);
+                output.append(info);
+            }
+        });
+        proportionItem.addActionListener(e -> {
+            if (Dataset.dataArray != null) {
+                String info = ChoiceMenu.proportionMenu(this);
+                output.append(info);
+            }
+        });
         histogramButton.addActionListener(e-> {
             if(Dataset.dataArray != null) {
                 //String textOutput = ChoiceMenu.histogramMenu(this);
@@ -304,18 +341,12 @@ public class Layout extends JFrame {
                 visualPanel1.repaint();
             }
         });
-        linearRegressionButton.addActionListener (e -> {
+        /* linearRegressionButton.addActionListener (e -> {
             if (Dataset.dataArray != null) {
                 String info = ChoiceMenu.linearRegression(this);
                 output.append(info);
             }
-        });
-        meanDiffButton.addActionListener(e -> {
-            if (Dataset.dataArray != null) {
-                String info = ChoiceMenu.meanDiffMenu(this);
-                output.append(info);
-            }
-        });
+        }); */
 
         tableModel.addTableModelListener(e -> updateCharts());
         tableModel.addTableModelListener(new TableModelListener() {

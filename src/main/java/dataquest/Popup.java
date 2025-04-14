@@ -156,10 +156,6 @@ public class Popup {
                     if(qType.equals("comparison")) {
                         comboPanel.add(new JLabel(compareTemp));
                     }
-                    if(qType.equals("comparison")) {
-                        
-                    }
-
 
                     //comboPanel.setBackground(Color.RED); //TODO: Allow text to grow when resizing window?
                     allComponents.add(comboPanel);
@@ -262,13 +258,19 @@ public class Popup {
                 Object box = mainComponents.get(i); //WILL HAVE ERROR? -- 3/26/25 I have no idea what I was meaning about errors here. It seems to be working fine.
                 if (qType.equals("label")) {
                     continue;
-                } else if (qType.equals("combo")) {
+                } else if (qType.equals("combo") || qType.equals("comparison")) {
                     try {
                         selectedValues[i] = (String) ((JComboBox<String>) box).getSelectedItem();
                     } catch (ClassCastException classCastError) {
                         System.out.println("ERROR: Could not cast mainComponents.get(" + i + ") to a JComboBox<String>");
                     }
-                } else if(qType.equals("radio")) {
+                } /* else if (qType.equals("comparison")) {
+                    try {
+                        selectedValues[i] = (String) ((JComboBox<String>) box).getSelectedItem();
+                    } catch (ClassCastException classCastError) {
+                        System.out.println("ERROR: Could not cast mainComponents.get(" + i + ") to a JComboBox<String>");
+                    }
+                }  */else if(qType.equals("radio")) {
                     try {
                         JRadioButton[] radioButtons = (JRadioButton[]) box;
                         for (JRadioButton radioButton : radioButtons) {

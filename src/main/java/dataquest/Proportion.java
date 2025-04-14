@@ -6,43 +6,41 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Proportion {
-    Field fieldA;
-    Field fieldB;
-    ArrayList<Double> valuesA;
-    ArrayList<Double> valuesB;
-    int nA;
-    int nB;
-    double successA; //defines value to compare to for pHat
-    double successB;
-    double pNull;  
-    double z;
-    double p;
-    double criticalValue;
-    double[] ci = new double[2];
-    int xA;
-    int xB;
-    double pHatA;
-    double pHatB; 
-    double alpha;
-    Direction direction;
-    
-    public enum Direction {
-        LESS_THAN,      //value < success       pHat < pNull
-        GREATER_THAN,   //value > success
-        EQUAL           //value == success
-    }
+    private Field fieldA;
+    private Field fieldB;
+    private ArrayList<Double> valuesA;
+    private ArrayList<Double> valuesB;
+    private int nA;
+    private int nB;
+    private double successA; //defines value to compare to for pHat
+    private double successB;
+    private double pNull;  
+    private double z;
+    private double p;
+    private double criticalValue;
+    private double[] ci = new double[2];
+    private int xA;
+    private int xB;
+    private double pHatA;
+    private double pHatB; 
+    private double alpha;
+    private Direction direction;
+    private Direction successADirection;
+    private Direction successBDirection;
+    private String testType = "";
 
-    Proportion(Field fieldA, double success, double alpha, double pNull, Direction direction){
+    Proportion(Field fieldA, double success,Direction successADirection, double alpha, double pNull, Direction direction){
         this.fieldA = fieldA;
-        valuesA = fieldA.getValues();
+        this.valuesA = fieldA.getValues();
         this.pNull = pNull;
-        nA = StatisticalSummary.getCount(valuesA);
+        this.nA = StatisticalSummary.getCount(valuesA);
         this.direction = direction;
-        successA = success;
+        this.successA = success;
         this.alpha = alpha;
+        this.successADirection = successADirection;
     }
 
-    Proportion(Field fieldA, Field fieldB, double successA, double successB, double alpha, double pNull, Direction direction){
+    Proportion(Field fieldA, Field fieldB, double successA, Direction successADirection, double successB, Direction successBDirection, double alpha, double pNull, Direction direction){
         this.fieldA = fieldA;
         this.fieldB = fieldB;
         valuesA = fieldA.getValues();
@@ -54,6 +52,9 @@ public class Proportion {
         this.successA = successA;
         this.successB = successB;
         this.alpha = alpha; 
+        this.successADirection = successADirection;
+        this.successBDirection = successBDirection;
+
     }
 
     //used because of inexactness of floats causing slight but noticeable differences in t tests 
@@ -64,12 +65,14 @@ public class Proportion {
 
 
     public void setOneProportion(){
+        testType = "One Proportion Z-Test";
         setOneSamplePHat();
         setOnePropStat();
         setOnePropCI();
     }
     
     public void setTwoProportion(){
+        testType = "Two Proportion Z-Test";
         setTwoSamplePHat();
         setTwoPropStat();
         setTwoPropCI();
@@ -84,7 +87,7 @@ public class Proportion {
         //NOTE: very slightly faster not to check every time, just makes code less messy 
         xA = 0;
         for (double d : valuesA) {
-            switch(direction){
+            switch(successADirection){
                 case LESS_THAN:
                     if(d < successA) xA++;
                     continue;
@@ -144,7 +147,7 @@ public class Proportion {
         xA = 0;
         xB = 0;
         for (double d : valuesA) {
-            switch(direction){
+            switch(successADirection){
                 case LESS_THAN:
                     if(d < successA) xA++;
                     continue;
@@ -163,7 +166,7 @@ public class Proportion {
         
         //NOTE: very slightly faster not to check every time, just makes code less messy 
         for (double d : valuesB) {
-            switch(direction){
+            switch(successBDirection){
                 case LESS_THAN:
                     if(d < successB) xB++;
                     continue;
@@ -202,7 +205,7 @@ public class Proportion {
             criticalValue = -StatisticalSummary.getZStar(alpha*2);
         else
             criticalValue = StatisticalSummary.getZStar(alpha*2);
-
+        p = StatisticalSummary.getPValue(z);
     }
 
     private void setTwoPropCI() {
@@ -229,30 +232,41 @@ public class Proportion {
     }
 //end of two-prop sub-setters
 
+    private String getConclusion(){
+        String conclusion = "Conclusion: \n\tp";
+        if(p < alpha) {
+            conclusion += " < " + alpha;
+            conclusion += "\n\tReject the null";
+        } else {
+            conclusion += " \u2265 " + alpha;
+            conclusion += "\n\t Failed to reject the null";
+        }
+        return conclusion;
+    }
     public String printBasic(){
         String result = ""; 
         result += "Threshold " + fieldA.getName()+ ": " + successA;
+        if(testType.equals("Two Proportion Z-Test"))
         result += "\nThreshold " + fieldB.getName() + ": " + successB;
         result += "\nExpected: " + pNull; //TODO: What to call it? 
         result += "\nalpha = " + alpha;
-        result += "\nTest: ";
-        result += "[fill]"; 
+        result += "\nTest: " + testType;
         result += "\n  p^A = " + round(pHatA) + " (" + xA + "/" + nA + ")"; 
-        result += "\n  p^B = " + round(pHatB) + " (" + xB + "/" + nB + ")"; 
+        if(testType.equals("Two Proportion Z-Test"))
+            result += "\n  p^B = " + round(pHatB) + " (" + xB + "/" + nB + ")"; 
         result += "\n  z = "; 
         try {
             result += round(z);
         } catch (NumberFormatException e) { //if infinity
             result += z;
         }
-        result += "\n  Critical Value = " + round(criticalValue);
+        //result += "\n  Critical Value = " + round(criticalValue);
         result +="\n  P-Value = "; //NOTE: In the calculator, it multiplied P(x<=Z) by something (pNull?); should we? 
         result += String.format("%,.5f", p); //round(p); //For some reason was formatting as scino?? 
         System.out.printf("p: %.5f \t (p(x<=Z) = %.5f)", (p*pNull), p); //not the same for pregnancy, success = 2, alpha = 0.2, pNull = .2, Direction.LESS_THAN)
         result += "\n  CI: ";
         result += Arrays.toString(ci); // Normal approximation
-        result += "\nConclusion: ";
-        result += "[fill]";
+        result += "\n" + getConclusion();
 
         return result;
     }

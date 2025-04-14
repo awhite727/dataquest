@@ -6,38 +6,25 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.commons.math3.stat.inference.TTest;
-import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.stat.descriptive.StatisticalSummaryValues;
 
 
 
-//TODO: Make sure that it works multiple times in a row with different fields
 //TODO: Add divide by 0 try/catch
-//TODO: Finish/test Z
-//TODO: Finish paired
-//NOTE: Name not great; includes one sample t-test too but includes two-sample z-test so can't be called t-test 
-
 public class TwoSample {
         
-    Field fieldA;
-    Field fieldB; 
-    //ArrayList<Double> valuesA;
-    //ArrayList<Double> valuesB;
-    double[] valuesA;
-    double[] valuesB;
-
-    TTest tTest = new TTest();
-
+    private Field fieldA;
+    private Field fieldB; 
+    private double[] valuesA;
+    private double[] valuesB;
+    private String testType = "";
+    private TTest tTest = new TTest();
+    private Direction direction; 
     private double meanA;
-    //private double sdA;
-    //private int nA;
     private double meanB;
-    //private double sdB;
-    //private int nB;
-    StatisticalSummaryValues statsA; 
-    StatisticalSummaryValues statsB; //NOTE: The mean stored in statsB is the mean+difference
+    private StatisticalSummaryValues statsA; 
+    private StatisticalSummaryValues statsB; //NOTE: The mean stored in statsB is the mean+difference
     private double difference; //(typically?) just do meanA - meanB - difference 
-    private char hNull;
     private double alpha; 
     
     private double df;
@@ -47,7 +34,7 @@ public class TwoSample {
     private double p;
     
     //TODO: Add new constructors for custom sds; one field; one field and custom sds
-    TwoSample(Field fieldA, Field fieldB, double alpha, double difference, char hNull){
+    TwoSample(Field fieldA, Field fieldB, double alpha, double difference, Direction direction){
         this.fieldA = fieldA;
         ArrayList<Double>valuesA = fieldA.getValues(); //TODO: handle differently for paired sample 
         this.valuesA = new double[valuesA.size()];
@@ -60,14 +47,9 @@ public class TwoSample {
         for (int i = 0; i < this.valuesB.length; i++) {
             this.valuesB[i] = valuesB.get(i);
         }
-        //StatisticalSummaryValues(double mean, double variance, long n, double max, double min, double sum) 
         meanA = StatisticalSummary.getMean(valuesA);
         meanB = StatisticalSummary.getMean(valuesB);
         this.difference = difference;
-        /* sdA = StatisticalSummary.getSampleSD(valuesA);
-        nA = StatisticalSummary.getCount(valuesA);
-        sdB = StatisticalSummary.getSampleSD(valuesB);
-        nB = StatisticalSummary.getCount(valuesB); */
         statsA = new StatisticalSummaryValues(meanA, Math.pow(StatisticalSummary.getSampleSD(valuesA),2), StatisticalSummary.getCount(valuesA),StatisticalSummary.getMax(valuesA),StatisticalSummary.getMin(valuesA),StatisticalSummary.getSum(valuesA));
         statsB = new StatisticalSummaryValues(meanB+difference, Math.pow(StatisticalSummary.getSampleSD(valuesB),2), StatisticalSummary.getCount(valuesB),StatisticalSummary.getMax(valuesB),StatisticalSummary.getMin(valuesB),StatisticalSummary.getSum(valuesB));
 
@@ -84,8 +66,44 @@ public class TwoSample {
 
 
         this.alpha = alpha;
+        this.direction = direction;
+    }
 
-        this.hNull = hNull;
+    //for pooled sample 
+    TwoSample(Field fieldA, Field fieldB, double popSDA, double popSDB, double alpha, double difference, Direction direction){
+        this.fieldA = fieldA;
+        ArrayList<Double>valuesA = fieldA.getValues();
+        this.valuesA = new double[valuesA.size()];
+        for (int i = 0; i < this.valuesA.length; i++) {
+            this.valuesA[i] = valuesA.get(i);
+        }
+        this.fieldB = fieldB;
+        ArrayList<Double>valuesB = fieldB.getValues(); //handle differently for paired sample
+        this.valuesB = new double[valuesB.size()];
+        for (int i = 0; i < this.valuesB.length; i++) {
+            this.valuesB[i] = valuesB.get(i);
+        }
+        meanA = StatisticalSummary.getMean(valuesA);
+        meanB = StatisticalSummary.getMean(valuesB);
+        this.difference = difference;
+        statsA = new StatisticalSummaryValues(meanA, Math.pow(popSDA,2), StatisticalSummary.getCount(valuesA),StatisticalSummary.getMax(valuesA),StatisticalSummary.getMin(valuesA),StatisticalSummary.getSum(valuesA));
+        statsB = new StatisticalSummaryValues(meanB+difference, Math.pow(popSDB,2), StatisticalSummary.getCount(valuesB),StatisticalSummary.getMax(valuesB),StatisticalSummary.getMin(valuesB),StatisticalSummary.getSum(valuesB));
+
+        System.out.println("MeanA: " + meanA);
+            System.out.println("\tstatsA meanA: " + statsA.getMean());
+        System.out.println("MeanB: " + meanB);
+            System.out.println("\tMeanB+difference: " + statsB.getMean());
+        System.out.println("VarA: " + statsA.getVariance());
+            System.out.println("\tsdA: " + statsA.getStandardDeviation());
+        System.out.println("VarB: " + statsB.getVariance());
+            System.out.println("\tsdB: " + statsB.getStandardDeviation());
+        System.out.println("nA: " + statsA.getN());
+        System.out.println("nB: " + statsB.getN());
+
+
+        this.alpha = alpha;
+
+        this.direction = direction;
         this.difference = difference;
     }
 
@@ -98,11 +116,13 @@ public class TwoSample {
 //setters by type: Welch, Pooled, two-sample Z-test
 
     public void setWelch(){
+        testType = "Welch Two-Sample T-Test";
         setWelchStat();
         setWelchDF();
         setWelchCI();
     }
     public void setPooled(){
+        testType = "Pooled Two-Sample T-Test";
         setPooledStat();
         setPooledDF();
         setPooledCI();
@@ -117,10 +137,16 @@ public class TwoSample {
          * criticalValue = StatisticalSummary.getZStar(alpha)
          * CI = meanDiff +- criticalValue*SE
          */
-
+        testType = "Two-Sample Z-Test";
         double meanDiff = statsA.getMean() - statsB.getMean(); //NOTE: Different for CI and stat
         double sqrtPart = Math.sqrt(statsA.getVariance()/statsA.getN() + statsB.getVariance()/statsB.getN());
         testStat = round(meanDiff/sqrtPart);
+
+        p = StatisticalSummary.getPValue(testStat);
+        if(!direction.equals(Direction.EQUAL)){
+            p /= 2;
+        }
+        p = round(p);
 
         criticalValue = StatisticalSummary.getZStar(alpha);
         meanDiff = meanA - meanB;
@@ -129,35 +155,24 @@ public class TwoSample {
     }
     
     public void setPaired(){
+        testType = "Paired Sample T-Test";
         ArrayList<Double> paired = alignPaired();
         setPairedStat(paired);
         setPairedDF();
         setPairedCI(paired);
     }
 
-    //uses difference as mu in constructor
-    public void setOneSampleT(){
-        /* Formula: https://www.uah.edu/images/administrative/student-success-center/resources/handouts/handouts_2019/business_stats_test_statistics_and_critical_value.pdf
-         * t = (xbar - mu)
-         *      /
-         *      (sd/sqrt(n))
-         */
-        testStat = tTest.t(difference, statsA);
-        p = round(tTest.tTest(difference,statsA));
-        criticalValue = round(StatisticalSummary.getTStar(alpha, statsA.getN()));
-        double moe = criticalValue * (statsA.getStandardDeviation()/Math.sqrt(statsA.getN()));
-        df = statsA.getN()-1;
-        ci[0] = round(meanA - moe);
-        ci[1] = round(meanA + moe);
-    }
-
     //TODO: Allow checks with significance level, i.e. A-B < 10
-    public void setWelchStat(){
+    private void setWelchStat(){
         testStat = round(tTest.t(statsA, statsB));
-        p = round(tTest.tTest(statsA, statsB));
+        p = tTest.tTest(statsA, statsB);
+        if(!direction.equals(Direction.EQUAL)){
+            p /= 2;
+        }
+        p = round(p);
     }
 
-    public void setWelchDF(){
+    private void setWelchDF(){
         /* Formula:
          * (sdA^2/nA + sdB^2/nB)^2
          * /
@@ -189,7 +204,7 @@ public class TwoSample {
         }
     }
 
-    public void setWelchCI(){
+    private void setWelchCI(){
         /* Formula: https://online.stat.psu.edu/stat415/lesson/3/3.2
          * meanA - meanB +- t(alpha,df) * sqrt(sdA^2/nA + sdB^2/nB)
          * 
@@ -208,7 +223,11 @@ public class TwoSample {
 //Pooled sub-setters
     private void setPooledStat() {
         testStat = round(tTest.homoscedasticT(statsA, statsB));
-        p = round(tTest.homoscedasticTTest(statsA,statsB));
+        p = tTest.homoscedasticTTest(statsA,statsB);
+        if(!direction.equals(Direction.EQUAL)){
+            p /= 2;
+        }
+        p = round(p);
     }
 
     private void setPooledDF() {
@@ -274,11 +293,15 @@ public class TwoSample {
          * t = (diffBar - difference)/sdMeanDiff
          * sdmeanDiff = diffSD/sqrt(n)
          */
-        //testStat = tTest.pairedT(valuesA, valuesB); 
+        //testStat = tTest.pairedT(valuesA, valuesB);  //doesn't allow difference
         double diffBar = StatisticalSummary.getMean(paired);
         double diffSD = StatisticalSummary.getSampleSD(paired);
         testStat = (diffBar - difference)/(diffSD/Math.sqrt(paired.size()));
         p = tTest.pairedTTest(valuesA, valuesB);
+        if(!direction.equals(Direction.EQUAL)){
+            p /= 2;
+        }
+        p = round(p);
     }
 
     private void setPairedDF() {
@@ -300,98 +323,41 @@ public class TwoSample {
 
 //End of paired sub-setters
 
+private String getConclusion(){
+    String conclusion = "Conclusion: \n\tp";
+    if(p < alpha) {
+        conclusion += " < " + alpha;
+        conclusion += "\n\tReject the null";
+    } else {
+        conclusion += " \u2265 " + alpha;
+        conclusion += "\n\tFailed to reject the null";
+    }
+    return conclusion;
+}
 
-
-//TODO: Check if t or z test to include or leave out the df
-//TODO: Separate and complete oneSampleT
-    public String printBasic(){
+//TODO: add the null and alternative to conclusion
+public String printBasic(){
         String result = ""; 
         result += "mean " + fieldA.getName()+ " = " + round(meanA);
         result += "\nmean " + fieldB.getName() + " = " + round(meanB);
         result += "\nd = " + difference; //TODO: What to call it? 
-        result += "\nalpha = " + alpha;
-        result += "\nTest: ";
-        result += "[fill]"; 
+        result += "\n\u03B1 = " + alpha;
+        result += "\nTest: " + testType;
         //if t
-        result += "\n  t = "; 
-        result += round(testStat);
-        result += "\n  df = ";
-        result += round(df);
-        //else z = round(testStat)
-        result += "\n  Critical Value: " + round(criticalValue);
+        if(testType.equals("Two-Sample Z-Test")) {
+            result += "\n  z = ";
+            result += round(testStat);        
+        } else {
+            result += "\n  t = ";
+            result += round(testStat);
+            result += "\n  df = ";
+            result += round(df);
+        }
         result +="\n  P-Value = ";
-        result += round(p);
+        result += p;
         result += "\n  CI: ";
         result += Arrays.toString(ci);
-        result += "\nConclusion: ";
-        result += "[fill]";
-
+        result += "\n" + getConclusion();
         return result;
     }
-    //returns string with the results and explanation of what it means
-    public String printTestWordy() {
-        String result = "";
-        //double[] muRange;
-        boolean rejectNull; 
-        //criticalValue = round(StatisticalSummary.getTStar(alpha, df));
-        //double pval = round(getPVal());
-        //System.out.println("CriticalVal: " + criticalVal);
-        //System.out.println("WelchDF: " + df);
-
-
-
-        //Difference in means
-        //The true difference in means between fieldA and FieldB is estimated to be between [x,y] with Z% Confidence.
-        result += "The true difference in means between ";
-        result += fieldA.getName();
-        result += " and ";
-        result += fieldB.getName(); 
-        /* try {
-            muRange = ci;
-        } catch (Exception e) {
-            result += " could not be found do to an unexpected error";
-            e.printStackTrace();
-            return result;
-        } */
-        result += " is estimated to be between [";
-        result += ci[0];
-        result += ", ";
-        result += ci[1];
-        result += "] with ";
-        result += ((1-alpha)*100);
-        result += "% Confidence, where alpha is ";
-        result += alpha;
-        result += " and df is ";
-        result += df;
-        result += ". ";
-        
-        
-        //Using a {Welch two-sample t-test} results in a t-value of 
-        result += "\nUsing a ";
-        result += "two-sample t-test "; //TODO: Replace with method getting the type
-        result += "results in a t-value of "; 
-        result += testStat;
-        result += ". |";
-        result += testStat;
-        result +="| compared to a critical value of "; //p-value of ";
-        result += round(criticalValue); //NOTE: if |testStat| > criticalValue, ALWAYS outside of acceptance region
-        result +=" finds that "; 
-        switch(hNull) {
-            case '<':
-                
-                break;
-            case '>':
-                break;
-            case '=':
-                break;
-            default:
-                System.out.println("ERROR: Not a valid H0");
-        }
-
-        result += "{t-value ><= critical value}";
-        result += " therefore we {fail to }reject the null"; //TODO: add check 
-
-        System.out.println(result);
-        return result;
-    }    
 }

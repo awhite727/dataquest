@@ -47,6 +47,19 @@ public class StatisticalSummary {
         return new NormalDistribution().cumulativeProbability(value);
     }
 
+    public static double getPValue(double value, Direction direction) {
+        double p = new NormalDistribution().cumulativeProbability(value);
+        switch (direction) {
+            case EQUAL:
+                return p*2;
+            case LESS_THAN:
+                return p;
+            case GREATER_THAN:
+                return 1-p;
+        }
+        return -1;
+    }
+
     public static double getMean(List<Double> data) {
         return data.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
     }
