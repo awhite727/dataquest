@@ -678,7 +678,7 @@ public class ChoiceMenu {
         for (String s : selected) {
             System.out.println("\t" + s);
         }
-        if(selected[0].equals("") || selected[1]==null) return null; //TODO: Add error notification if XOR null
+        if(selected[0] == null || selected[0].equals("") || selected[1]==null) return null; //TODO: Add error notification if XOR null
         
         Field summaryField = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
         Histogram histogram = new Histogram("TEMP Histogram", null, summaryField);
@@ -928,7 +928,7 @@ public class ChoiceMenu {
         Field[] fields = Dataset.getNumericFields();
         if (fields.length < 2) {
             System.out.println("ERROR: Not enough numerical fields available for mean comparison.");
-            return null;
+            return "";
         }
         ArrayList<String> questionType = new ArrayList<>();
         ArrayList<String[]> questionList = new ArrayList<>();
@@ -1050,7 +1050,7 @@ public class ChoiceMenu {
         Field[] fields = Dataset.getNumericFields();
         if (fields.length < 1) {
             System.out.println("ERROR: No numerical fields available.");
-            return null;
+            return "";
         } else if(fields.length < 2) {
             System.out.println("NOTE: Not enough numerical fields available for a two-proportion test.");
             return oneProportionMenu(parent);
@@ -1073,7 +1073,7 @@ public class ChoiceMenu {
         Field[] fields = Dataset.getNumericFields();
         if (fields.length < 1) {
             System.out.println("ERROR: No numerical fields available.");
-            return null;
+            return "";
         }
 
         ArrayList<String> questionType = new ArrayList<>();
@@ -1204,7 +1204,7 @@ public class ChoiceMenu {
         Field[] fields = Dataset.getNumericFields();
         if (fields.length < 2) {
             System.out.println("ERROR: Not enough numerical fields available.");
-            return null;
+            return "";
         }
 
         ArrayList<String> questionType = new ArrayList<>();
