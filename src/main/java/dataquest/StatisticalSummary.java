@@ -1,13 +1,16 @@
 package dataquest;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.apache.commons.math3.distribution.TDistribution;
+import org.apache.commons.math3.stat.inference.OneWayAnova;
 import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
+
 
 
 public class StatisticalSummary {
@@ -60,6 +63,17 @@ public class StatisticalSummary {
         return -1;
     }
 
+    // used by TDistribution visualization to get the points
+   public static List<Double> calculateTDistributionPDF(int df, List<Double> xList) {
+    TDistribution tDistribution = new TDistribution(df);
+    List<Double> yList = new ArrayList<>();
+    for (double x: xList) {
+        yList.add(tDistribution.density(x));
+    }
+    return yList;
+    
+}
+
     public static double getMean(List<Double> data) {
         return data.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
     }
@@ -78,6 +92,55 @@ public class StatisticalSummary {
         double mean = getMean(data);
         double variance = data.stream().mapToDouble(x -> Math.pow(x - mean, 2)).average().orElse(0.0);
         return Math.sqrt(variance);
+    }
+
+    // takes the fields for anova and outputs information about the anova test
+    public static String getAnova(Field numerical, Field category) {
+        if (numerical == null || category == null) {
+            return "Error selecting fields.";
+        }
+        String [] levels = category.getLevels();
+        Collection<double[]> dataSplit = new ArrayList<>();     // data split by category
+        ArrayList<Object> dataArray = numerical.getTypedArray();
+        for (String level : levels) {
+            ArrayList<Integer> indexes = category.getIndexOfLevel(level);
+            if (indexes.size() == 1) {
+                String out = "All levels must have two or more values, " + level + " has 1 at line " + indexes.get(0);
+                return out;
+            }
+            List<Double> dataLevel = new ArrayList<>();
+            for(int i:indexes) {
+                if (dataArray.get(i) instanceof Number number) {
+                    dataLevel.add(number.doubleValue());
+                }
+            }
+            double[] levelArray = new double[dataLevel.size()]; // needs to be array of double
+            for (int i=0; i<levelArray.length;i++) {
+                levelArray[i]=dataLevel.get(i);
+            }
+            dataSplit.add(levelArray);
+        }
+
+        // generate string output
+        OneWayAnova model = new OneWayAnova();
+        double fStat = model.anovaFValue(dataSplit);
+        int dfR = levels.length - 1;
+        int dfE = dataArray.size() - levels.length;
+        double pValue = model.anovaPValue(dataSplit);
+        StringBuilder output = new StringBuilder();
+        output.append("\tOne Way ANOVA Test");
+        output.append("\nComparing " + numerical.getName() +" by " + category.getName());
+        output.append("\nLevels: \n   ");
+        output.append(levels[0]);
+        for (int i = 1; i< levels.length; i++) {
+            output.append(", " + levels[i]);
+        }
+        output.append("\nF-Statistic: " + String.format("%.4f", fStat));
+        output.append("\nDegrees of freedom: ");
+        output.append("\n   Regression: " + dfR);
+        output.append("    Error: " + dfE);
+        output.append("\np-value: " + String.format("%.4f", pValue));
+        return output.toString();
     }
 
     public static double getSampleSD(List<Double> data) {

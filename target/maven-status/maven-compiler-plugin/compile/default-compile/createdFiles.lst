@@ -1,10 +1,14 @@
 dataquest\MeanDiff.class
 dataquest\Layout$HeaderEditorListener$1.class
-dataquest\Boxplot.class
-dataquest\Layout$1.class
+dataquest\PooledTwoSample.class
 dataquest\Layout$2.class
+dataquest\Popup.class
 dataquest\Layout$EditableHeaderRenderer.class
 dataquest\Visualization.class
-dataquest\Layout$HeaderEditorListener.class
 dataquest\Boxplot$CustomBoxAndWhiskerRenderer.class
 dataquest\Layout$4.class
+dataquest\TDistribution.class
+dataquest\Boxplot.class
+dataquest\Welch.class
+dataquest\Layout$1.class
+dataquest\Layout$HeaderEditorListener.class

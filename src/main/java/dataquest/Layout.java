@@ -1,8 +1,9 @@
 package dataquest;
 import java.awt.BorderLayout;
-import java.awt.Choice;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.FocusAdapter;
@@ -18,6 +19,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -47,12 +50,12 @@ public class Layout extends JFrame {
     //private JFreeChart chart1, chart2;
     //private ChartPanel chartPanel1, chartPanel2;
     //private Color[] colorPalette;
-    private JButton 
-        histogramButton, boxplotButton;//, linearRegressionButton;
+    private JButton /* addRowButton, addColumnButton, importingButton, 
+        handleMissingButton, statisticalSummaryButton,  */
+        histogramButton, boxplotButton;//, linearRegressionButton,
+        //meanDiffButton;
 
     private Dataset dataset;
-    //private Graph graph1;
-    //private Graph graph2;
     private Visualization visual1;
     private Visualization visual2;
     private JPanel visualPanel1;
@@ -60,6 +63,8 @@ public class Layout extends JFrame {
 
     private final int visualPanelWidth = 400;
     private final int visualPanelHeight = 300;
+
+    private final Font menuFont = new Font("sans-serif", Font.PLAIN, 15);
 
     public Layout() {
         setTitle("DataQuest");
@@ -123,10 +128,12 @@ public class Layout extends JFrame {
 
         JMenuItem summaryItem = new JMenuItem("Statistical summary");
         JMenuItem linearRegressionItem = new JMenuItem("Linear regression");
+        JMenuItem anovaItem = new JMenuItem("One Way ANOVA Test");
         JMenuItem meanCompareItem = new JMenu("Mean comparison");//new JMenuItem("Mean comparison");
         JMenuItem proportionItem = new JMenuItem("Proportion test");
         statsMenu.add(summaryItem);
         statsMenu.add(linearRegressionItem);
+        statsMenu.add(anovaItem);
         statsMenu.add(meanCompareItem);
             JMenuItem zTwoSample = new JMenuItem("Z two-sample");
             JMenuItem tTwoSample = new JMenuItem("T two-sample");
@@ -141,6 +148,7 @@ public class Layout extends JFrame {
         menuBar.add(spreadsheetMenu);
         menuBar.add(statsMenu);
 
+        customizeMenu(menuBar); // customizes the menu bar and its components
         setJMenuBar(menuBar);
 
         // Create buttons
@@ -169,6 +177,36 @@ public class Layout extends JFrame {
         
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3; gbc.weighty = 0.1;
         add(buttonPanel, gbc);
+
+        JPanel visualButtons = new JPanel(new BorderLayout());
+        JPanel buttonContainer = new JPanel();
+        buttonContainer.setLayout(new BoxLayout(buttonContainer, BoxLayout.X_AXIS));
+
+        JPanel visualButtons1 = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 0));
+        JPanel visualButtons2 = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 0));
+
+        JButton visualButton1 = new JButton("+");
+        JButton editButton1 = new JButton("Edit");
+        JButton visualButton2 = new JButton("+");
+        JButton editButton2 = new JButton("Edit");
+
+        visualButtons1.add(visualButton1);
+        visualButtons1.add(editButton1);
+
+        visualButtons2.add(editButton2);
+        visualButtons2.add(visualButton2);
+
+        // Make visualButtons1 and visualButtons2 expand horizontally
+        buttonContainer.add(visualButtons1);
+        buttonContainer.add(Box.createHorizontalGlue());  // Pushes panels apart
+        buttonContainer.add(visualButtons2);
+
+        visualButtons.add(buttonContainer, BorderLayout.CENTER);
+
+        
+        gbc.gridx=0; gbc.gridy=2; gbc.gridwidth = 2; gbc.weighty = 0.1; gbc.fill = GridBagConstraints.HORIZONTAL;
+        add(visualButtons, gbc);
+
         
 
         // Create spreadsheet
@@ -221,29 +259,11 @@ public class Layout extends JFrame {
         // Create output area
         output = new JTextArea();
         output.setEditable(false);
-        output.setLineWrap(true); //to automatically wrap long strings
-        output.setWrapStyleWord(true); //to break by full words
+        //output.setLineWrap(true);
+        output.setWrapStyleWord(true);
+        output.setFont(output.getFont().deriveFont(15f));
         gbc.gridx = 1; gbc.gridy = 0;
         add(new JScrollPane(output), gbc);
-
-        // Set color palette
-        /* colorPalette = new Color[]{
-            new Color(0x264653), new Color(0x2A9D8F), new Color(0xE9C46A),
-            new Color(0xF4A261), new Color(0xE76F51), new Color(0x023047),
-            new Color(0x219EBC), new Color(0xFFB703), new Color(0xFB8500)
-        }; */
-
-        //TODO: POSSIBLE BREAK POINT; make sure that updates to Graph chart affect charts here
-        // Create empty charts
-        //chart1 = createEmptyChart("Wavy Grpah-1");
-        //chart2 = createEmptyChart("Wavy Graph-2");
-        
-        /*chartPanel1 = new ChartPanel(graph1.getChart());
-        chartPanel2 = new ChartPanel(graph2.getChart());
-        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 1; gbc.weighty = 0.5;
-        add(chartPanel1, gbc);
-        gbc.gridx = 1;
-        add(chartPanel2, gbc); */
 
         visualPanel1 = new JPanel();
         visualPanel1.setLayout(new BorderLayout()); // most charts need to be centered
@@ -253,7 +273,7 @@ public class Layout extends JFrame {
         visualPanel2.setLayout(new BorderLayout()); // most charts need to be centered
         visualPanel2.setPreferredSize(new Dimension(visualPanelWidth, visualPanelHeight));
         visualPanel2.add(new JLabel("Visualization 2"));
-        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 1; gbc.weighty = 0.5;
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 1; gbc.weighty = 0.5;
         add(visualPanel1, gbc);
         gbc.gridx = 1;
         add(visualPanel2, gbc);
@@ -279,6 +299,12 @@ public class Layout extends JFrame {
         linearRegressionItem.addActionListener (e -> {
             if (Dataset.dataArray != null) {
                 String info = ChoiceMenu.linearRegression(this);
+                output.append(info);
+            }
+        });
+        anovaItem.addActionListener(e -> {
+            if (Dataset.dataArray != null) {
+                String info = ChoiceMenu.anovaMenu(this);
                 output.append(info);
             }
         });
@@ -341,7 +367,13 @@ public class Layout extends JFrame {
                 visualPanel1.repaint();
             }
         });
-        /* linearRegressionButton.addActionListener (e -> {
+        visualButton1.addActionListener(e -> {
+            setVisual(1);
+        });
+        visualButton2.addActionListener(e -> {
+            setVisual(2);
+        });
+        /*linearRegressionButton.addActionListener (e -> {
             if (Dataset.dataArray != null) {
                 String info = ChoiceMenu.linearRegression(this);
                 output.append(info);
@@ -624,6 +656,33 @@ public class Layout extends JFrame {
         }
     }
 
+    // used to set visuals with the + buttons
+    private void setVisual(int panel) {
+        Visualization visual = ChoiceMenu.visualMenu(this);
+        if (visual == null) { // possible user error when selecting
+            return;
+        }
+        if (panel == 1) {
+            visual1 = visual;   // saves for later
+            JPanel newPanel = visual.createChart();
+            // remove old panel and add new one
+            visualPanel1.removeAll();
+            visualPanel1.add(newPanel, BorderLayout.CENTER);
+            
+            visualPanel1.revalidate();
+            visualPanel1.repaint();        
+            }
+        else {
+            visual2 = visual;   // saves for later
+            JPanel newPanel = visual.createChart();
+            // remove old panel and add new one
+            visualPanel2.removeAll();
+            visualPanel2.add(newPanel, BorderLayout.CENTER);
+
+            visualPanel2.revalidate();
+            visualPanel2.repaint();  
+        }
+    }
 
     private void updateCharts() {
         //graph1.updateCharts(tableModel);
@@ -668,6 +727,31 @@ public class Layout extends JFrame {
         plot.setRenderer(renderer);
     }
 */
+    // helper method for setting fonts of menu components and other things later
+    private void customizeMenu(Component component) {
+        if (component instanceof JMenu) {
+            JMenu menu = (JMenu) component;
+            menu.setFont(menuFont);
+            for (int i = 0; i < menu.getItemCount(); i++) {
+                JMenuItem item = menu.getItem(i);
+                if (item != null) {
+                    customizeMenu(item);
+                }
+            }
+        } else if (component instanceof JMenuBar) {
+            JMenuBar menuBar = (JMenuBar) component;
+            for (int i = 0; i < menuBar.getMenuCount(); i++) {
+                JMenu menu = menuBar.getMenu(i);
+                if (menu != null) {
+                    customizeMenu(menu);
+                }
+            }
+        }
+         else if (component instanceof JMenuItem) {
+            component.setFont(menuFont);
+        } 
+    }
+
     // custom renderer to make headers look normal even while editing
     static class EditableHeaderRenderer implements TableCellRenderer {
         private final TableCellRenderer defaultRenderer;

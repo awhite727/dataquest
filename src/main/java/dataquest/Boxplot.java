@@ -289,7 +289,7 @@ public class Boxplot extends Visualization {
 
         List yOutliers = bawDataset.getOutliers(row, column);
         if (yOutliers != null) {
-            System.out.println(yOutliers.toString());
+            //System.out.println(yOutliers.toString());
             for (int i = 0; i < yOutliers.size(); i++) {
                 double outlier = ((Number) yOutliers.get(i)).doubleValue();
                 Number minOutlier = bawDataset.getMinOutlier(row, column);

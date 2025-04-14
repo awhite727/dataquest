@@ -20,6 +20,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 
+import org.apache.poi.hpsf.Array;
+import org.apache.poi.xwpf.usermodel.BreakClear;
+
 public class ChoiceMenu {
 
     /* menu methods are statically called from layout
@@ -62,8 +65,45 @@ public class ChoiceMenu {
             default:
                 System.out.println("ERROR: Unexpected error in importingDelimMenu");
                 return null;
-        }        
+        }
     }
+
+    // set to void to avoid compilation errors, will return Visualization once finished.
+    public static Visualization visualMenu(JFrame parent) {
+        String[] visualOptions = {"Choose a visualization: ", "Boxplot", "Histogram", "Scatterplot", "T-Distribution"};
+
+        String tabName = "Visualization";
+        ArrayList<String> questionType = new ArrayList<>(Arrays.asList("radio"));
+        ArrayList<String[]> questionList = new ArrayList<>();
+        questionList.add(visualOptions);
+
+        String[] selected = Popup.showGenericPopup(parent, tabName, questionType, questionList, new ArrayList<>()); //Popup.genericPopup is more up to date
+        Visualization output;
+        switch (selected[0]) {
+            case "Boxplot":
+                if (Dataset.dataArray != null) {
+                    output = boxplotMenu(parent);
+                    break;
+                }
+            case "Scatterplot":
+                if (Dataset.dataArray!=null) {
+                    output = scatterplotMenu(parent);
+                    break;
+                }
+            case "T-Distribution":
+                output = tDistributionMenu(parent);
+                break;
+            /*
+            case "Histogram":
+                break;
+                */
+            default:
+                System.out.println("Error creating visualization of type: " + selected[0]);
+                return null;
+        }
+        return output;
+    }
+
     public static String statisticalSummaryMenu(JFrame parent) {
         Field[] fields = Dataset.getNumericFields();
         if (fields.length==0) {
@@ -180,6 +220,122 @@ public class ChoiceMenu {
         boxplotField = Dataset.dataArray.get(Dataset.indexOfField(boxplotFieldName));
         Boxplot boxplot = new Boxplot("Boxplot", null, boxplotField, categoryField);
         return boxplot;
+    }
+
+    public static Graph scatterplotMenu(JFrame parent) {
+        Field[] fields = Dataset.getNumericFields();
+        if (fields.length < 2) {
+            System.out.println("Not enough numeric fields");
+            return null;
+        }
+        Field[] categoryFields = Dataset.getCategoricalFields();
+        String[] xFieldNames = new String[fields.length + 1];
+        String[] yFieldNames = new String[fields.length + 1];
+        xFieldNames[0] = "X Variable";
+        yFieldNames[1] = "Y Variable";
+        for (int i = 0; i<fields.length; i++) {
+            String name = fields[i].getName();
+            xFieldNames[i + 1] = name;
+            yFieldNames[i + 1] = name;
+        }
+        String [] categoryFieldNames = new String[categoryFields.length + 2];
+        categoryFieldNames[0] = "(Optional) Level";
+        categoryFieldNames[1] = "none";
+        for (int i = 0; i< categoryFields.length; i++) {
+            categoryFieldNames[i+2] = categoryFields[i].getName();
+        }
+        ArrayList<String> questionType = new ArrayList<>(Arrays.asList("combo", "combo", "combo"));
+        ArrayList<String[]> questionList = new ArrayList<>(Arrays.asList(xFieldNames, yFieldNames, categoryFieldNames));
+        String[] selected = Popup.showGenericPopup(parent, "Scatterplot", questionType, questionList, new ArrayList<String[]>());
+
+        //String[] selected = showTwoComboPopup(parent, "Scatterplot", "X Variable", "Y Variable", fieldNames, fieldNames);
+        Field xField = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
+        Field yField = Dataset.dataArray.get(Dataset.indexOfField(selected[1]));
+        String categoryFieldName = selected[2];
+        Graph graph;
+        if (categoryFieldName.equals("none")) {
+            graph = new Graph("Scatterplot", null, xField, yField, null);
+        }
+        else {
+            int index = Dataset.indexOfField(categoryFieldName);
+            if (index != -1) {
+                Field categoryField = Dataset.dataArray.get(index);
+                graph = new Graph("Scatterplot", null, xField, yField, categoryField);
+            }
+            else {
+                System.out.println("Error finding field of name " + categoryFieldName);
+                graph = new Graph("Scatterplot", null, xField, yField, null);
+            }
+        }
+        return graph;
+    }
+
+    public static TDistribution tDistributionMenu(JFrame parent) {
+
+        ArrayList<String> questionType = new ArrayList<>(Arrays.asList("text", "radio", "text"));
+        String [] dfQuestion = new String[] {"Degrees of Freedom"};
+        String [] directionQuestion = new String[] {"Direction", "Upper Tail", "Lower Tail", "Two-Tailed", "Confidence Interval"};
+        String [] aQuestion = new String[] {"T-Score"};
+        ArrayList<String[]> questionList = new ArrayList<>(Arrays.asList(dfQuestion, directionQuestion, aQuestion));
+
+        String[] selected = Popup.showGenericPopup(parent, "T-Distribution", questionType, questionList, new ArrayList<String[]>());
+
+        int df = 10;
+        double a  = 0;
+        try {
+            df = Integer.parseInt(selected[0]);
+            a = Double.parseDouble(selected[2]);
+        } catch(NumberFormatException e) {
+            System.out.println("Invalid entry: " + e.getMessage());
+            df = 10;
+            a = 0;
+        }
+        String selectedDirection = selected[1];
+        String direction = "inside";
+        switch (selectedDirection) {
+            case "Upper Tail":
+                direction = ">";
+                break;
+            case "Lower Tail":
+                direction = "<";
+                break;
+            case "Two-Tailed":
+                direction = "outside";
+                break;
+            case "Confidence Interval":
+                direction = "inside";
+                break;
+        }
+
+        TDistribution tDistribution = new TDistribution(null, null, df, direction, a);
+        return tDistribution;
+    }
+
+    public static String anovaMenu(JFrame parent) {
+        Field[] fields = Dataset.getNumericFields();
+        Field[] levels = Dataset.getCategoricalAnovaFields();
+        if (fields.length==0) {
+            return "No numerical fields for calculation";
+        }
+        if (levels.length == 0) {
+            return "No categorical fields for splitting";
+        }
+        // case where the numerical and categorical field are the same field
+        if (fields.length == 1 && levels.length == 1 && fields[0].getName().equals(levels[0].getName())) {
+            return "Not enough fields for calculation";
+        }
+        String[] fieldNames = new String[fields.length];
+        for (int i = 0; i<fields.length; i++) {
+            fieldNames[i] = fields[i].getName();
+        }
+        String[] levelNames = new String[levels.length];
+        for (int i=0; i<levels.length; i++) {
+            levelNames[i] = levels[i].getName();
+        }
+        String[] selected = showTwoComboPopup(parent, "ANOVA", "Test field", "Level", fieldNames, levelNames);
+        Field numField = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
+        Field levField = Dataset.dataArray.get(Dataset.indexOfField(selected[1]));
+        return StatisticalSummary.getAnova(numField, levField);
     }
 
     // called by other methods for simple combo box choices
@@ -308,19 +464,19 @@ public class ChoiceMenu {
         return selectedValues;
     }
 
-    /* // called by other methods, displays a popup with specified choices and returns the results
+    // called by other methods, displays a popup with specified choices and returns the results
     // Allowed questionTypes: 
         /* "label" - no specified question; just for display text
          * "combo" - dropdown box 
          * "radio" - bubbles -- returns null if nothing selected
          * "text" - textbox -- returns empty string if nothing added
          * "check" - checkbox (radio but allowing multiple to be selected) -- returns empty string if nothing added
-         * /
+         */
     // for each element in questionList index 0 assumed to be the question name; if none to be used use ""
     // returns String[] of the results in the index; labels are returned as null
     //NOTE: Currently all questions automatically optional
     //If not included it will just return null
-    private static String[] showGenericPopup(JFrame parent, String tabName, ArrayList<String> questionType, ArrayList<String[]> questionList) {
+    /* private static String[] showGenericPopup(JFrame parent, String tabName, ArrayList<String> questionType, ArrayList<String[]> questionList) {
         ArrayList<Object> mainComponents = new ArrayList<>();
         ArrayList<Component> allComponents = new ArrayList<>();
         JDialog popup = new JDialog(parent, tabName, true);
