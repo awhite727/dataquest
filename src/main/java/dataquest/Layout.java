@@ -19,11 +19,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -42,18 +42,17 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.xy.XYSeriesCollection;
+
 
 public class Layout extends JFrame {
     private JTable spreadsheet;
     private DefaultTableModel tableModel;
     private JTextArea output;
-    //private JFreeChart chart1, chart2;
-    //private ChartPanel chartPanel1, chartPanel2;
-    //private Color[] colorPalette;
-    private JButton /* addRowButton, addColumnButton, importingButton, 
-        handleMissingButton, statisticalSummaryButton,  */
-        histogramButton, boxplotButton;//, linearRegressionButton,
-        //meanDiffButton;
 
     private Dataset dataset;
     private Visualization visual1;
@@ -110,9 +109,11 @@ public class Layout extends JFrame {
         JMenu statsMenu = new JMenu("Statistics");
         JMenu visualsMenu = new JMenu("Visualizations");
 
+        JMenuItem newItem = new JMenuItem("New");
         JMenuItem openItem = new JMenuItem("Open");
         JMenuItem saveItem = new JMenuItem("Save");
         JMenuItem importItem = new JMenuItem("Import");
+        fileMenu.add(newItem);
         fileMenu.add(openItem);
         fileMenu.add(saveItem);
         fileMenu.addSeparator();
@@ -152,31 +153,6 @@ public class Layout extends JFrame {
         setJMenuBar(menuBar);
 
         // Create buttons
-        
-        JPanel buttonPanel = new JPanel();
-        //addRowButton = new JButton("Add Row");
-        //addColumnButton = new JButton("Add Column");
-        //importingButton = new JButton("Import Dataset");
-        //handleMissingButton = new JButton("Handle Missing");
-        //statisticalSummaryButton = new JButton("Statistical Summary");
-
-        histogramButton = new JButton("Histogram");
-        boxplotButton = new JButton("Boxplot");
-        //linearRegressionButton = new JButton("Linear Regression");
-        //meanDiffButton = new JButton("Mean comparison");
-        //buttonPanel.add(addRowButton);
-        //buttonPanel.add(addColumnButton);
-        //buttonPanel.add(importingButton);
-        //buttonPanel.add(handleMissingButton);
-        //buttonPanel.add(statisticalSummaryButton);
-
-        buttonPanel.add(histogramButton);
-        buttonPanel.add(boxplotButton);
-        //buttonPanel.add(linearRegressionButton);
-        //buttonPanel.add(meanDiffButton);
-        
-        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3; gbc.weighty = 0.1;
-        add(buttonPanel, gbc);
 
         JPanel visualButtons = new JPanel(new BorderLayout());
         JPanel buttonContainer = new JPanel();
@@ -259,20 +235,19 @@ public class Layout extends JFrame {
         // Create output area
         output = new JTextArea();
         output.setEditable(false);
-        //output.setLineWrap(true);
+        output.setLineWrap(true);
         output.setWrapStyleWord(true);
         output.setFont(output.getFont().deriveFont(15f));
+        output.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // top, left, bottom, right
         gbc.gridx = 1; gbc.gridy = 0;
         add(new JScrollPane(output), gbc);
 
-        visualPanel1 = new JPanel();
+        visualPanel1 = createBlankChart(1);
         visualPanel1.setLayout(new BorderLayout()); // most charts need to be centered
         visualPanel1.setPreferredSize(new Dimension(visualPanelWidth, visualPanelHeight));
-        visualPanel1.add(new JLabel("Visualization 1"));    // placeholder label for default look
-        visualPanel2 = new JPanel();
+        visualPanel2 = createBlankChart(2);
         visualPanel2.setLayout(new BorderLayout()); // most charts need to be centered
         visualPanel2.setPreferredSize(new Dimension(visualPanelWidth, visualPanelHeight));
-        visualPanel2.add(new JLabel("Visualization 2"));
         gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 1; gbc.weighty = 0.5;
         add(visualPanel1, gbc);
         gbc.gridx = 1;
@@ -280,6 +255,7 @@ public class Layout extends JFrame {
 
 
         // Add listeners
+        newItem.addActionListener(e -> newProject());
         importItem.addActionListener(e -> importAssist());
         rowItem.addActionListener(e -> addRow());
         columnItem.addActionListener(e -> addColumn());
@@ -338,47 +314,12 @@ public class Layout extends JFrame {
                 output.append(info);
             }
         });
-        histogramButton.addActionListener(e-> {
-            if(Dataset.dataArray != null) {
-                //String textOutput = ChoiceMenu.histogramMenu(this);
-                //if(textOutput != null) output.append(textOutput+"---\n");
-                visual1 = ChoiceMenu.histogramMenu(this);
-                if(visual1!= null){
-                    JPanel newPanel = visual1.createChart();
-                    visualPanel1.removeAll();
-                    //newPanel.add(new JLabel("Testing Layout"));
-                    visualPanel1.add(newPanel, BorderLayout.CENTER);
-                    visualPanel1.revalidate();
-                    visualPanel1.repaint();
-                }
-            }
-          //TODO: create actual graph
-        });
-        boxplotButton.addActionListener(e -> {
-            if (Dataset.dataArray != null) {
-                visual1 = ChoiceMenu.boxplotMenu(this);
-                JPanel newPanel = visual1.createChart();
-
-                // remove old panel and add new one
-                visualPanel1.removeAll();
-                visualPanel1.add(newPanel, BorderLayout.CENTER);
-
-                visualPanel1.revalidate();
-                visualPanel1.repaint();
-            }
-        });
         visualButton1.addActionListener(e -> {
             setVisual(1);
         });
         visualButton2.addActionListener(e -> {
             setVisual(2);
         });
-        /*linearRegressionButton.addActionListener (e -> {
-            if (Dataset.dataArray != null) {
-                String info = ChoiceMenu.linearRegression(this);
-                output.append(info);
-            }
-        }); */
 
         tableModel.addTableModelListener(e -> updateCharts());
         tableModel.addTableModelListener(new TableModelListener() {
@@ -611,6 +552,15 @@ public class Layout extends JFrame {
         tableModel.setColumnIdentifiers(columnNames);
     }
 
+    // wipes the layout and dataset
+    private void newProject() {
+        tableModel.setDataVector(new Object[5][3], new Object[] {"Column 1", "Column 2", "Column 3"}); // resets table
+        visualPanel1 = createBlankChart(1);
+        visualPanel2 = createBlankChart(2);
+        Dataset.dataArray = null;
+        output.setText(""); // clears output
+    }
+
     // manual entry 
     private void updateValue(Object value, int row, int col) {
         if (Dataset.dataArray == null) {
@@ -727,6 +677,22 @@ public class Layout extends JFrame {
         plot.setRenderer(renderer);
     }
 */
+    private ChartPanel createBlankChart(int id) {
+        XYSeriesCollection data = new XYSeriesCollection();
+        JFreeChart chart = ChartFactory.createScatterPlot(
+            "Visual " + id, 
+            "",             
+            "",               
+            data,                
+            PlotOrientation.VERTICAL,
+            true,                   // include legend
+            true,                   // include tooltips
+            false                   // exclude url
+        );
+
+        return new ChartPanel(chart);
+    }
+
     // helper method for setting fonts of menu components and other things later
     private void customizeMenu(Component component) {
         if (component instanceof JMenu) {

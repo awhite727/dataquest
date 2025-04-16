@@ -308,12 +308,19 @@ public class StatisticalSummary {
         return total;
     }
 
-    public static String getSummary(List<Double> data) {
-        return String.format(
-            "Mean: %.2f\nMedian: %.2f\nStandard Deviation: %.2f\nMin: %.2f\nMax: %.2f\nQ1: %.2f\nQ3: %.2f\nCount: %d\n",
-            getMean(data), getMedian(data), getStandardDeviation(data),
-            getMin(data), getMax(data), getQuartile(data, 1), getQuartile(data, 3), getCount(data)
-        );
+    public static String getSummary(Field field) {
+        List<Double> data = field.getValues();
+        StringBuilder output = new StringBuilder();
+        output.append("\n\tSummary of " + field.getName());
+        output.append("\nMean: " + String.format("%.4f", getMean(data)));
+        output.append("\nStandard Deviation: " + String.format("%.4f",getStandardDeviation(data)));
+        output.append("\nMinimum: " + String.format("%.4f", getMin(data)));
+        output.append("\nFirst Quartile: " + String.format("%.4f", getQuartile(data, 1)));
+        output.append("\nMedian: " + String.format("%.4f", getMedian(data)));
+        output.append("\nThird Quartile: " + String.format("%.4f", getQuartile(data, 3)));
+        output.append("\nMaximum: " + String.format("%.4f", getMax(data)));
+        output.append("\nCount: " + getCount(data));
+        return output.toString();
     }
 
 }

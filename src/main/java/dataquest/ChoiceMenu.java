@@ -115,7 +115,7 @@ public class ChoiceMenu {
         }
         String selected = showComboPopup(parent, "Statistical Summary", "Choose a field", fieldNames);
         Field summaryField = Dataset.dataArray.get(Dataset.indexOfField(selected));
-        String textOutput = StatisticalSummary.getSummary(summaryField.getValues());
+        String textOutput = StatisticalSummary.getSummary(summaryField);
         return textOutput;
    }
 
