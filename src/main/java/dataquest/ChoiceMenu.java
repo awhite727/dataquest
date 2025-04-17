@@ -93,10 +93,8 @@ public class ChoiceMenu {
             case "T-Distribution":
                 output = tDistributionMenu(parent);
                 break;
-            /*
             case "Histogram":
-                break;
-                */
+                output = histogramMenu(parent);
             default:
                 System.out.println("Error creating visualization of type: " + selected[0]);
                 return null;

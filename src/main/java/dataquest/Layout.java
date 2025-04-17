@@ -3,7 +3,6 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.FocusAdapter;
@@ -34,6 +33,8 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
@@ -48,6 +49,10 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.xy.XYSeriesCollection;
 
+import com.formdev.flatlaf.FlatDarculaLaf;
+import com.formdev.flatlaf.FlatIntelliJLaf;
+
+
 
 public class Layout extends JFrame {
     private JTable spreadsheet;
@@ -59,15 +64,25 @@ public class Layout extends JFrame {
     private Visualization visual2;
     private JPanel visualPanel1;
     private JPanel visualPanel2;
+    private JButton darkMode;
 
-    private final int visualPanelWidth = 400;
-    private final int visualPanelHeight = 300;
+    private final int visualPanelWidth = 800;
+    private final int visualPanelHeight = 400;
 
-    private final Font menuFont = new Font("sans-serif", Font.PLAIN, 15);
+    private boolean isDarkMode = false;
+    //private final Font menuFont = new Font("sans-serif", Font.PLAIN, 15);
 
     public Layout() {
         setTitle("DataQuest");
         setSize(800, 600);
+        FlatIntelliJLaf.setup(); // default light mode
+        try {
+            UIManager.setLookAndFeel(new FlatIntelliJLaf());
+            UIManager.put("Component.focusWidth", 0); // No focus border
+            UIManager.put("Component.innerFocusWidth", 0); // No inner ring
+        } catch (UnsupportedLookAndFeelException e) {
+            e.printStackTrace();
+        }
         //setIconImage(new ImageIcon("src\\main\\resources\\icon.png").getImage()); //Just changes icon at the bottom when it's running to whatever icon.png we have in resources
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         dataset = new Dataset();
@@ -149,7 +164,9 @@ public class Layout extends JFrame {
         menuBar.add(spreadsheetMenu);
         menuBar.add(statsMenu);
 
-        customizeMenu(menuBar); // customizes the menu bar and its components
+        //customizeMenu(menuBar); // customizes the menu bar and its components
+        darkMode = new JButton("Toggle Dark/Light");
+        menuBar.add(darkMode);
         setJMenuBar(menuBar);
 
         // Create buttons
@@ -237,7 +254,6 @@ public class Layout extends JFrame {
         output.setEditable(false);
         output.setLineWrap(true);
         output.setWrapStyleWord(true);
-        output.setFont(output.getFont().deriveFont(15f));
         output.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // top, left, bottom, right
         gbc.gridx = 1; gbc.gridy = 0;
         add(new JScrollPane(output), gbc);
@@ -321,6 +337,10 @@ public class Layout extends JFrame {
             setVisual(2);
         });
 
+        darkMode.addActionListener(e -> {
+            toggleDarkMode();
+        });
+
         tableModel.addTableModelListener(e -> updateCharts());
         tableModel.addTableModelListener(new TableModelListener() {
             @Override
@@ -338,6 +358,8 @@ public class Layout extends JFrame {
                 }
             }
         });
+        SwingUtilities.updateComponentTreeUI(this);
+        pack();
     
 
     if (dataset == null) {
@@ -677,6 +699,26 @@ public class Layout extends JFrame {
         plot.setRenderer(renderer);
     }
 */
+    private void toggleDarkMode() {
+        if (isDarkMode) {
+            try {
+                UIManager.setLookAndFeel(new FlatIntelliJLaf());
+            } catch (UnsupportedLookAndFeelException e) {
+                e.printStackTrace();
+            }
+        }
+        else {
+            try {
+                UIManager.setLookAndFeel(new FlatDarculaLaf());
+            } catch (UnsupportedLookAndFeelException e) {
+                e.printStackTrace();
+            }
+        }
+        isDarkMode = !isDarkMode;
+        SwingUtilities.updateComponentTreeUI(this);
+        pack();
+    }
+
     private ChartPanel createBlankChart(int id) {
         XYSeriesCollection data = new XYSeriesCollection();
         JFreeChart chart = ChartFactory.createScatterPlot(
@@ -694,6 +736,7 @@ public class Layout extends JFrame {
     }
 
     // helper method for setting fonts of menu components and other things later
+    /*
     private void customizeMenu(Component component) {
         if (component instanceof JMenu) {
             JMenu menu = (JMenu) component;
@@ -717,6 +760,7 @@ public class Layout extends JFrame {
             component.setFont(menuFont);
         } 
     }
+    */
 
     // custom renderer to make headers look normal even while editing
     static class EditableHeaderRenderer implements TableCellRenderer {
