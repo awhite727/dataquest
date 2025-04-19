@@ -1,17 +1,10 @@
 package dataquest;
 
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.GridLayout;
-import java.awt.Insets;
-import java.awt.TextArea;
 import java.awt.TextField;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -23,13 +16,9 @@ import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
-import javax.swing.JRootPane;
 import javax.swing.JScrollPane;
-import javax.swing.JViewport;
-import javax.swing.SizeRequirements;
 
 //TODO: Use class to break down each element into a private set and get of the Component
 //setComponent should run any necessary checks for that component then return the Component
@@ -37,16 +26,454 @@ import javax.swing.SizeRequirements;
 //TODO: Fix automatic width sizing
 //TODO: Add error handling 
 //TODO: Add next/previous/submit
-//TODO: Add tabbed pane 
-//TODO: Add text wrapping 
     //-- JLabel.setText("<html>Text</html>")/new JLabel("<html>" + text + "</html>")
     //Special characters need to be escaped first, like \<
     //https://stackoverflow.com/questions/2420742/make-a-jlabel-wrap-its-text-by-setting-a-max-width 
-public class Popup { 
+public class Popup {
+    private JFrame parent;
+    private String tabName;
+    private ArrayList<QuestionType> questionType;
+    //private ArrayList<String> questionType;
+    private ArrayList<String[]> questionList;
+    private ArrayList<HandleError[]> errors;
+    //private ArrayList<String[]> errors;
+    private JPanel container;
+    private JScrollPane scrollPane;
+    private JDialog popup;
+    private Dimension minSize;
+
     Popup(){}
-    //NOTE: If we want to include generic error handling prior to submission, best way to do this I can think of would be to handle by passing another ArrayList<String[]> errors
-    //Each String[] would contain String index of what to check for errors, a check type (i.e. "int", "lessThan", "exactMatch" etc) at index 1 and the specification at index 2 ("2", "I accept these terms and conditions")
-    //New private methods would be added to be called by a checker
+    Popup(JFrame parent, String tabName) {
+        this.parent = parent;
+        this.tabName = tabName;
+        questionType = new ArrayList<>();
+        questionList = new ArrayList<>();
+        errors = new ArrayList<>();
+        designPopup();        
+    }
+    public enum QuestionType {
+        LABEL,
+        DROPDOWN,
+        BUBBLE,
+        TEXT,
+        CHECKBOX,
+        COMPARISON
+    }
+    public enum HandleError {
+        REQUIRED,
+        NUMERIC,
+        ZERO_TO_ONE,
+        NONE
+    }
+
+    //TODO: Delete; used for testing 
+    public void printQuestions() {
+        if(questionList.size() != questionType.size() || questionType.stream().filter(a -> a!=QuestionType.LABEL).count() != errors.size()) {
+            System.out.println("ERROR: sizes are not equal");
+            System.out.println("\tqType.size() = " + questionType.size());
+            System.out.println("\tqList.size() = " + questionList.size());
+            System.out.println("\terrors.size() = " + errors.size());
+            return;
+        }
+
+        int errorIndex = 0;
+        for (int i = 0; i < questionType.size(); i++) {
+            System.out.println("Questions " + (i+1) + ": ");
+            System.out.println("\tType = " + questionType.get(i));
+            System.out.println("\tContents = " + questionList.get(i));
+            if(!questionType.get(i).equals(QuestionType.LABEL)) {
+                System.out.println("\terrors = " + errors.get(errorIndex));
+                errorIndex++;
+            }
+        }
+    }
+    //The look of the popup 
+    private void designPopup() {
+        popup = new JDialog(parent, tabName, true);
+        minSize = new Dimension(350,250); //used at bottom
+        
+
+        //popup.setLayout(new FlowLayout(FlowLayout.LEFT));
+        //Note: Could use a GroupLayout to get the vertical and horizontal aligns right??
+            //https://docs.oracle.com/javase/tutorial/uiswing/layout/group.html
+        //GroupLayout popupLayout = new GroupLayout(popup);
+        //popup.setLayout(popupLayout);
+        container = new JPanel();
+        container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
+        container.setAlignmentX(Component.LEFT_ALIGNMENT);
+        //container.setLayout(new FlowLayout(FlowLayout.LEFT));
+        scrollPane = new JScrollPane(container);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        popup.add(scrollPane);
+
+        popup.setLocationRelativeTo(parent);
+        Dimension containerSize = container.getPreferredSize();
+        if(containerSize.getWidth() < minSize.getWidth())
+            containerSize.setSize(minSize.getWidth(),containerSize.getHeight());
+        if(containerSize.getHeight() < minSize.getHeight())
+            containerSize.setSize(containerSize.getWidth(),minSize.getHeight());
+        
+        popup.setMinimumSize(containerSize);
+        popup.setVisible(false);
+    }
+    
+
+    //public void addQuestion(String qType, String[] contents, String[] error) {
+    public void addQuestion(QuestionType qType, String[] contents, HandleError[] error) {
+        try {
+            switch(qType) {
+                case LABEL:
+                case TEXT:
+                    if(contents.length < 1) {
+                        throw new Exception("ERROR: " + qType.toString() + " must have a length of 1");
+                    }
+                    break;
+                case COMPARISON:
+                    if(contents.length < 3) {
+                        throw new Exception("ERROR: " + qType.toString() + " must have a length of 3");
+                    }
+                    break;
+                default:
+                    if(contents.length < 2) {
+                        throw new Exception("ERROR: " + qType.toString() + " must have a length of 2");
+                    }
+                break;
+            }
+            questionType.add(qType);
+            questionList.add(contents);
+            errors.add(error);
+        } catch (ArrayIndexOutOfBoundsException outError) { //don't think this is called
+            System.out.println("ERROR: Index out of bounds; Check the values being passed to addQuestion");
+            outError.printStackTrace();
+        } catch (Exception e) { //For generic expected errors
+            System.out.println(e);
+            e.printStackTrace();
+        }
+    }
+
+    public void addQuestions(ArrayList<String> qTypes, ArrayList<String[]> contents, ArrayList<HandleError[]> errors) {
+        if (errors == null) errors = new ArrayList<>();
+        int sizeMinusLabels = (int) qTypes.stream().filter(a -> !a.equals("label")).count();
+        try {
+            if(qTypes.size() != contents.size()) {
+                throw new Exception("ERROR: addQuestions must have equally sized qType and content ArrayLists");
+            }
+            //if there are errors present and the size is not equal to the amount of non-label questions, print a warning
+            if(errors.size() != 0 && sizeMinusLabels != errors.size()) {
+                System.out.println("WARNING: number of errors differs from the number of questions (minus labels). Any errors exceeding the questions will be ignored and any less than the number of questions will automatically be set to none");
+            }
+
+
+            for (String qType : qTypes) {
+                switch (qType) {
+                    case "label":
+                        questionType.add(QuestionType.LABEL);
+                        break;
+                    case "combo":
+                        questionType.add(QuestionType.DROPDOWN);
+                        break;
+                    case "radio":
+                        questionType.add(QuestionType.BUBBLE);
+                        break;
+                    case "text":
+                        questionType.add(QuestionType.TEXT);
+                        break;
+                    case "check":
+                        questionType.add(QuestionType.CHECKBOX);
+                        break;
+                    case "comparison":
+                        questionType.add(QuestionType.COMPARISON);
+                        break;
+                    default:
+                        throw new Exception("ERROR: qType not a valid type: " + qType);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+            return;
+        }
+        questionList.addAll(contents);
+        this.errors.addAll(errors);
+        /* for (HandleError[] error : errors) {
+            if (error == null) { //Way to make the error none
+                this.errors.add(n)
+                continue; 
+            }
+            
+            try {
+                switch (error) {
+                    case "required":
+                        this.errors.add(HandleError.REQUIRED);
+                        break;
+                    case "numeric":
+                        this.errors.add(HandleError.NUMERIC);
+                        break;
+                    case "":
+                    case "none":
+                    case "na":
+                        this.errors.add(HandleError.NONE);
+                        break;
+                    default:
+                    throw new Exception("ERROR: error not a valid type: " + error + "\n\tSetting type to none");
+                }
+            } catch (Exception e) {
+                System.out.println(e);
+                this.errors.add(HandleError.NONE);
+            }
+        } */
+        if(errors.size() < sizeMinusLabels) {
+            for (int i = errors.size(); i < sizeMinusLabels; i++) {
+                this.errors.add(null);
+            }
+        }
+    }
+
+
+    //returns null if it can't be constructed; if it can be, returns the values in order 
+    public String[] showGenericPopup() {
+        System.out.println("showGeneric called");
+        if(parent == null || tabName == null) return null;
+        ArrayList<Object> mainComponents = new ArrayList<>();
+        ArrayList<Component> allComponents = new ArrayList<>();
+        System.out.println("Types: " + questionType);
+
+        for (int i = 0; i < questionType.size(); i++) {
+            try {
+                //If it's a label/textbox it shouldn't have any other elements in the String[] so continue
+                //If it's a combo/radio and it only had the title, print error and continue
+                QuestionType qType = questionType.get(i);
+                String[] question = questionList.get(i);
+                switch(qType) {
+                    case LABEL: 
+                        JLabel tempLabel = new JLabel(question[0]);
+                        //mainComponents.add(null);
+                        allComponents.add(tempLabel);
+                        break; //continue;
+                    case TEXT:
+                        JPanel textPanel = new JPanel(new GridLayout(2,1)); 
+                        textPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+                        textPanel.add(new JLabel(question[0]));
+                        TextField field = new TextField();                        
+                        field.setSize(new Dimension(50, 30));
+                        mainComponents.add(field);
+                        textPanel.add(field);
+                        allComponents.add(textPanel);
+                        break;
+                    case DROPDOWN: case COMPARISON:
+                        JPanel comboPanel = new JPanel();
+                        comboPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+                        comboPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+                        comboPanel.add(new JLabel(question[0]));
+                        question[0] = "";
+                        String compareTemp = "";
+                        if(qType.equals(QuestionType.COMPARISON)) {
+                            compareTemp = question[question.length-1];
+                            question = Arrays.copyOfRange(question, 0, question.length-1);
+                        }
+                        JComboBox<String> comboBox = new JComboBox<>(question);
+                        comboBox.setMinimumSize(new Dimension(100,comboBox.getPreferredSize().height));
+                        comboPanel.add(comboBox);
+                        mainComponents.add(comboBox);
+                        if(qType.equals(QuestionType.COMPARISON)) comboPanel.add(new JLabel(compareTemp));
+                        allComponents.add(comboPanel);
+                        break;
+                    case BUBBLE:
+                        System.out.println("Bubble called");
+                        String[] radioOptions = Arrays.copyOfRange(question, 1, question.length);
+                        ButtonGroup radioGroup = new ButtonGroup(); 
+                        JPanel radioPanel = new JPanel();
+                        radioPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+                        radioPanel.add(new JLabel(question[0]));
+                        JRadioButton[] radioButtons = new JRadioButton[radioOptions.length];
+                        radioPanel.setLayout(new BoxLayout(radioPanel, BoxLayout.Y_AXIS)); // vertical stacking
+                        for (int j = 0; j < radioOptions.length; j++) {
+                            radioButtons[j] = new JRadioButton(radioOptions[j]);
+                            radioGroup.add(radioButtons[j]);
+                            radioPanel.add(radioButtons[j]);
+                        }
+                        mainComponents.add(radioButtons);
+                        allComponents.add(radioPanel);
+                        break;
+                    case CHECKBOX:
+                        String[] checkOptions = Arrays.copyOfRange(question, 1, question.length);
+                        JPanel checkPanel = new JPanel();
+                        checkPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+                        checkPanel.add(new JLabel(question[0]));
+                        
+                        JCheckBox[] checkButtons = new JCheckBox[checkOptions.length];
+                        
+                        checkPanel.setLayout(new BoxLayout(checkPanel, BoxLayout.Y_AXIS)); // vertical stacking
+                        for (int j = 0; j < checkOptions.length; j++) {
+                            checkButtons[j] = new JCheckBox(checkOptions[j]);
+                            checkPanel.add(checkButtons[j]);
+                        }
+                        mainComponents.add(checkButtons);
+                        allComponents.add(checkPanel);
+                        break;
+                    default:
+                        throw new Exception("ERROR: Unknown type " + qType);
+                }
+            } catch (ArrayIndexOutOfBoundsException outError) {
+                System.out.println("ERROR: Index out of bounds; Check the values being passed to showGenericPopup");
+                outError.printStackTrace();
+            } catch (Exception e) { //For generic expected errors
+                System.out.println(e);
+                e.printStackTrace();
+            }
+            
+        }
+        
+        //Make confirm button and action listener
+        String[] selectedValues = new String[mainComponents.size()];
+        JButton confirmButton = new JButton("Confirm");
+        confirmButton.addActionListener(e -> {
+            String[] tempSelected = submission(mainComponents);
+            if(tempSelected != null) { //if there was no error
+                for (int i = 0; i < selectedValues.length; i++) {
+                    selectedValues[i] = tempSelected[i];
+                }
+                popup.dispose();
+            }
+            
+        });
+
+        allComponents.add(confirmButton);
+        for (Component c : allComponents) {
+            container.add(c);
+        }
+        popup.setVisible(true);
+        return selectedValues;
+    }
+
+    private String[] submission(ArrayList<Object> mainComponents){
+        String[] selectedValues = new String[mainComponents.size()];
+        try {
+            int typeIndex = 0;
+            int componentIndex = 0;
+            while(typeIndex < questionType.size()) {
+                QuestionType qType = questionType.get(typeIndex);
+                if(qType.equals(QuestionType.LABEL)) { //not added to main component, don't need to examine
+                    typeIndex++;
+                    continue;
+                }
+                Object box = mainComponents.get(componentIndex);
+                //System.out.println("Main component: " + box);
+                switch(qType) {
+                    case LABEL: break;
+                    case DROPDOWN: case COMPARISON:
+                        try {
+                            selectedValues[componentIndex] = (String) ((JComboBox<String>) box).getSelectedItem();
+                        } catch (ClassCastException classCastError) {
+                            System.out.println("ERROR: Could not cast mainComponents.get(" + componentIndex + ") to a JComboBox<String>");
+                            System.out.println("\t"+mainComponents.get(componentIndex));
+                        } 
+                        break;
+                    case BUBBLE: 
+                        try {
+                            JRadioButton[] radioButtons = (JRadioButton[]) box;
+                            for (JRadioButton radioButton : radioButtons) {
+                                if (radioButton.isSelected()) {
+                                    selectedValues[componentIndex] = radioButton.getText();
+                                    break;
+                                }
+                            }
+                        } catch (ClassCastException classCastError) {
+                            System.out.println("ERROR: Could not cast mainComponents.get(" + componentIndex + ") to a JRadioButton[]");
+                            System.out.println("\t" + mainComponents.get(componentIndex));
+                        }
+                        break;
+                    case CHECKBOX:
+                        try {
+                            JCheckBox[] checkButtons = (JCheckBox[]) box;
+                            ArrayList<String> checkString = new ArrayList<>();
+                            for (JCheckBox checkButton : checkButtons) {
+                                if (checkButton.isSelected()) {
+                                    checkString.add(checkButton.getText());
+                                }
+                                selectedValues[componentIndex] = String.join(",", checkString);
+                            }
+                        } catch (ClassCastException classCastError) {
+                            System.out.println("ERROR: Could not cast mainComponents.get(" + componentIndex + ") to a JCheckBox[]");
+                            System.out.println("\t" + mainComponents.get(componentIndex));
+                        }
+                        break;
+                    case TEXT:
+                        try {
+                            selectedValues[componentIndex] = ((TextField)box).getText();
+                        } catch (Exception e1) {
+                            System.out.println("ERROR: Could not cast mainComponents.get(" + componentIndex + ") to a TextField");
+                            System.out.println("\t" + mainComponents.get(componentIndex));
+                        }
+                    break;
+                    default: throw new Exception("ERROR: Unknown type " + qType);
+                }
+                //Check for errors, return null if there is one 
+                if(errors.size() > componentIndex)
+                    if(!errorHandling(errors.get(componentIndex),selectedValues[componentIndex])) return null;
+                typeIndex++;
+                componentIndex++;
+            }
+            } catch (Exception e) {
+                System.out.println(e);
+                e.printStackTrace();
+            }
+        return selectedValues;
+    }
+
+    private boolean errorHandling(HandleError[] handleErrors, String value){
+        boolean success = true;
+        if(handleErrors == null || (handleErrors.length == 1 && handleErrors[0] == HandleError.NONE)) return true;
+        for (HandleError error : handleErrors) {
+            switch (error) {
+            case NONE: //Shouldn't be reached if passed properly, but if it isn't it's ignored
+                break;
+            case REQUIRED: 
+                if(value == null || value.equals("")) {
+                    success = false;
+                    System.out.println("Required field not present (" + value + ")");
+                }
+                break;
+            case NUMERIC:
+                if(value == null || value.equals("")) continue; //handles required separately
+                try {
+                    Double.valueOf(value);
+                } catch (Exception e) {
+                    success = false;
+                    System.out.println("Numeric field cannot be turned into double (" + value + ")");
+                }
+                break;
+            case ZERO_TO_ONE:
+            if(value == null || value.equals("")) continue; //handles required separately
+                try {
+                    double val = Double.valueOf(value);
+                    if(val <= 0 || val >= 1) {
+                        System.out.println("Value not between 0-1 (exclusive): " + val);
+                        success = false;
+                    }
+                } catch (Exception e) {
+                    success = false;
+                    System.out.println("Zero-to-one field cannot be turned into double (" + value + ")");
+                }
+                break;
+            default:
+                System.out.println("ERROR: Unhandled new HandleError: " + error);
+                success = false;
+                break;
+            }
+        }
+        System.out.println("Success: " + success);
+        return success;
+    }
+
+
+
+
+
+
+
 
 
 

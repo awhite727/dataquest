@@ -8,6 +8,7 @@ import java.awt.FlowLayout;
 import java.awt.TextField;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.logging.Handler;
 
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -23,6 +24,9 @@ import javax.swing.JRadioButton;
 import org.apache.poi.hpsf.Array;
 import org.apache.poi.xwpf.usermodel.BreakClear;
 
+import dataquest.Popup.HandleError;
+import dataquest.Popup.QuestionType;
+
 public class ChoiceMenu {
 
     /* menu methods are statically called from layout
@@ -34,8 +38,11 @@ public class ChoiceMenu {
         ArrayList<String[]> questionList = new ArrayList<String[]>(2);
         questionList.add(new String[]{"File deliminator: ","Comma", "Semicolon", "Space", "New line", "Tab","Custom"});
         questionList.add(new String[]{""});
-        String[] selected=  Popup.showGenericPopup(parent, "Deliminator", questionType, 
-        questionList, new ArrayList<>());
+        Popup popup = new Popup(parent,"Select deliminator");
+        popup.addQuestion(QuestionType.BUBBLE,new String[]{"File deliminator: ","Comma", "Semicolon", "Space", "New line", "Tab","Custom"}, new HandleError[]{HandleError.NONE});
+        
+        String[] selected=  popup.showGenericPopup();//Popup.showGenericPopup(parent, "Deliminator", questionType, 
+        //questionList, new ArrayList<>());
         if(selected[0] == null) return null;
         if((!selected[0].equals("Custom")) && selected[1].length() > 0) {
             System.out.println("ERROR: Custom deliminator used but " + selected[0] + " deliminator selected.");
@@ -65,6 +72,55 @@ public class ChoiceMenu {
             default:
                 System.out.println("ERROR: Unexpected error in importingDelimMenu");
                 return null;
+        }
+    }
+
+    public static void updateFieldType(JFrame parent) {
+        final String tabName = "Update Field Type";
+        final Field[] fields = Dataset.dataArray.toArray(new Field[Dataset.dataArray.size()]);
+        String[] fieldNames = new String[fields.length+1];
+        final String[] types = {"Type: ", "String","Boolean","Numeric"};
+        if (fields.length == 0) {
+            System.out.println("ERROR: No fields to update");
+            return;
+        }
+        fieldNames[0] = "Fields: ";
+        
+        for (int i = 0; i < fields.length; i++) {
+            fieldNames[i+1] = fields[i].getName();
+            System.out.println("Added: " + fieldNames[i]);
+        }
+
+        ArrayList<String> questionType = new ArrayList<>();
+        ArrayList<String[]> questionList = new ArrayList<>();
+        ArrayList<String[]> errors = new ArrayList<>(0);
+
+        questionType.add("combo");
+        questionList.add(fieldNames);
+        questionType.add("combo");
+        questionList.add(types);
+
+        String selected[] = Popup.showGenericPopup(parent, tabName, questionType, questionList, errors);
+
+        System.out.println(Arrays.toString(selected));
+        if(selected[0] == "" || selected[1] == "") {
+            System.out.println("ERROR: Nulls");
+            return;
+        }
+        final Field field = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
+        switch (selected[1]) {
+            case "String":
+                field.setType("String");
+                break;
+            case "Boolean":
+            field.setType("boolean");
+            break;
+            case "Numeric":
+            field.setType("float");
+            break;        
+            default: //Should not be reached
+                System.out.println("ERROR: Not a valid type");
+                return;
         }
     }
 
@@ -722,12 +778,12 @@ public class ChoiceMenu {
         }
         ArrayList<String> questionType = new ArrayList<>();
         ArrayList<String[]> questionList = new ArrayList<>();
-        ArrayList<String[]> errors = new ArrayList<>(0);
+        ArrayList<HandleError[]> errors = new ArrayList<>();
         //Prepare for popup
         String [] fieldA = new String[fields.length+1];
         String [] fieldB = new String[fields.length+1];
-        fieldA[0] = "First Field: ";
-        fieldB[0] = "Second Field: ";
+        fieldA[0] = "Field A: ";
+        fieldB[0] = "Field B: ";
         for (int i=0;i<fields.length;i++) {
             fieldA[i+1] = fields[i].getName();
             fieldB[i+1] = fields[i].getName();
@@ -736,37 +792,58 @@ public class ChoiceMenu {
         //Fields
         questionType.add("combo");
         questionList.add(fieldA);
+        errors.add(new HandleError[]{HandleError.REQUIRED});
+
         questionType.add("combo");
         questionList.add(fieldB);
+        errors.add(new HandleError[]{HandleError.REQUIRED});
+
 
         //Hypothesis 
         questionType.add("label");
         questionList.add(new String[]{"H\u2080:"}); // \u2080 is unicode for subscript 0
+        
         questionType.add("comparison");
-        questionList.add(new String[]{"Field A - Field B    ","<",">","=","    d"}); //\u2260 is uncode for !=         
+        questionList.add(new String[]{"Field A - Field B    ","<",">","=","    d"}); //\u2260 is uncode for !=   
+        errors.add(new HandleError[]{HandleError.REQUIRED});
+        
         questionType.add("text");
         questionList.add(new String[]{"d = "});
+        errors.add(new HandleError[]{HandleError.NUMERIC});
+        
         questionType.add("label");
         questionList.add(new String[]{"(default: 0)"});
+        
         questionType.add("label");
         questionList.add(new String[]{"\n"});
+        
         questionType.add("text");
         questionList.add(new String[]{"\u03B1 = "});
+        errors.add(new HandleError[]{HandleError.ZERO_TO_ONE});
+        
         questionType.add("label");
         questionList.add(new String[]{"(default: 0.05)"});
+        
         questionType.add("radio");
         questionList.add(new String[]{"Assume equal variance?","yes (Student/Pooled t-test)", "no (Welch t-test)"});       
+        errors.add(new HandleError[]{HandleError.REQUIRED});
+        
         questionType.add("label");
         questionList.add(new String[]{"\n"});
 
-        String selected[] = Popup.showGenericPopup(parent, tabName, questionType, questionList, errors);
+        Popup popup = new Popup(parent,tabName);
+        popup.addQuestions(questionType, questionList, errors);
+        popup.printQuestions();
+        String[] selected = popup.showGenericPopup();
+        //String selected[] = Popup.showGenericPopup(parent, tabName, questionType, questionList, new ArrayList<String[]>());
 
         //Check validity, if anything null return 
         /* for (String string : selected) {
             if (string == null) return "";
         } */
         System.out.println(Arrays.toString(selected));
-        if(selected[0] == "" || selected[1] == "" || selected[3] == "" || selected[9] == null) {
+        return "Success";
+        /* if(selected[0] == "" || selected[1] == "" || selected[3] == "" || selected[9] == null) {
             System.out.println("ERROR: Nulls");
             return "";
         }
@@ -801,7 +878,8 @@ public class ChoiceMenu {
         }
         if(!selected[7].strip().equals("")) {
             try {
-                alpha = Double.parseDouble(selected[4]); //valueOf? 
+                System.out.println("Converted alpha to: " + selected[7]);
+                alpha = Double.valueOf(selected[7]); //valueOf? 
                 if(alpha <= 0 || alpha >= 1) {
                     alpha = 0.05;
                     throw new Exception();
@@ -819,7 +897,7 @@ public class ChoiceMenu {
             System.out.println("ERROR: Test not found");
             return "";
         }
-        return tt.printBasic();
+        return tt.printBasic(); */
     }
 
     public static String pairedMenu(JFrame parent) {
@@ -835,8 +913,8 @@ public class ChoiceMenu {
         //Prepare for popup
         String [] fieldA = new String[fields.length+1];
         String [] fieldB = new String[fields.length+1];
-        fieldA[0] = "First Field: ";
-        fieldB[0] = "Second Field: ";
+        fieldA[0] = "Field A: ";
+        fieldB[0] = "Field B: ";
         for (int i=0;i<fields.length;i++) {
             fieldA[i+1] = fields[i].getName();
             fieldB[i+1] = fields[i].getName();
@@ -908,7 +986,8 @@ public class ChoiceMenu {
         }
         if(!selected[7].strip().equals("")) {
             try {
-                alpha = Double.parseDouble(selected[4]); //valueOf? 
+                System.out.println("Attempting to parse: " + selected[4]);
+                alpha = Double.parseDouble(selected[7]); //valueOf? 
                 if(alpha <= 0 || alpha >= 1) {
                     alpha = 0.05;
                     throw new Exception();
@@ -1107,8 +1186,9 @@ public class ChoiceMenu {
         questionType.add("label");
         questionList.add(new String[]{"H\u2080:"}); // \u2080 is unicode for subscript 0
         questionType.add("comparison");
-        questionList.add(new String[]{"\u0070\u0302    ","<",">","=","    P\u2080"}); //phat <>= PNull //\u2260 is uncode for !=        
-        
+        //questionList.add(new String[]{"\u0070\u0302    ","<",">","=","    P\u2080"}); //phat <>= PNull //\u2260 is uncode for !=        
+        questionList.add(new String[]{"P\u2081    ","<",">","=","    P\u2080"});
+
         questionType.add("text");
         questionList.add(new String[]{"P\u2080 = "}); // Pnull
         questionType.add("label");
@@ -1199,6 +1279,8 @@ public class ChoiceMenu {
         proportion.setOneProportion();
         return proportion.printBasic();
     }
+
+    //TODO: Remove pnull 
     public static String twoProportionMenu(JFrame parent) {
         final String tabName = "Proportion z-test";
         Field[] fields = Dataset.getNumericFields();
@@ -1249,10 +1331,11 @@ public class ChoiceMenu {
         questionType.add("label");
         questionList.add(new String[]{"H\u2080:"}); // \u2080 is unicode for subscript 0
         questionType.add("comparison");
-        questionList.add(new String[]{"\u0070\u0302    ","<",">","=","    P\u2080"}); //phat <>= PNull //\u2260 is uncode for !=        
-        
-        questionType.add("text");
-        questionList.add(new String[]{"P\u2080 = "}); // Pnull
+        //questionList.add(new String[]{"\u0070\u0302    ","<",">","=","    P\u2080"}); //phat <>= PNull //\u2260 is uncode for !=        
+        questionList.add(new String[]{"P\u2081    ","<",">","=","    P\u2082"});
+
+        //questionType.add("text");
+        //questionList.add(new String[]{"P\u2080 = "}); // Pnull
         questionType.add("label");
         questionList.add(new String[]{"\n"});
         questionType.add("text");

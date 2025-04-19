@@ -88,9 +88,24 @@ public class StatisticalSummary {
         }
     }
 
+    //TODO: 4/17/2025 Changed from population SD to sample SD; if populationSD needed call overloaded population method  
     public static double getStandardDeviation(List<Double> data) {
         double mean = getMean(data);
+        double variance = data.stream().mapToDouble(x -> Math.pow(x - mean, 2)).sum();
+        variance = variance/(getCount(data) - 1);
+        return Math.sqrt(variance);
+    }
+
+    public static double getStandardDeviation(List<Double> data, boolean population) {
+        double mean = getMean(data);
         double variance = data.stream().mapToDouble(x -> Math.pow(x - mean, 2)).average().orElse(0.0);
+        return Math.sqrt(variance);
+    }
+
+    public static double getSampleSD(List<Double> data) {
+        double mean = getMean(data);
+        double variance = data.stream().mapToDouble(x -> Math.pow(x - mean, 2)).sum();
+        variance = variance/(getCount(data) - 1);
         return Math.sqrt(variance);
     }
 
@@ -143,12 +158,6 @@ public class StatisticalSummary {
         return output.toString();
     }
 
-    public static double getSampleSD(List<Double> data) {
-        double mean = getMean(data);
-        double variance = data.stream().mapToDouble(x -> Math.pow(x - mean, 2)).sum();
-        variance = variance/(getCount(data) - 1);
-        return Math.sqrt(variance);
-    }
     // takes the fields of the linear regression and outputs a string of information about the model
     public static String getLinearRegression(Field target, Field[] parameters) {
         if (target == null || parameters == null || parameters.length ==0) {

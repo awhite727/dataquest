@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -41,6 +42,7 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
+//import javax.xml.crypto.Data;
 
 
 public class Layout extends JFrame {
@@ -120,9 +122,14 @@ public class Layout extends JFrame {
 
         JMenuItem rowItem = new JMenuItem("Add row");
         JMenuItem columnItem = new JMenuItem("Add column");
+        JMenuItem columnUpdateItem = new JMenuItem("Update column type");
+        JMenuItem columnDeleteItem = new JMenuItem("Delete column");
+        
         JMenuItem missingItem = new JMenuItem("Handle missing values");
         spreadsheetMenu.add(rowItem);
         spreadsheetMenu.add(columnItem);
+        spreadsheetMenu.add(columnUpdateItem);
+        spreadsheetMenu.add(columnDeleteItem);
         spreadsheetMenu.addSeparator();     
         spreadsheetMenu.add(missingItem);
 
@@ -211,6 +218,7 @@ public class Layout extends JFrame {
 
         // Create spreadsheet
         tableModel = new DefaultTableModel(5, 3);
+        //tableModel.setColumnIdentifiers(new String[]{"Column 1", "Column 2", "Column 3"});
         spreadsheet = new JTable(tableModel);
         JTableHeader header = spreadsheet.getTableHeader();
         // allows for editing column names
@@ -283,6 +291,15 @@ public class Layout extends JFrame {
         importItem.addActionListener(e -> importAssist());
         rowItem.addActionListener(e -> addRow());
         columnItem.addActionListener(e -> addColumn());
+        columnUpdateItem.addActionListener(e -> {
+            if(Dataset.dataArray == null) {
+                System.out.println("ERROR: No data to update");
+            } else {
+                ChoiceMenu.updateFieldType(this);
+                updateSpreadsheet();
+            }
+        }
+        );
         missingItem.addActionListener(e -> {
             if(Dataset.dataArray != null) {
                 ChoiceMenu.missingValueMenu(this);
@@ -291,9 +308,13 @@ public class Layout extends JFrame {
             }
         });
         summaryItem.addActionListener(e -> {
+            //TODO: REMOVE - just testing 
+            for (Field field : Dataset.dataArray) {
+                System.out.println("Field " + field.getName() + " type: " + field.getType());
+            }
             if(Dataset.dataArray != null) {
                 String textOutput = ChoiceMenu.statisticalSummaryMenu(this);
-                output.append(textOutput);
+                output.append("\n" + textOutput);
             }
         });
         linearRegressionItem.addActionListener (e -> {
@@ -317,25 +338,25 @@ public class Layout extends JFrame {
         tTwoSample.addActionListener(e -> {
             if (Dataset.dataArray != null) {
                 String info = ChoiceMenu.tTwoSampleMenu(this);
-                output.append(info);
+                output.append("\n" + info);
             }
         });
         zTwoSample.addActionListener(e -> {
             if (Dataset.dataArray != null) {
                 String info = ChoiceMenu.zTwoSampleMenu(this);
-                output.append(info);
+                output.append("\n" + info);
             }
         });
         pairedSample.addActionListener(e -> {
             if (Dataset.dataArray != null) {
                 String info = ChoiceMenu.pairedMenu(this);
-                output.append(info);
+                output.append("\n" + info);
             }
         });
         proportionItem.addActionListener(e -> {
             if (Dataset.dataArray != null) {
                 String info = ChoiceMenu.proportionMenu(this);
-                output.append(info);
+                output.append("\n" + info);
             }
         });
         histogramButton.addActionListener(e-> {
@@ -390,7 +411,10 @@ public class Layout extends JFrame {
                     if (row >=0 && column >= 0) {
                         Object updatedValue = tableModel.getValueAt(row, column);
                         if (updatedValue != null) {
-                            updateValue(updatedValue, row, column);
+                            if (!updateValue(updatedValue, row, column)) {
+                                System.out.println("ERROR: Not a matching type");
+                                
+                            }
                         }
                         System.out.println("Value changed at [" + row + ", " + column + "] to: " + updatedValue);
                     }
@@ -502,7 +526,6 @@ public class Layout extends JFrame {
             //String extension = file.getName().split(".")[1];//NOTE: Apparently capital extensions are valid, so can be used to prevent capital issues; however I'm worried this may lead to more issues than benefits
             if(file.getName().endsWith(".txt")) { //TODO: Apparently capital txt isn't handled with this but is valid?
                 System.out.println("txt");
-                //TODO: Call choice menu to determine the delim
                 String delim = ChoiceMenu.importingDelimMenu(this);
                 if(delim != null) dataset.csvReading(file, delim);
             } else if(file.getName().endsWith(".csv")) {
@@ -515,11 +538,12 @@ public class Layout extends JFrame {
                 System.out.println("xls");
                 dataset.xlsReading(file);
             } else {
-                System.out.println("Not a valid file type: " + file.getName());
+                System.out.println("ERROR: Not a valid file type " + file.getName());
                 return;
             }
+            Dataset.trimDataArray();
         } catch(IOException e) {
-            System.out.println("File not found: ");
+            System.out.println("ERROR: File in use by another process");
             System.out.println(file);
             return;
         } catch(Exception e) {
@@ -554,6 +578,7 @@ public class Layout extends JFrame {
         // cache columns to reduce method calls
         ArrayList<ArrayList<?>> cachedColumns = new ArrayList<>();
         for (Field field : data) { 
+            //ArrayList<Object> tempTypedField = (ArrayList<Object>) field.getTypedArray().stream().map(value -> (value == null) ? "#Blank#" : value).collect(Collectors.toList());
             cachedColumns.add(field.getTypedArray()); 
         }
 
@@ -589,6 +614,8 @@ public class Layout extends JFrame {
         int columnCount = tableModel.getColumnCount();
         String[] columnNames = new String[columnCount + 1];
 
+        if(Dataset.dataArray == null) Dataset.dataArray = new ArrayList<>();
+
         // gets names of columns
         if (Dataset.dataArray !=  null) {
             String[] fieldNames = Dataset.getFields();
@@ -611,8 +638,9 @@ public class Layout extends JFrame {
         tableModel.setColumnIdentifiers(columnNames);
     }
 
-    // manual entry 
-    private void updateValue(Object value, int row, int col) {
+    // manual entry
+    //returns false only if the type doesn't match so an error message can appear and the table displays what the analyzing array holds 
+    private boolean updateValue(Object value, int row, int col) {
         if (Dataset.dataArray == null) {
             Dataset.dataArray = new ArrayList<>();
         }
@@ -620,7 +648,7 @@ public class Layout extends JFrame {
         // Ensure dataset has enough columns
         while (Dataset.dataArray.size() <= col) {
             if (Dataset.getPattern(value.toString()).equals("missing")) {   // if a blank value is accidentally added to a new column
-                return;
+                return true;
             }
             Dataset.dataArray.add(new Field(tableModel.getColumnName(Dataset.dataArray.size())));
         }
@@ -640,6 +668,9 @@ public class Layout extends JFrame {
         }
         if (success) {
             tableModel.setValueAt(value, row, col);
+        } else {
+            //TODO: Set to a missing? Currently keeps looking at typed array so may lead to confusion if a number isn't properly updated
+            tableModel.setValueAt(null, row, col);
         }
 
         // re-add listeners
@@ -654,6 +685,7 @@ public class Layout extends JFrame {
         if (tableModel.getColumnCount() <= col + 1) {
             addColumn();
         }
+        return success;
     }
 
     // used to set visuals with the + buttons
@@ -795,6 +827,7 @@ public class Layout extends JFrame {
         }
 
         private void startEditing(int column) {
+            //System.out.println("startEditing called");
             editingColumn = column;
             JTableHeader header = table.getTableHeader();
             TableColumnModel colModel = table.getColumnModel();
@@ -805,6 +838,18 @@ public class Layout extends JFrame {
             header.add(editor);
             editor.requestFocus();
             editor.selectAll();
+            if(Dataset.dataArray == null) {
+                Dataset.dataArray = new ArrayList<>();
+            }
+
+            if(Dataset.dataArray.size() <= column) {
+                final int difference = (column + 1) - Dataset.dataArray.size();
+                for (int i = 0; i < difference; i++) {
+                    String columnName = colModel.getColumn(Dataset.dataArray.size()).getHeaderValue().toString(); //Get what the column is called in the table
+                    Dataset.dataArray.add(new Field(columnName)); //add Field to dataset
+                }
+            }
+            
         }
 
         private void stopEditing() {

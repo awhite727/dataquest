@@ -143,8 +143,19 @@ public class TwoSample {
         testStat = round(meanDiff/sqrtPart);
 
         p = StatisticalSummary.getPValue(testStat);
-        if(!direction.equals(Direction.EQUAL)){
-            p /= 2;
+        //NOTE: Handled differently because getPValue returns cummulative probability p(x<=T) 
+        switch (direction) {
+            case LESS_THAN:
+                //p /= 2;
+                p = 1-p;
+                break;
+            case GREATER_THAN:
+                //p/=2;
+                break;
+            default: //EQUAL
+                p = 1 - p;
+                p*=2;
+                break;
         }
         p = round(p);
 
@@ -166,8 +177,16 @@ public class TwoSample {
     private void setWelchStat(){
         testStat = round(tTest.t(statsA, statsB));
         p = tTest.tTest(statsA, statsB);
-        if(!direction.equals(Direction.EQUAL)){
-            p /= 2;
+        switch (direction) {
+            case GREATER_THAN:
+                p /= 2;
+                p = 1-p;
+                break;
+            case LESS_THAN:
+                p/=2;
+                break;
+            default: //EQUAL
+                break;
         }
         p = round(p);
     }
@@ -224,8 +243,16 @@ public class TwoSample {
     private void setPooledStat() {
         testStat = round(tTest.homoscedasticT(statsA, statsB));
         p = tTest.homoscedasticTTest(statsA,statsB);
-        if(!direction.equals(Direction.EQUAL)){
-            p /= 2;
+        switch (direction) {
+            case GREATER_THAN:
+                p /= 2;
+                p = 1-p;
+                break;
+            case LESS_THAN:
+                p/=2;
+                break;
+            default: //EQUAL
+                break;
         }
         p = round(p);
     }
@@ -298,8 +325,16 @@ public class TwoSample {
         double diffSD = StatisticalSummary.getSampleSD(paired);
         testStat = (diffBar - difference)/(diffSD/Math.sqrt(paired.size()));
         p = tTest.pairedTTest(valuesA, valuesB);
-        if(!direction.equals(Direction.EQUAL)){
-            p /= 2;
+        switch (direction) {
+            case GREATER_THAN:
+                p /= 2;
+                p = 1-p;
+                break;
+            case LESS_THAN:
+                p/=2;
+                break;
+            default: //EQUAL
+                break;
         }
         p = round(p);
     }
@@ -335,14 +370,65 @@ private String getConclusion(){
     return conclusion;
 }
 
+//helper method to make print basic less ugly
+private String getNullHypothesis() {
+    if(testType.equals("One Proportion Z-Test")) {
+        switch (direction) {
+            case LESS_THAN:
+                return "p < p\u2080";
+            case GREATER_THAN:
+                return "p > p\u2080"; // \u2265 is >=
+            case EQUAL:
+                return "p = p\u2080";
+            default:
+                break;
+        }
+    } else {
+        switch (direction) {
+            case LESS_THAN:
+                return "p\u2081 < p\u2082";
+            case GREATER_THAN:
+                return "p\u2081 > p\u2082";
+            case EQUAL:
+                return "p\u2081 = p\u2082";
+        }
+    }
+    return null;
+}
+
+//helper method to make print basic less ugly
+private String getAltHypothesis() {
+    if(testType.equals("One Proportion Z-Test")) {
+        switch (direction) {
+            case LESS_THAN:
+                return fieldA.getName() + " > " + difference;
+            case GREATER_THAN:
+            return fieldA.getName() + " < " + difference;
+            case EQUAL:
+            return fieldA.getName() + " = " + difference;
+            default:
+                break;
+        }
+    } else {
+        switch (direction) {
+            case LESS_THAN:
+                return fieldA.getName() + " + " + fieldB.getName() + " > " + difference;
+            case GREATER_THAN:
+            return fieldA.getName() + " + " + fieldB.getName() + " < " + difference;
+            case EQUAL:
+            return fieldA.getName() + " + " + fieldB.getName() + " = " + difference;
+        }
+    }
+    return null;
+}
+
 //TODO: add the null and alternative to conclusion
 public String printBasic(){
-        String result = ""; 
-        result += "mean " + fieldA.getName()+ " = " + round(meanA);
+        String result = "Test: " + testType; 
+        result += "\nmean " + fieldA.getName()+ " = " + round(meanA);
         result += "\nmean " + fieldB.getName() + " = " + round(meanB);
         result += "\nd = " + difference; //TODO: What to call it? 
         result += "\n\u03B1 = " + alpha;
-        result += "\nTest: " + testType;
         //if t
         if(testType.equals("Two-Sample Z-Test")) {
             result += "\n  z = ";
@@ -355,8 +441,10 @@ public String printBasic(){
         }
         result +="\n  P-Value = ";
         result += p;
-        result += "\n  CI: ";
-        result += Arrays.toString(ci);
+        if(direction == Direction.EQUAL) {
+            result += "\n  CI: ";
+            result += Arrays.toString(ci);
+        }
         result += "\n" + getConclusion();
         return result;
     }

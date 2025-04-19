@@ -55,7 +55,8 @@ class Dataset {
         ArrayList<Field> fieldsList = new ArrayList<>();
         for(int i=0; i<dataArray.size(); i++) {
             Field f = dataArray.get(i);
-            if(f.getType().equals("float")) {
+            if(f.getType() == null) continue;
+            if(f.getType().equals("float") && f.getValues().size() > 0) { //prevents choice menu errors where the user set a type to float but there are no actual numbers in that field
                 fieldsList.add(f);
             }
         }
@@ -261,6 +262,7 @@ class Dataset {
     
     //Takes an imported .xlsx file and fills out the dataArray
     public void xlsxReading(File file) throws IOException{
+        System.out.println("Called");
         XSSFWorkbook wb;
         XSSFSheet sheet;
         DataFormatter df = new DataFormatter(); //have emulatecsv = true if we want to prevent trimming
@@ -282,16 +284,21 @@ class Dataset {
             System.out.println("ERROR: Not a valid file type");
             return;
         }
-        Row fields = sheet.getRow(0);
+        Row fields = sheet.getRow(sheet.getFirstRowNum()); //updated to find the first populated row, not just the first row
         System.out.println("Preparing iterations: ");
         int numFields = fields.getPhysicalNumberOfCells();
         for (Row row : sheet){
             for (int j=0; j < numFields; j++) {
                 Cell cell = row.getCell(j);
+                if(cell == null && row.equals(fields)) {
+                    //System.out.println("Unnamed column identified"); //for testing
+                    dataArray.add(new Field(""));
+                    continue;
+                }
                 String cellString = df.formatCellValue(cell);
                 if(row.equals(fields)) {
                     if(!cell.getCellType().toString().equalsIgnoreCase("STRING")){
-                        System.out.println("NOTICE: Cell " + df.formatCellValue(cell) + "is not a String. Is this intended to be a data cell?");
+                        System.out.println("NOTICE: Cell " + df.formatCellValue(cell) + " is not a String. Is this intended to be a data cell?");
                     }
                     dataArray.add(new Field(cellString));
                     continue;
@@ -306,6 +313,18 @@ class Dataset {
                 }
             }
         }
+        //Check for edge cases of empty columns/only named columns
+        /* ArrayList<Field> deleteFields = new ArrayList<>();
+        for (Field field : dataArray) {
+            if(field.getType() != null) continue;
+            else if(field.getName().strip().equals("")) deleteFields.add(field);
+            else field.setType("String");
+            System.out.println(field.getName());
+        }
+        for (Field field : deleteFields) {
+            dataArray.ind
+        }*/
+        
         System.out.println("\n~ ~ ~\nReading completed.");
         System.out.println("Total lines of data: " + dataArray.get(0).getStringArray().size());
         System.out.println("Lines with typing errors: " + incorrectCount);
@@ -374,5 +393,13 @@ class Dataset {
                 System.out.println("\t" + field.getName() + ": " + nullCount);
             }
         }
+    }
+
+    public static void trimDataArray() {
+        if (dataArray == null) return;
+        dataArray.removeIf(field -> field.getType() == null && field.getName().strip().equals("")); //remove unused columns (sometimes slips through if data used to be there and was deleted, especially for xlsx)
+        dataArray.stream().filter(field -> field.getType()==null).forEach(field -> {
+                    if(field.getName().strip().equals("")) field.setType("String"); //Prevent any null type slipping through (occurs if there are columns with names but no data)
+        });
     }
 }
