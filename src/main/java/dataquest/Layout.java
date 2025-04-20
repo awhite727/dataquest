@@ -18,7 +18,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -52,11 +51,11 @@ public class Layout extends JFrame {
     //private JFreeChart chart1, chart2;
     //private ChartPanel chartPanel1, chartPanel2;
     //private Color[] colorPalette;
-    private JButton /* addRowButton, addColumnButton, importingButton, 
-        handleMissingButton, statisticalSummaryButton,  */
-        histogramButton, boxplotButton;//, linearRegressionButton,
-        //meanDiffButton;
-
+    /* private JButton addRowButton, addColumnButton, importingButton, 
+        handleMissingButton, statisticalSummaryButton,
+        histogramButton, boxplotButton, linearRegressionButton,
+        meanDiffButton;
+    */
     private Dataset dataset;
     private Visualization visual1;
     private Visualization visual2;
@@ -88,7 +87,7 @@ public class Layout extends JFrame {
             public void windowClosing(WindowEvent e) {
                 int exitChoice = JOptionPane.showConfirmDialog (null, "Would you like to save your workspace?",null, JOptionPane.YES_NO_OPTION);                
                 if(exitChoice == JOptionPane.YES_OPTION){
-                    //TODO: Add loading bar; takes a good bit
+                    //TODO: Add loading bar? takes a good bit
                     System.out.println("Loading");
                     ArrayList<Object> workspace = new ArrayList<>();
                     //Graph[] graphs = new Graph[]{graph1,graph2};
@@ -167,8 +166,8 @@ public class Layout extends JFrame {
         //handleMissingButton = new JButton("Handle Missing");
         //statisticalSummaryButton = new JButton("Statistical Summary");
 
-        histogramButton = new JButton("Histogram");
-        boxplotButton = new JButton("Boxplot");
+        //histogramButton = new JButton("Histogram");
+        //boxplotButton = new JButton("Boxplot");
         //linearRegressionButton = new JButton("Linear Regression");
         //meanDiffButton = new JButton("Mean comparison");
         //buttonPanel.add(addRowButton);
@@ -177,8 +176,8 @@ public class Layout extends JFrame {
         //buttonPanel.add(handleMissingButton);
         //buttonPanel.add(statisticalSummaryButton);
 
-        buttonPanel.add(histogramButton);
-        buttonPanel.add(boxplotButton);
+        //buttonPanel.add(histogramButton);
+        //buttonPanel.add(boxplotButton);
         //buttonPanel.add(linearRegressionButton);
         //buttonPanel.add(meanDiffButton);
         
@@ -308,13 +307,9 @@ public class Layout extends JFrame {
             }
         });
         summaryItem.addActionListener(e -> {
-            //TODO: REMOVE - just testing 
-            for (Field field : Dataset.dataArray) {
-                System.out.println("Field " + field.getName() + " type: " + field.getType());
-            }
             if(Dataset.dataArray != null) {
                 String textOutput = ChoiceMenu.statisticalSummaryMenu(this);
-                output.append("\n" + textOutput);
+                if(textOutput != null)output.append("\n" + textOutput);
             }
         });
         linearRegressionItem.addActionListener (e -> {
@@ -338,28 +333,28 @@ public class Layout extends JFrame {
         tTwoSample.addActionListener(e -> {
             if (Dataset.dataArray != null) {
                 String info = ChoiceMenu.tTwoSampleMenu(this);
-                output.append("\n" + info);
+                if(info != null)output.append("\n" + info);
             }
         });
         zTwoSample.addActionListener(e -> {
             if (Dataset.dataArray != null) {
                 String info = ChoiceMenu.zTwoSampleMenu(this);
-                output.append("\n" + info);
+                if(info != null)output.append("\n" + info);
             }
         });
         pairedSample.addActionListener(e -> {
             if (Dataset.dataArray != null) {
                 String info = ChoiceMenu.pairedMenu(this);
-                output.append("\n" + info);
+                if(info != null)output.append("\n" + info);
             }
         });
         proportionItem.addActionListener(e -> {
             if (Dataset.dataArray != null) {
                 String info = ChoiceMenu.proportionMenu(this);
-                output.append("\n" + info);
+                if(info != null)output.append("\n" + info);
             }
         });
-        histogramButton.addActionListener(e-> {
+        /* histogramButton.addActionListener(e-> {
             if(Dataset.dataArray != null) {
                 //String textOutput = ChoiceMenu.histogramMenu(this);
                 //if(textOutput != null) output.append(textOutput+"---\n");
@@ -374,8 +369,8 @@ public class Layout extends JFrame {
                 }
             }
           //TODO: create actual graph
-        });
-        boxplotButton.addActionListener(e -> {
+        }); */
+        /* boxplotButton.addActionListener(e -> {
             if (Dataset.dataArray != null) {
                 visual1 = ChoiceMenu.boxplotMenu(this);
                 JPanel newPanel = visual1.createChart();
@@ -387,7 +382,7 @@ public class Layout extends JFrame {
                 visualPanel1.revalidate();
                 visualPanel1.repaint();
             }
-        });
+        }); */
         visualButton1.addActionListener(e -> {
             setVisual(1);
         });
@@ -473,10 +468,7 @@ public class Layout extends JFrame {
         }
     }
     
-    //Opens the importing window
-    //Checks if the user has python properly installed
-    //If so, it opens the modern importing window
-    //TODO: Add notification if they don't have it
+    //Opens the importing window using python
     //Once file selected, calls the repesective Dataset's csvReading, xlsReading, or xlsxReading
    //Returns true if the file was found and properly added to Dataset.dataArray, returns false if not 
     private void importAssist(){
@@ -494,8 +486,8 @@ public class Layout extends JFrame {
             bf.close();
         } catch (Exception e) {
             //Python isn't present
-            System.out.println("ERROR: Python not installed.");
-            JOptionPane.showMessageDialog(null, "ERROR: Python not properly installed. Please install to import data");
+            Popup.showErrorMessage(this,
+                "ERROR: Python not installed or enviroment path not properly set. Please install to use importing feature");
             return;
         }
 
@@ -511,26 +503,28 @@ public class Layout extends JFrame {
          bf.close();
          file = new File(selectedPath);
       } catch (IOException e) {
-         System.out.println("ERROR: " + pythonPath + " could not be found");
+        Popup.showErrorMessage(this,("ERROR: " + pythonPath + " could not be found"));
          e.printStackTrace();
       } catch (InterruptedException e) {
-         //Process p interupted by another thread
+        Popup.showErrorMessage(this, "Another process interrupted importing");
          e.printStackTrace();
       } catch (NullPointerException e){
          //file selection canceled 
+         return;
       }
         try {
-            if(file.getName().equals("")){//nothing selected or it'
+            if(file.getName().equals("")){//nothing selected 
                 return;
             } 
             //String extension = file.getName().split(".")[1];//NOTE: Apparently capital extensions are valid, so can be used to prevent capital issues; however I'm worried this may lead to more issues than benefits
-            if(file.getName().endsWith(".txt")) { //TODO: Apparently capital txt isn't handled with this but is valid?
+            if(file.getName().endsWith(".txt")) {
                 System.out.println("txt");
                 String delim = ChoiceMenu.importingDelimMenu(this);
-                if(delim != null) dataset.csvReading(file, delim);
+                if(delim == null) return;
+                 dataset.csvReading(file, delim);
             } else if(file.getName().endsWith(".csv")) {
                 System.out.println("csv");
-                dataset.csvReading(file); 
+                dataset.csvReading(file,","); 
             } else if(file.getName().endsWith(".xlsx")) {
                 System.out.println("xlsx");
                 dataset.xlsxReading(file);
@@ -538,13 +532,12 @@ public class Layout extends JFrame {
                 System.out.println("xls");
                 dataset.xlsReading(file);
             } else {
-                System.out.println("ERROR: Not a valid file type " + file.getName());
+                Popup.showErrorMessage(this, "ERROR: Not a valid file type\n" + file.getName());
                 return;
             }
             Dataset.trimDataArray();
         } catch(IOException e) {
-            System.out.println("ERROR: File in use by another process");
-            System.out.println(file);
+            Popup.showErrorMessage(this,"ERROR: File in use by another process. Please close to use this file");
             return;
         } catch(Exception e) {
             System.out.println("ERROR: Unknown error in Dataset.gui()");
@@ -560,6 +553,7 @@ public class Layout extends JFrame {
         if(data == null){return;} // handles empty dataset
         //int rows = data.get(0).getTypedArray().size();
         int rows = 0;
+        //TODO: Note non-rectangular dataArrays lead to handleMissingValues believing that a column with only following missing values to not be missing any values and not allowing the user to fill that field
         // for non-rectangular dataArrays, gets the largest row size
         for (int i = 0; i < data.size(); i++ ) {
             int rowSize = data.get(i).getTypedArray().size();

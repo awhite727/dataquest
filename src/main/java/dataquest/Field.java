@@ -73,7 +73,7 @@ public class Field implements Serializable{
 
     // returns indexes where missing values haven't been handled yet
     public ArrayList<Integer> getMissing() {
-        ArrayList<Integer> indexes = new ArrayList();
+        ArrayList<Integer> indexes = new ArrayList<>();
         for (int i = 0; i<typedArray.size(); i++) {
             if (typedArray.get(i) == null) {
                 indexes.add(i);
@@ -248,7 +248,7 @@ public class Field implements Serializable{
             System.out.println("ERROR: type not determined");
             return false;
         } 
-        //TODO: replace with missing value handling
+        
         if(newValue.isEmpty()) { 
             stringArray.add(newValue);
             typedArray.add(null);

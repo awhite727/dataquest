@@ -88,21 +88,7 @@ public class StatisticalSummary {
         }
     }
 
-    //TODO: 4/17/2025 Changed from population SD to sample SD; if populationSD needed call overloaded population method  
     public static double getStandardDeviation(List<Double> data) {
-        double mean = getMean(data);
-        double variance = data.stream().mapToDouble(x -> Math.pow(x - mean, 2)).sum();
-        variance = variance/(getCount(data) - 1);
-        return Math.sqrt(variance);
-    }
-
-    public static double getStandardDeviation(List<Double> data, boolean population) {
-        double mean = getMean(data);
-        double variance = data.stream().mapToDouble(x -> Math.pow(x - mean, 2)).average().orElse(0.0);
-        return Math.sqrt(variance);
-    }
-
-    public static double getSampleSD(List<Double> data) {
         double mean = getMean(data);
         double variance = data.stream().mapToDouble(x -> Math.pow(x - mean, 2)).sum();
         variance = variance/(getCount(data) - 1);
@@ -170,7 +156,7 @@ public class StatisticalSummary {
         }
         ArrayList<ArrayList<Double>> values = Dataset.matchFields(variables);
         if (values.get(0).size() <= 1) {
-            return "Too many missing values to compute linear regression.";
+            return null;//return "Too many missing values to compute linear regression.";
         }
         ArrayList<Double> depVar = values.get(0);
         values.remove(0); // gives dependent variables

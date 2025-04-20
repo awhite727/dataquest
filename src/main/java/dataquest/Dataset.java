@@ -108,9 +108,9 @@ class Dataset {
             List<Integer> missing = f.getMissing();    // gets all missing indexes in this field
             missingIndex.addAll(missing);   // adds all new missing indexes
         }
-        ArrayList<ArrayList<Double>> values = new ArrayList();
+        ArrayList<ArrayList<Double>> values = new ArrayList<>();
         for (Field f: fields) {
-            ArrayList<Double> valuesWithoutMissing = new ArrayList();
+            ArrayList<Double> valuesWithoutMissing = new ArrayList<>();
             for (int i=0; i<fields[0].getTypedArray().size(); i++) {
                 if (!missingIndex.contains(i)) {    // skips if at least one field has a missing at that value
                     Object value = f.getTypedAtIndex(i);
@@ -197,11 +197,6 @@ class Dataset {
         dataArray.add(new Field(fieldName));
     }
     
-    //TODO: Temporary method to make reversing any errors easier; remove later
-    void csvReading(File file) throws IOException{
-        csvReading(file, ",");
-    }
-
     //Takes in the imported file and fills out the dataArray
     void csvReading(File file, String delim) throws IOException{
         BufferedReader csvReader = new BufferedReader(new FileReader(file));

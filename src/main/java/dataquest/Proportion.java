@@ -40,12 +40,12 @@ public class Proportion {
         this.successADirection = successADirection;
     }
 
-    Proportion(Field fieldA, Field fieldB, double successA, Direction successADirection, double successB, Direction successBDirection, double alpha, double pNull, Direction direction){
+    Proportion(Field fieldA, Field fieldB, double successA, Direction successADirection, double successB, Direction successBDirection, double alpha, Direction direction){
         this.fieldA = fieldA;
         this.fieldB = fieldB;
         valuesA = fieldA.getValues();
         valuesB = fieldB.getValues();
-        this.pNull = pNull;
+        //this.pNull = pNull;
         nA = StatisticalSummary.getCount(valuesA);
         nB = StatisticalSummary.getCount(valuesB);
         this.direction = direction;
@@ -208,15 +208,21 @@ public class Proportion {
         double denom = Math.sqrt((pHat*(1-pHat)) * (1.0/nA + 1.0/nB));
         //System.out.println("Denom: " + round(denom));
         z = (pHatA - pHatB)/denom;
-        //System.out.println("pHatA-pHatB: " + (pHatA-pHatB));
-        //System.out.println("z: " + round(z));
-        if(direction == Direction.EQUAL)
-            criticalValue = StatisticalSummary.getZStar(alpha);
-        else if(direction == Direction.LESS_THAN)
-            criticalValue = -StatisticalSummary.getZStar(alpha*2);
-        else
-            criticalValue = StatisticalSummary.getZStar(alpha*2);
         p = StatisticalSummary.getPValue(z);
+        switch (direction) {
+            case LESS_THAN:
+                p = 1-p;
+                criticalValue = -StatisticalSummary.getZStar(alpha*2);
+                break;
+            case GREATER_THAN:
+                criticalValue = StatisticalSummary.getZStar(alpha*2);
+                break;
+            default: //EQUAL
+                p*=2;
+                criticalValue = StatisticalSummary.getZStar(alpha);
+                break;
+        }
+        p = round(p);
     }
 
     private void setTwoPropCI() {
@@ -226,7 +232,6 @@ public class Proportion {
          *          )
          */
 
-        //NOTE: site didn't include pNull in CI; I think that's correct but wanna note bc tired 
         double meanDiff = pHatA - pHatB;
         //double zStar = StatisticalSummary.getZStar(alpha);
         System.out.println("MeanDiff: " + meanDiff);
@@ -238,7 +243,7 @@ public class Proportion {
         System.out.println("z*Sqrt: " + (criticalValue*sqrtPart));
 
 
-        ci[0] = round(meanDiff - (Math.abs(criticalValue)*sqrtPart)); //TODO: Check if left/right? calculator changes like [-1,-.4] for -.45 +- 0.015
+        ci[0] = round(meanDiff - (Math.abs(criticalValue)*sqrtPart));
         ci[1] = round(meanDiff + (Math.abs(criticalValue)*sqrtPart));
     }
 //end of two-prop sub-setters
@@ -290,7 +295,7 @@ public class Proportion {
                 case GREATER_THAN:
                     return "p < p\u2080";
                 case EQUAL:
-                    return "p = p\u2080";
+                    return "p \u2260 p\u2080";
                 default:
                     break;
             }
