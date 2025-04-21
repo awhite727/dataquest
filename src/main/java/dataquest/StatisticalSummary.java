@@ -164,20 +164,33 @@ public class StatisticalSummary {
         if (values.size() == 1) {
             ArrayList<Double> indVar = values.get(0);
             SimpleRegression model = findSimpleLinearRegression(indVar, depVar);
+            double fstat = model.getRegressionSumSquares()/model.getMeanSquareError();
             StringBuilder output = new StringBuilder();
             output.append("\tSimple Linear Regression\n");
             output.append("Dependent variable: " + target.getName() + "\n");
             output.append("Independent variable: " + parameters[0].getName() + "\n");
             output.append("Equation: y = " + String.format("%.4f", model.getIntercept()) + 
                         " + " + String.format("%.4f", model.getSlope()) + "x\n");
-            output.append("Significance: " + String.format("%.4f", model.getSignificance()) + "\n");
-            output.append("\tR-Squared: " + String.format("%.4f", model.getRSquare()) + "\n");
+            output.append("Significance: " + String.format("%.4f", model.getSignificance()));
+            output.append("\tF-statistic: " + String.format("%.4f", fstat));
+            output.append("\nR-Squared: " + String.format("%.4f", model.getRSquare()) + "\n");
 
             return output.toString();
         }
         // multiple linear regression output
         else {
             OLSMultipleLinearRegression  model = findMultipleLinearRegression(values, depVar);
+            double meanSquareRegression = model.calculateTotalSumOfSquares()/parameters.length;
+            int dfe = depVar.size()-parameters.length;
+            if (dfe<=0) {
+                dfe = 1;
+            }
+            double meanSquareResidual = model.calculateResidualSumOfSquares()/dfe;
+            if(meanSquareResidual <=0) {
+                System.out.println("Error calculating f statistic");
+                meanSquareResidual = 1;
+            }
+            double fstat = meanSquareRegression/meanSquareResidual;
             StringBuilder output = new StringBuilder();
             output.append("\tMultiple Linear Regression\n");
             output.append("Target field: " + target.getName() + "\n");
@@ -198,6 +211,7 @@ public class StatisticalSummary {
                     output.append("\n" + "\t");
                 }
             }
+            output.append("\nF-Statistic: " + String.format("%.4f", fstat));
             output.append("\nR-Squared: " + String.format("%.4f", model.calculateRSquared()) + "\n");
             return output.toString();
         }
@@ -303,12 +317,19 @@ public class StatisticalSummary {
         return total;
     }
 
-    public static String getSummary(List<Double> data) {
-        return String.format(
-            "Mean: %.2f\nMedian: %.2f\nStandard Deviation: %.2f\nMin: %.2f\nMax: %.2f\nQ1: %.2f\nQ3: %.2f\nCount: %d\n",
-            getMean(data), getMedian(data), getStandardDeviation(data),
-            getMin(data), getMax(data), getQuartile(data, 1), getQuartile(data, 3), getCount(data)
-        );
+    public static String getSummary(Field field) {
+        List<Double> data = field.getValues();
+        StringBuilder output = new StringBuilder();
+        output.append("\n\tSummary of " + field.getName());
+        output.append("\nMean: " + String.format("%.4f", getMean(data)));
+        output.append("\nStandard Deviation: " + String.format("%.4f",getStandardDeviation(data)));
+        output.append("\nMinimum: " + String.format("%.4f", getMin(data)));
+        output.append("\nFirst Quartile: " + String.format("%.4f", getQuartile(data, 1)));
+        output.append("\nMedian: " + String.format("%.4f", getMedian(data)));
+        output.append("\nThird Quartile: " + String.format("%.4f", getQuartile(data, 3)));
+        output.append("\nMaximum: " + String.format("%.4f", getMax(data)));
+        output.append("\nCount: " + getCount(data));
+        return output.toString();
     }
 
 }

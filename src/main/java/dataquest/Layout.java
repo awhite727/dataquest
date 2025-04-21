@@ -3,7 +3,6 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.FocusAdapter;
@@ -19,11 +18,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -34,6 +33,8 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
@@ -41,35 +42,47 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
-//import javax.xml.crypto.Data;
+
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.xy.XYSeriesCollection;
+
+import com.formdev.flatlaf.FlatDarculaLaf;
+import com.formdev.flatlaf.FlatIntelliJLaf;
+
 
 
 public class Layout extends JFrame {
     private JTable spreadsheet;
     private DefaultTableModel tableModel;
     private JTextArea output;
-    //private JFreeChart chart1, chart2;
-    //private ChartPanel chartPanel1, chartPanel2;
-    //private Color[] colorPalette;
-    /* private JButton addRowButton, addColumnButton, importingButton, 
-        handleMissingButton, statisticalSummaryButton,
-        histogramButton, boxplotButton, linearRegressionButton,
-        meanDiffButton;
-    */
+
     private Dataset dataset;
     private Visualization visual1;
     private Visualization visual2;
     private JPanel visualPanel1;
     private JPanel visualPanel2;
+    private JButton darkMode;
 
-    private final int visualPanelWidth = 400;
-    private final int visualPanelHeight = 300;
+    private final int visualPanelWidth = 800;
+    private final int visualPanelHeight = 400;
 
-    private final Font menuFont = new Font("sans-serif", Font.PLAIN, 15);
+    private boolean isDarkMode = false;
+    //private final Font menuFont = new Font("sans-serif", Font.PLAIN, 15);
 
     public Layout() {
         setTitle("DataQuest");
         setSize(800, 600);
+        FlatIntelliJLaf.setup(); // default light mode
+        try {
+            UIManager.setLookAndFeel(new FlatIntelliJLaf());
+            UIManager.put("Component.focusWidth", 0); // No focus border
+            UIManager.put("Component.innerFocusWidth", 0); // No inner ring
+        } catch (UnsupportedLookAndFeelException e) {
+            e.printStackTrace();
+        }
         //setIconImage(new ImageIcon("src\\main\\resources\\icon.png").getImage()); //Just changes icon at the bottom when it's running to whatever icon.png we have in resources
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         dataset = new Dataset();
@@ -111,9 +124,11 @@ public class Layout extends JFrame {
         JMenu statsMenu = new JMenu("Statistics");
         JMenu visualsMenu = new JMenu("Visualizations");
 
+        JMenuItem newItem = new JMenuItem("New");
         JMenuItem openItem = new JMenuItem("Open");
         JMenuItem saveItem = new JMenuItem("Save");
         JMenuItem importItem = new JMenuItem("Import");
+        fileMenu.add(newItem);
         fileMenu.add(openItem);
         fileMenu.add(saveItem);
         fileMenu.addSeparator();
@@ -154,35 +169,12 @@ public class Layout extends JFrame {
         menuBar.add(spreadsheetMenu);
         menuBar.add(statsMenu);
 
-        customizeMenu(menuBar); // customizes the menu bar and its components
+        //customizeMenu(menuBar); // customizes the menu bar and its components
+        darkMode = new JButton("Toggle Dark/Light");
+        menuBar.add(darkMode);
         setJMenuBar(menuBar);
 
         // Create buttons
-        
-        JPanel buttonPanel = new JPanel();
-        //addRowButton = new JButton("Add Row");
-        //addColumnButton = new JButton("Add Column");
-        //importingButton = new JButton("Import Dataset");
-        //handleMissingButton = new JButton("Handle Missing");
-        //statisticalSummaryButton = new JButton("Statistical Summary");
-
-        //histogramButton = new JButton("Histogram");
-        //boxplotButton = new JButton("Boxplot");
-        //linearRegressionButton = new JButton("Linear Regression");
-        //meanDiffButton = new JButton("Mean comparison");
-        //buttonPanel.add(addRowButton);
-        //buttonPanel.add(addColumnButton);
-        //buttonPanel.add(importingButton);
-        //buttonPanel.add(handleMissingButton);
-        //buttonPanel.add(statisticalSummaryButton);
-
-        //buttonPanel.add(histogramButton);
-        //buttonPanel.add(boxplotButton);
-        //buttonPanel.add(linearRegressionButton);
-        //buttonPanel.add(meanDiffButton);
-        
-        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3; gbc.weighty = 0.1;
-        add(buttonPanel, gbc);
 
         JPanel visualButtons = new JPanel(new BorderLayout());
         JPanel buttonContainer = new JPanel();
@@ -266,20 +258,18 @@ public class Layout extends JFrame {
         // Create output area
         output = new JTextArea();
         output.setEditable(false);
-        //output.setLineWrap(true);
+        output.setLineWrap(true);
         output.setWrapStyleWord(true);
-        output.setFont(output.getFont().deriveFont(15f));
+        output.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // top, left, bottom, right
         gbc.gridx = 1; gbc.gridy = 0;
         add(new JScrollPane(output), gbc);
 
-        visualPanel1 = new JPanel();
+        visualPanel1 = createBlankChart(1);
         visualPanel1.setLayout(new BorderLayout()); // most charts need to be centered
         visualPanel1.setPreferredSize(new Dimension(visualPanelWidth, visualPanelHeight));
-        visualPanel1.add(new JLabel("Visualization 1"));    // placeholder label for default look
-        visualPanel2 = new JPanel();
+        visualPanel2 = createBlankChart(2);
         visualPanel2.setLayout(new BorderLayout()); // most charts need to be centered
         visualPanel2.setPreferredSize(new Dimension(visualPanelWidth, visualPanelHeight));
-        visualPanel2.add(new JLabel("Visualization 2"));
         gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 1; gbc.weighty = 0.5;
         add(visualPanel1, gbc);
         gbc.gridx = 1;
@@ -287,6 +277,7 @@ public class Layout extends JFrame {
 
 
         // Add listeners
+        newItem.addActionListener(e -> newProject());
         importItem.addActionListener(e -> importAssist());
         rowItem.addActionListener(e -> addRow());
         columnItem.addActionListener(e -> addColumn());
@@ -389,12 +380,10 @@ public class Layout extends JFrame {
         visualButton2.addActionListener(e -> {
             setVisual(2);
         });
-        /*linearRegressionButton.addActionListener (e -> {
-            if (Dataset.dataArray != null) {
-                String info = ChoiceMenu.linearRegression(this);
-                output.append(info);
-            }
-        }); */
+
+        darkMode.addActionListener(e -> {
+            toggleDarkMode();
+        });
 
         tableModel.addTableModelListener(e -> updateCharts());
         tableModel.addTableModelListener(new TableModelListener() {
@@ -416,6 +405,8 @@ public class Layout extends JFrame {
                 }
             }
         });
+        SwingUtilities.updateComponentTreeUI(this);
+        pack();
     
 
     if (dataset == null) {
@@ -632,6 +623,15 @@ public class Layout extends JFrame {
         tableModel.setColumnIdentifiers(columnNames);
     }
 
+    // wipes the layout and dataset
+    private void newProject() {
+        tableModel.setDataVector(new Object[5][3], new Object[] {"Column 1", "Column 2", "Column 3"}); // resets table
+        visualPanel1 = createBlankChart(1);
+        visualPanel2 = createBlankChart(2);
+        Dataset.dataArray = null;
+        output.setText(""); // clears output
+    }
+
     // manual entry
     //returns false only if the type doesn't match so an error message can appear and the table displays what the analyzing array holds 
     private boolean updateValue(Object value, int row, int col) {
@@ -753,7 +753,44 @@ public class Layout extends JFrame {
         plot.setRenderer(renderer);
     }
 */
+    private void toggleDarkMode() {
+        if (isDarkMode) {
+            try {
+                UIManager.setLookAndFeel(new FlatIntelliJLaf());
+            } catch (UnsupportedLookAndFeelException e) {
+                e.printStackTrace();
+            }
+        }
+        else {
+            try {
+                UIManager.setLookAndFeel(new FlatDarculaLaf());
+            } catch (UnsupportedLookAndFeelException e) {
+                e.printStackTrace();
+            }
+        }
+        isDarkMode = !isDarkMode;
+        SwingUtilities.updateComponentTreeUI(this);
+        pack();
+    }
+
+    private ChartPanel createBlankChart(int id) {
+        XYSeriesCollection data = new XYSeriesCollection();
+        JFreeChart chart = ChartFactory.createScatterPlot(
+            "Visual " + id, 
+            "",             
+            "",               
+            data,                
+            PlotOrientation.VERTICAL,
+            true,                   // include legend
+            true,                   // include tooltips
+            false                   // exclude url
+        );
+
+        return new ChartPanel(chart);
+    }
+
     // helper method for setting fonts of menu components and other things later
+    /*
     private void customizeMenu(Component component) {
         if (component instanceof JMenu) {
             JMenu menu = (JMenu) component;
@@ -777,6 +814,7 @@ public class Layout extends JFrame {
             component.setFont(menuFont);
         } 
     }
+    */
 
     // custom renderer to make headers look normal even while editing
     static class EditableHeaderRenderer implements TableCellRenderer {
