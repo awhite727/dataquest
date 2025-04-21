@@ -90,7 +90,8 @@ public class StatisticalSummary {
 
     public static double getStandardDeviation(List<Double> data) {
         double mean = getMean(data);
-        double variance = data.stream().mapToDouble(x -> Math.pow(x - mean, 2)).average().orElse(0.0);
+        double variance = data.stream().mapToDouble(x -> Math.pow(x - mean, 2)).sum();
+        variance = variance/(getCount(data) - 1);
         return Math.sqrt(variance);
     }
 
@@ -143,12 +144,6 @@ public class StatisticalSummary {
         return output.toString();
     }
 
-    public static double getSampleSD(List<Double> data) {
-        double mean = getMean(data);
-        double variance = data.stream().mapToDouble(x -> Math.pow(x - mean, 2)).sum();
-        variance = variance/(getCount(data) - 1);
-        return Math.sqrt(variance);
-    }
     // takes the fields of the linear regression and outputs a string of information about the model
     public static String getLinearRegression(Field target, Field[] parameters) {
         if (target == null || parameters == null || parameters.length ==0) {
@@ -161,7 +156,7 @@ public class StatisticalSummary {
         }
         ArrayList<ArrayList<Double>> values = Dataset.matchFields(variables);
         if (values.get(0).size() <= 1) {
-            return "Too many missing values to compute linear regression.";
+            return null;//return "Too many missing values to compute linear regression.";
         }
         ArrayList<Double> depVar = values.get(0);
         values.remove(0); // gives dependent variables

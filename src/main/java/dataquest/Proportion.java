@@ -40,12 +40,12 @@ public class Proportion {
         this.successADirection = successADirection;
     }
 
-    Proportion(Field fieldA, Field fieldB, double successA, Direction successADirection, double successB, Direction successBDirection, double alpha, double pNull, Direction direction){
+    Proportion(Field fieldA, Field fieldB, double successA, Direction successADirection, double successB, Direction successBDirection, double alpha, Direction direction){
         this.fieldA = fieldA;
         this.fieldB = fieldB;
         valuesA = fieldA.getValues();
         valuesB = fieldB.getValues();
-        this.pNull = pNull;
+        //this.pNull = pNull;
         nA = StatisticalSummary.getCount(valuesA);
         nB = StatisticalSummary.getCount(valuesB);
         this.direction = direction;
@@ -98,7 +98,7 @@ public class Proportion {
                     if(d == successA) xA++;
                     continue;
                 default: 
-                    System.out.println("ERROR: Unexpected error checking the direction of porportion test");
+                    System.out.println("ERROR: Unexpected error checking the direction of sample A");
                     break;
             }
         }
@@ -119,12 +119,23 @@ public class Proportion {
         double denom = Math.sqrt((pNull*(1-pNull))/nA);
         z = (pHatA - pNull)/denom;
         p = StatisticalSummary.getPValue(z);
-        if(direction == Direction.EQUAL) 
-            criticalValue = StatisticalSummary.getZStar(alpha);
-        else if(direction == Direction.LESS_THAN)
-            criticalValue = -StatisticalSummary.getZStar(alpha*2);
-        else 
-            criticalValue = StatisticalSummary.getZStar(alpha*2);
+        switch (direction) {
+            case LESS_THAN:
+                //p /= 2;
+                p = 1-p;
+                criticalValue = -StatisticalSummary.getZStar(alpha*2);
+                break;
+            case GREATER_THAN:
+                //p/=2;
+                criticalValue = StatisticalSummary.getZStar(alpha*2);
+                break;
+            default: //EQUAL
+                //p = 1 - p;
+                p*=2;
+                criticalValue = StatisticalSummary.getZStar(alpha);
+                break;
+        }
+        p = round(p);
     }
 
     private void setOnePropCI() {
@@ -197,15 +208,21 @@ public class Proportion {
         double denom = Math.sqrt((pHat*(1-pHat)) * (1.0/nA + 1.0/nB));
         //System.out.println("Denom: " + round(denom));
         z = (pHatA - pHatB)/denom;
-        //System.out.println("pHatA-pHatB: " + (pHatA-pHatB));
-        //System.out.println("z: " + round(z));
-        if(direction == Direction.EQUAL)
-            criticalValue = StatisticalSummary.getZStar(alpha);
-        else if(direction == Direction.LESS_THAN)
-            criticalValue = -StatisticalSummary.getZStar(alpha*2);
-        else
-            criticalValue = StatisticalSummary.getZStar(alpha*2);
         p = StatisticalSummary.getPValue(z);
+        switch (direction) {
+            case LESS_THAN:
+                p = 1-p;
+                criticalValue = -StatisticalSummary.getZStar(alpha*2);
+                break;
+            case GREATER_THAN:
+                criticalValue = StatisticalSummary.getZStar(alpha*2);
+                break;
+            default: //EQUAL
+                p*=2;
+                criticalValue = StatisticalSummary.getZStar(alpha);
+                break;
+        }
+        p = round(p);
     }
 
     private void setTwoPropCI() {
@@ -215,7 +232,6 @@ public class Proportion {
          *          )
          */
 
-        //NOTE: site didn't include pNull in CI; I think that's correct but wanna note bc tired 
         double meanDiff = pHatA - pHatB;
         //double zStar = StatisticalSummary.getZStar(alpha);
         System.out.println("MeanDiff: " + meanDiff);
@@ -227,7 +243,7 @@ public class Proportion {
         System.out.println("z*Sqrt: " + (criticalValue*sqrtPart));
 
 
-        ci[0] = round(meanDiff - (Math.abs(criticalValue)*sqrtPart)); //TODO: Check if left/right? calculator changes like [-1,-.4] for -.45 +- 0.015
+        ci[0] = round(meanDiff - (Math.abs(criticalValue)*sqrtPart));
         ci[1] = round(meanDiff + (Math.abs(criticalValue)*sqrtPart));
     }
 //end of two-prop sub-setters
@@ -243,29 +259,114 @@ public class Proportion {
         }
         return conclusion;
     }
+
+    //helper method to make print basic less ugly
+    private String getNullHypothesis() {
+        if(testType.equals("One Proportion Z-Test")) {
+            switch (direction) {
+                case LESS_THAN:
+                    return "p < p\u2080";
+                case GREATER_THAN:
+                    return "p > p\u2080"; // \u2265 is >=
+                case EQUAL:
+                    return "p = p\u2080";
+                default:
+                    break;
+            }
+        } else {
+            switch (direction) {
+                case LESS_THAN:
+                    return "p\u2081 < p\u2082";
+                case GREATER_THAN:
+                    return "p\u2081 > p\u2082";
+                case EQUAL:
+                    return "p\u2081 = p\u2082";
+            }
+        }
+        return null;
+    }
+
+    //helper method to make print basic less ugly
+    private String getAltHypothesis() {
+        if(testType.equals("One Proportion Z-Test")) {
+            switch (direction) {
+                case LESS_THAN:
+                    return "p > p\u2080"; //Less/equal?
+                case GREATER_THAN:
+                    return "p < p\u2080";
+                case EQUAL:
+                    return "p \u2260 p\u2080";
+                default:
+                    break;
+            }
+        } else {
+            switch (direction) {
+                case LESS_THAN:
+                    return "p\u2081 > p\u2082";
+                case GREATER_THAN:
+                    return "p\u2081 < p\u2082";
+                case EQUAL:
+                    return "p\u2081 \u2260 p\u2082";
+            }
+        }
+        return null;
+    }
+
     public String printBasic(){
-        String result = ""; 
-        result += "Threshold " + fieldA.getName()+ ": " + successA;
-        if(testType.equals("Two Proportion Z-Test"))
-        result += "\nThreshold " + fieldB.getName() + ": " + successB;
-        result += "\nExpected: " + pNull; //TODO: What to call it? 
-        result += "\nalpha = " + alpha;
-        result += "\nTest: " + testType;
-        result += "\n  p^A = " + round(pHatA) + " (" + xA + "/" + nA + ")"; 
-        if(testType.equals("Two Proportion Z-Test"))
-            result += "\n  p^B = " + round(pHatB) + " (" + xB + "/" + nB + ")"; 
+        String result = "Test: " + testType + "\n";
+        
+        switch (successADirection) {
+            case LESS_THAN:
+                result += "Success for " + fieldA.getName() + ": x < " + successA;
+                break;
+            case GREATER_THAN:
+                result += "Success for " + fieldA.getName() + ": x > " + successA;
+                break;
+            case EQUAL:
+                result += "Success for " + fieldA.getName() + ": x = " + successA;
+                break;        
+            default:
+                break;
+        }
+        result += "\n\t\u0070\u0302 = " + round(pHatA) + " (" + xA + "/" + nA + ")\n"; 
+        if(testType.equals("One Proportion Z-Test")) {
+            result += "P\u2080 = " + pNull;
+        } else {
+            switch (successBDirection) {
+                case LESS_THAN:
+                    result += "Success for " + fieldB.getName() + ": x < " + successB;
+                    break;
+                case GREATER_THAN:
+                    result += "Success for " + fieldB.getName() + ": x > " + successB;
+                    break;
+                case EQUAL:
+                    result += "Success for " + fieldB.getName() + ": x = " + successB;
+                    break;        
+                default:
+                    break;
+            }
+            result += "\n\t\u0070\u0302 = " + round(pHatB) + " (" + xB + "/" + nB + ")";  
+        }
+        
+        if(testType.equals("One Proportion Z-Test"))
+        result += "\n\u03B1 = " + alpha;
+        //Null and alt hypothesis 
+        result += "\nHypothesis: ";
+        result += "\n  H\u2080: " + getNullHypothesis();
+        result += "\n  H\u2081: " + getAltHypothesis();
+        result += "\nResults: ";
         result += "\n  z = "; 
         try {
             result += round(z);
         } catch (NumberFormatException e) { //if infinity
             result += z;
         }
-        //result += "\n  Critical Value = " + round(criticalValue);
-        result +="\n  P-Value = "; //NOTE: In the calculator, it multiplied P(x<=Z) by something (pNull?); should we? 
-        result += String.format("%,.5f", p); //round(p); //For some reason was formatting as scino?? 
-        System.out.printf("p: %.5f \t (p(x<=Z) = %.5f)", (p*pNull), p); //not the same for pregnancy, success = 2, alpha = 0.2, pNull = .2, Direction.LESS_THAN)
-        result += "\n  CI: ";
-        result += Arrays.toString(ci); // Normal approximation
+        if(direction.equals(Direction.EQUAL)) {
+            result += "\n  CI: ";
+            result += Arrays.toString(ci);
+        } 
+        result +="\n  P-Value = "; 
+        result += String.format("%,.5f", p);  
         result += "\n" + getConclusion();
 
         return result;

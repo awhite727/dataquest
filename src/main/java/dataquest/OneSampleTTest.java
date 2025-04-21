@@ -26,7 +26,7 @@ public class OneSampleTTest {
     private double p;
     
     //TODO: Add new constructors for custom sds; one field; one field and custom sds
-    OneSampleTTest(Field fieldA, Field fieldB, double alpha, double mu, Direction direction){
+    OneSampleTTest(Field fieldA, double alpha, double mu, Direction direction){
         this.fieldA = fieldA;
         ArrayList<Double>valuesA = fieldA.getValues(); //TODO: handle differently for paired sample 
         this.valuesA = new double[valuesA.size()];
@@ -35,7 +35,7 @@ public class OneSampleTTest {
         }
         meanA = StatisticalSummary.getMean(valuesA);
         this.mu = mu;
-        statsA = new StatisticalSummaryValues(meanA, Math.pow(StatisticalSummary.getSampleSD(valuesA),2), StatisticalSummary.getCount(valuesA),StatisticalSummary.getMax(valuesA),StatisticalSummary.getMin(valuesA),StatisticalSummary.getSum(valuesA));
+        statsA = new StatisticalSummaryValues(meanA, Math.pow(StatisticalSummary.getStandardDeviation(valuesA),2), StatisticalSummary.getCount(valuesA),StatisticalSummary.getMax(valuesA),StatisticalSummary.getMin(valuesA),StatisticalSummary.getSum(valuesA));
         
         System.out.println("MeanA: " + meanA);
             System.out.println("\tstatsA meanA: " + statsA.getMean());
