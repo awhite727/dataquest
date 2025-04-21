@@ -125,7 +125,7 @@ public class TwoSample {
         setPooledDF();
         setPooledCI();
     }
-
+    //TODO: Recheck all p-vals and tstats but especially this one 
     public void setZ(){
         /* Formula z: https://www.statology.org/two-sample-z-test/
          * CI: https://www.statskingdom.com/difference-confidence-interval-calculator.html 
@@ -150,7 +150,7 @@ public class TwoSample {
                 //p/=2;
                 break;
             default: //EQUAL
-                p = 1 - p;
+                //p = 1 - p;
                 p*=2;
                 break;
         }
@@ -443,7 +443,7 @@ public String printBasic(){
             result += round(df);
         }
         result +="\n  P-Value = ";
-        result += String.format("%,.5f", p);  
+        result += String.format("%,.5f", p);
         if(direction == Direction.EQUAL) {
             result += "\n  CI: ";
             result += Arrays.toString(ci);

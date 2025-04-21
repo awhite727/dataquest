@@ -175,7 +175,7 @@ public class ChoiceMenu {
         String[] selected = popup.showGenericPopup();//showComboPopup(parent, "Statistical Summary", "Choose a field", fieldNames);
         if (selected == null) return null;
         Field summaryField = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
-        String textOutput = StatisticalSummary.getSummary(summaryField.getValues());
+        String textOutput = StatisticalSummary.getSummary(summaryField);
         return textOutput;
    }
 
