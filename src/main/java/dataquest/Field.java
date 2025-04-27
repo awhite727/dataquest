@@ -73,7 +73,7 @@ public class Field implements Serializable{
 
     // returns indexes where missing values haven't been handled yet
     public ArrayList<Integer> getMissing() {
-        ArrayList<Integer> indexes = new ArrayList();
+        ArrayList<Integer> indexes = new ArrayList<>();
         for (int i = 0; i<typedArray.size(); i++) {
             if (typedArray.get(i) == null) {
                 indexes.add(i);
@@ -179,12 +179,18 @@ public class Field implements Serializable{
         return indexes;
     }
 
-    //Passed the new type and returns if it succeeds in identifying the type 
+    //UPDATED 4/16/2025: now passes boolean saying if all values fit the standard; if there is a cell that doesn't match the type 
+        //(i.e. if any cell is a string when the type is being set to float, returns false)
+        //Also returns false for other errors, though these should not be reached here and should be properly handled before
+        //OLD: 
+        //Passed the new type and returns if it succeeds in identifying the type
     //If a cell cannot be set to the new type, the index in typedArray is set to null
     //Case sensitive
     boolean setType(String newType){
         boolean validType = (newType.equals("String") ||newType.equals("float") ||newType.equals("boolean"));
+        boolean allTyped = true; 
 
+        //Should not be reached with proper front-end handling
         if(!validType){
             System.out.println("ERROR: Type " + newType + " not recognized");
             //If the type hasn't been set yet, set to String to prevent issues in Dataset
@@ -193,18 +199,17 @@ public class Field implements Serializable{
             }
             return false;
         }
-        if(stringArray.isEmpty()) {
-            type = newType;
-            return true;
-        }
+        
         type = newType;
+        if(stringArray.isEmpty()) return allTyped; 
         //if the newType is a String, there is no need to verify with Patterns
         // strings don't have missing value handling, so no need to do anything with missing values
         if(newType.equals("String")) {
             for (int i = 0; i < stringArray.size(); i++) {
                 typedArray.set(i, stringArray.get(i));
             }
-            return true;
+            return allTyped;
+            //return true;
         }
 
         for (int i = 0; i < stringArray.size(); i++) {
@@ -218,6 +223,7 @@ public class Field implements Serializable{
                 // error occurs, but value is handled gracefully by setting to missing
                 typedArray.set(i,null);
                 isMissing.set(i,true);
+                allTyped = false;
             } else if(realType.equals("float")) {
                 typedArray.set(i,Float.valueOf(stringArray.get(i)));
                 isMissing.set(i,false);
@@ -230,7 +236,7 @@ public class Field implements Serializable{
                 return false;
             }
         }
-        return true;
+        return allTyped;
     }
 
 
@@ -242,7 +248,7 @@ public class Field implements Serializable{
             System.out.println("ERROR: type not determined");
             return false;
         } 
-        //TODO: replace with missing value handling
+        
         if(newValue.isEmpty()) { 
             stringArray.add(newValue);
             typedArray.add(null);
@@ -260,6 +266,7 @@ public class Field implements Serializable{
         }
         if(type.equals("String")) {
             typedArray.add(newValue);
+            isMissing.add(false);
         } else {
             if(!type.equals(realType)) {
                 System.out.println("ERROR: " + newValue + " is type " + realType + " and cannot be parsed to type " + type);
@@ -285,7 +292,7 @@ public class Field implements Serializable{
     //updates a cell at a specified index to a new value
     //Does not allow updating unless it matches the specified type
     boolean updateCell(int oldValueIndex, String newValue){
-        if(oldValueIndex > typedArray.size()){return false;}
+        if(oldValueIndex > typedArray.size()) return false;
 
         if(newValue.isEmpty()) { 
             stringArray.set(oldValueIndex, newValue);
@@ -325,7 +332,7 @@ public class Field implements Serializable{
     public boolean setCell(int index, String newValue) {
         // if index is exactly at the end of the array, append the new cell.
         String valueType = Dataset.getPattern(newValue);
-        if (!valueType.equals(type) && !valueType.equals("missing")) {
+        if (type.equals("String") && !valueType.equals(type) && !valueType.equals("missing")) {
             return false;
         }
         if (index == stringArray.size()) {

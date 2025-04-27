@@ -133,8 +133,13 @@ public class Boxplot extends Visualization {
                 ArrayList<Object> dataArray = data.getTypedArray();
                 List<Float> dataLevels = new ArrayList<>();
                 for(int i:indexes) {
-                    if (dataArray.get(i) instanceof Number) {
-                        dataLevels.add((float) dataArray.get(i));
+                    try {
+                        if (dataArray.get(i) instanceof Number) {
+                            dataLevels.add((float) dataArray.get(i));
+                        }
+                    } catch (IndexOutOfBoundsException e) {
+                        System.out.println("ERROR: dataArray is smaller than indexes of the levels");
+                        e.printStackTrace();
                     }
                 }
                 dataset.add(dataLevels, "Data", level);
@@ -290,7 +295,7 @@ public class Boxplot extends Visualization {
 
         // draw outliers
         double oRadius = outlierRadius == null? state.getBarWidth()/3: outlierRadius;    // outlier radius
-        List<Outlier> outliers = new ArrayList();
+        List<Outlier> outliers = new ArrayList<>();
         OutlierListCollection outlierListCollection
                 = new OutlierListCollection();
 
