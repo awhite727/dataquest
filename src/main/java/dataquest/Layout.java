@@ -1,10 +1,13 @@
 package dataquest;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
@@ -46,6 +49,7 @@ import javax.swing.table.TableColumnModel;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.StandardChartTheme;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.xy.XYSeriesCollection;
 
@@ -83,6 +87,7 @@ public class Layout extends JFrame {
         } catch (UnsupportedLookAndFeelException e) {
             e.printStackTrace();
         }
+        updateTheme();  //sets global theme for charts
         //setIconImage(new ImageIcon("src\\main\\resources\\icon.png").getImage()); //Just changes icon at the bottom when it's running to whatever icon.png we have in resources
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         dataset = new Dataset();
@@ -359,8 +364,7 @@ public class Layout extends JFrame {
             }
         });
         SwingUtilities.updateComponentTreeUI(this);
-        pack();
-    
+        pack();    
 
     if (dataset == null) {
         dataset = new Dataset();
@@ -577,8 +581,16 @@ public class Layout extends JFrame {
     // wipes the layout and dataset
     private void newProject() {
         tableModel.setDataVector(new Object[5][3], new Object[] {"Column 1", "Column 2", "Column 3"}); // resets table
-        visualPanel1 = createBlankChart(1);
-        visualPanel2 = createBlankChart(2);
+        visualPanel1.removeAll();
+        visualPanel1.add(createBlankChart(1));
+        visualPanel1.revalidate();
+        visualPanel1.repaint();
+
+        visualPanel2.removeAll();
+        visualPanel2.add(createBlankChart(2));
+        visualPanel2.revalidate();
+        visualPanel2.repaint();
+
         Dataset.dataArray = null;
         output.setText(""); // clears output
     }
@@ -717,6 +729,37 @@ public class Layout extends JFrame {
         isDarkMode = !isDarkMode;
         SwingUtilities.updateComponentTreeUI(this);
         pack();
+        updateTheme();
+    }
+
+    private void updateTheme() {
+        
+        Font   titleFont    = UIManager.getFont("TitledBorder.font");
+        Font   labelFont    = UIManager.getFont("Label.font");
+        Color  bg           = UIManager.getColor("Panel.background");
+        Color  fg           = UIManager.getColor("Label.foreground");
+        Color  gridColor    = UIManager.getColor("Table.gridColor");
+        Insets insets       = UIManager.getInsets("Panel.borderInsets");
+        StandardChartTheme theme = new StandardChartTheme("L&F");
+        theme.setExtraLargeFont(titleFont.deriveFont(18f));        
+        theme.setLargeFont(labelFont.deriveFont(15f));               
+        theme.setRegularFont(labelFont);             
+        theme.setSmallFont(labelFont.deriveFont(10f));
+
+        theme.setAxisLabelPaint(fg);
+        theme.setTickLabelPaint(fg);
+        theme.setChartBackgroundPaint(bg);
+        theme.setPlotBackgroundPaint(bg);
+        theme.setPlotOutlinePaint(fg);
+        theme.setTitlePaint(fg);
+
+        theme.setDomainGridlinePaint(gridColor);
+        theme.setRangeGridlinePaint(gridColor);
+        theme.setLegendItemPaint(fg);
+
+        // apply globally for all new charts
+        ChartFactory.setChartTheme(theme);
+
     }
 
     private ChartPanel createBlankChart(int id) {

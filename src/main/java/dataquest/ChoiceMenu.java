@@ -95,6 +95,7 @@ public class ChoiceMenu {
                 break;
             case "Histogram":
                 output = histogramMenu(parent);
+                break;
             default:
                 System.out.println("Error creating visualization of type: " + selected[0]);
                 return null;

@@ -388,7 +388,8 @@ public class Field implements Serializable{
         String stringValue = "" + value;
         for (int i=0; i<typedArray.size(); i++) {
             if(isMissing.get(i)) {
-                updateCell(i, stringValue);
+                typedArray.set(i, value);
+                stringArray.set(i, value + "");
                 System.out.println("Updated at " + i + " with "+ stringValue);
             }
         }
