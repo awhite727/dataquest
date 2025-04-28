@@ -23,6 +23,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.UIManager;
 
 //TODO: Fix automatic width sizing
     //-- JLabel.setText("<html>Text</html>")/new JLabel("<html>" + text + "</html>")
@@ -293,6 +294,8 @@ public class Popup {
                         textPanel.add(new JLabel(question[0]));
                         TextField field = new TextField();                        
                         field.setSize(new Dimension(50, 30));
+                        field.setBackground(UIManager.getColor("TextField.background")); // or hardcode a Color
+                        field.setForeground(UIManager.getColor("TextField.foreground"));
                         mainComponents.add(field);
                         textPanel.add(field);
                         allComponents.add(textPanel);

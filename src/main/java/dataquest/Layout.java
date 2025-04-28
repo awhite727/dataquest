@@ -7,7 +7,6 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
@@ -127,7 +126,6 @@ public class Layout extends JFrame {
         JMenu fileMenu = new JMenu("File");
         JMenu spreadsheetMenu = new JMenu("Spreadsheet");
         JMenu statsMenu = new JMenu("Statistics");
-        JMenu visualsMenu = new JMenu("Visualizations");
 
         JMenuItem newItem = new JMenuItem("New");
         JMenuItem openItem = new JMenuItem("Open");
@@ -189,14 +187,14 @@ public class Layout extends JFrame {
         JPanel visualButtons2 = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 0));
 
         JButton visualButton1 = new JButton("+");
-        JButton editButton1 = new JButton("Edit");
+        //JButton editButton1 = new JButton("Edit");
         JButton visualButton2 = new JButton("+");
-        JButton editButton2 = new JButton("Edit");
+        //JButton editButton2 = new JButton("Edit");
 
         visualButtons1.add(visualButton1);
-        visualButtons1.add(editButton1);
+        //visualButtons1.add(editButton1);
 
-        visualButtons2.add(editButton2);
+        //visualButtons2.add(editButton2);
         visualButtons2.add(visualButton2);
 
         // Make visualButtons1 and visualButtons2 expand horizontally
@@ -267,7 +265,10 @@ public class Layout extends JFrame {
         output.setWrapStyleWord(true);
         output.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // top, left, bottom, right
         gbc.gridx = 1; gbc.gridy = 0;
-        add(new JScrollPane(output), gbc);
+        JScrollPane textScrollPane = new JScrollPane(output);
+        textScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        textScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        add(textScrollPane, gbc);
 
         visualPanel1 = createBlankChart(1);
         visualPanel1.setLayout(new BorderLayout()); // most charts need to be centered
@@ -390,7 +391,6 @@ public class Layout extends JFrame {
             toggleDarkMode();
         });
 
-        tableModel.addTableModelListener(e -> updateCharts());
         tableModel.addTableModelListener(new TableModelListener() {
             @Override
             public void tableChanged(TableModelEvent e) {
@@ -640,6 +640,9 @@ public class Layout extends JFrame {
         visualPanel2.revalidate();
         visualPanel2.repaint();
 
+        visual1 = null;
+        visual2 = null;
+
         Dataset.dataArray = null;
         output.setText(""); // clears output
     }
@@ -656,13 +659,27 @@ public class Layout extends JFrame {
             if (Dataset.getPattern(value.toString()).equals("missing")) {   // if a blank value is accidentally added to a new column
                 return true;
             }
-            Dataset.dataArray.add(new Field(tableModel.getColumnName(Dataset.dataArray.size())));
+            Field newField = new Field(tableModel.getColumnName(Dataset.dataArray.size()));
+            newField.setType(Dataset.getPattern(value.toString()));
+            int numRows = Dataset.getMaxRowCount();
+            for (int i = 0; i < numRows; i++) {
+                newField.setCell(i, " ");
+            }
+            Dataset.dataArray.add(newField);
         }
 
         // Ensure correct field type
         Field field = Dataset.dataArray.get(col);
         if (field.getType() == null) {
             field.setType(Dataset.getPattern(value.toString()));
+        }
+
+        // ensure rectangular always
+        int numRowsNeeded = row + 1;
+        for (Field f : Dataset.dataArray) {
+            while (f.getRowCount() < numRowsNeeded) {
+                f.setCell(f.getRowCount(), " ");
+            }
         }
         boolean success = field.setCell(row, value.toString().strip());
 
@@ -702,69 +719,60 @@ public class Layout extends JFrame {
         }
         if (panel == 1) {
             visual1 = visual;   // saves for later
-            JPanel newPanel = visual.createChart();
-            // remove old panel and add new one
-            visualPanel1.removeAll();
-            visualPanel1.add(newPanel, BorderLayout.CENTER);
-            
-            visualPanel1.revalidate();
-            visualPanel1.repaint();        
+            createVisual(1);       
             }
         else {
             visual2 = visual;   // saves for later
-            JPanel newPanel = visual.createChart();
-            // remove old panel and add new one
-            visualPanel2.removeAll();
-            visualPanel2.add(newPanel, BorderLayout.CENTER);
+            createVisual(2); 
+        }
+    }
 
-            visualPanel2.revalidate();
-            visualPanel2.repaint();  
+    private void createVisual(int id) {
+        if (id == 1) {
+            if (visual1 != null) {
+                JPanel newPanel = visual1.createChart();
+                // remove old panel and add new one
+                visualPanel1.removeAll();
+                visualPanel1.add(newPanel, BorderLayout.CENTER);
+                
+                visualPanel1.revalidate();
+                visualPanel1.repaint();  
+            }
+        }
+        else {
+            if (visual2 != null) {
+                JPanel newPanel = visual2.createChart();
+                // remove old panel and add new one
+                visualPanel2.removeAll();
+                visualPanel2.add(newPanel, BorderLayout.CENTER);
+
+                visualPanel2.revalidate();
+                visualPanel2.repaint();  
+            }
         }
     }
 
     private void updateCharts() {
-        //graph1.updateCharts(tableModel);
-        //graph2.updateCharts(tableModel);
-        /* XYSeriesCollection dataset1 = new XYSeriesCollection();
-        XYSeriesCollection dataset2 = new XYSeriesCollection();
-        
-        for (int col = 0; col < tableModel.getColumnCount(); col++) {
-            XYSeries series = new XYSeries("Series " + (col + 1));
-            for (int row = 0; row < tableModel.getRowCount(); row++) {
-                Object value = tableModel.getValueAt(row, col);
-                if (value instanceof Number) {
-                    series.add(row, ((Number) value).doubleValue());
-                }
-            }
-            if (!series.isEmpty()) {
-                if (col % 2 == 0) {
-                    dataset1.addSeries(series);
-                } else {
-                    dataset2.addSeries(series);
-                }
-            }
+        if (visual1 == null) {
+            visualPanel1.removeAll();
+            visualPanel1.add(createBlankChart(1));
+            visualPanel1.revalidate();
+            visualPanel1.repaint();
         }
-        chart1.getXYPlot().setDataset(dataset1);
-        chart2.getXYPlot().setDataset(dataset2);
-        
-
-        //TODO: POSSIBLE BREAK POINT; make sure the color is properly set
-        applyColorPalette(graph1.getChart());
-        applyColorPalette(graph2.getChart());
-        */
-        //output.setText("Data updated: " + java.time.LocalDateTime.now());
+        else {
+            createVisual(1);
+        }
+        if (visual2 == null) {
+            visualPanel2.removeAll();
+            visualPanel2.add(createBlankChart(2));
+            visualPanel2.revalidate();
+            visualPanel2.repaint();
+        }
+        else {
+            createVisual(2);
+        }
     }
 
-    /* private void applyColorPalette(JFreeChart chart) {
-        XYPlot plot = chart.getXYPlot();
-        XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
-        for (int i = 0; i < plot.getSeriesCount(); i++) {
-            renderer.setSeriesPaint(i, colorPalette[i % colorPalette.length]);
-            renderer.setSeriesShapesVisible(i, true);
-        }
-        plot.setRenderer(renderer);
-    }
-*/
     private void toggleDarkMode() {
         if (isDarkMode) {
             try {
@@ -783,7 +791,8 @@ public class Layout extends JFrame {
         isDarkMode = !isDarkMode;
         SwingUtilities.updateComponentTreeUI(this);
         pack();
-        updateTheme();
+        updateTheme();  // set the theme
+        updateCharts(); // recreate charts with the new theme
     }
 
     private void updateTheme() {
@@ -793,7 +802,6 @@ public class Layout extends JFrame {
         Color  bg           = UIManager.getColor("Panel.background");
         Color  fg           = UIManager.getColor("Label.foreground");
         Color  gridColor    = UIManager.getColor("Table.gridColor");
-        Insets insets       = UIManager.getInsets("Panel.borderInsets");
         StandardChartTheme theme = new StandardChartTheme("L&F");
         theme.setExtraLargeFont(titleFont.deriveFont(18f));        
         theme.setLargeFont(labelFont.deriveFont(15f));               
@@ -809,6 +817,7 @@ public class Layout extends JFrame {
 
         theme.setDomainGridlinePaint(gridColor);
         theme.setRangeGridlinePaint(gridColor);
+        theme.setLegendBackgroundPaint(bg);
         theme.setLegendItemPaint(fg);
 
         // apply globally for all new charts
@@ -828,6 +837,8 @@ public class Layout extends JFrame {
             true,                   // include tooltips
             false                   // exclude url
         );
+
+        ChartFactory.getChartTheme().apply(chart);
 
         return new ChartPanel(chart);
     }
