@@ -312,21 +312,15 @@ public class Layout extends JFrame {
         linearRegressionItem.addActionListener (e -> {
             if (Dataset.dataArray != null) {
                 String info = ChoiceMenu.linearRegression(this);
-                output.append(info);
+                if(info != null) output.append("\n" + info);
             }
         });
         anovaItem.addActionListener(e -> {
             if (Dataset.dataArray != null) {
                 String info = ChoiceMenu.anovaMenu(this);
-                output.append(info);
+                if(info != null) output.append("\n" + info);
             }
         });
-        /* meanCompareItem.addActionListener(e -> {
-            if (Dataset.dataArray != null) {
-                String info = ChoiceMenu.meanDiffMenu(this);
-                output.append(info);
-            }
-        }); */
         tTwoSample.addActionListener(e -> {
             if (Dataset.dataArray != null) {
                 String info = ChoiceMenu.tTwoSampleMenu(this);
@@ -351,34 +345,7 @@ public class Layout extends JFrame {
                 if(info != null)output.append("\n" + info);
             }
         });
-        /* histogramButton.addActionListener(e-> {
-            if(Dataset.dataArray != null) {
-                //String textOutput = ChoiceMenu.histogramMenu(this);
-                //if(textOutput != null) output.append(textOutput+"---\n");
-                visual1 = ChoiceMenu.histogramMenu(this);
-                if(visual1!= null){
-                    JPanel newPanel = visual1.createChart();
-                    visualPanel1.removeAll();
-                    //newPanel.add(new JLabel("Testing Layout"));
-                    visualPanel1.add(newPanel, BorderLayout.CENTER);
-                    visualPanel1.revalidate();
-                    visualPanel1.repaint();
-                }
-            }
-        }); */
-        /* boxplotButton.addActionListener(e -> {
-            if (Dataset.dataArray != null) {
-                visual1 = ChoiceMenu.boxplotMenu(this);
-                JPanel newPanel = visual1.createChart();
-
-                // remove old panel and add new one
-                visualPanel1.removeAll();
-                visualPanel1.add(newPanel, BorderLayout.CENTER);
-
-                visualPanel1.revalidate();
-                visualPanel1.repaint();
-            }
-        }); */
+        
         visualButton1.addActionListener(e -> {
             setVisual(1);
         });
@@ -418,15 +385,6 @@ public class Layout extends JFrame {
         updateSpreadsheet();
     }
 
-    /* private JFreeChart createEmptyChart(String title) {
-        XYSeriesCollection data = new XYSeriesCollection();
-        JFreeChart chart = ChartFactory.createXYLineChart(title, "X", "Y", data);
-        XYPlot plot = chart.getXYPlot();
-        plot.setBackgroundPaint(Color.WHITE);
-        plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
-        plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
-        return chart;
-    } */
     }
     @SuppressWarnings("unchecked")
     private void loadSavedWorkspace() {
@@ -464,7 +422,6 @@ public class Layout extends JFrame {
     
     //Opens the importing window using python
     //Once file selected, calls the repesective Dataset's csvReading, xlsReading, or xlsxReading
-   //Returns true if the file was found and properly added to Dataset.dataArray, returns false if not 
     private void importAssist(){
         String pythonPath = "src\\main\\resources\\PythonAssist.py";
         String selectedPath = "";

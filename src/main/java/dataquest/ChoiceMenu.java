@@ -131,22 +131,23 @@ public class ChoiceMenu {
         String[] selected = popup.showGenericPopup();
         if (selected == null) return null;
 
-        Visualization output;
+        Visualization output = null;
         switch (selected[0]) {
             case "Boxplot":
                 if (Dataset.dataArray != null) {
                     output = boxplotMenu(parent);
-                    break;
                 }
+                break;
             case "Scatterplot":
                 if (Dataset.dataArray!=null) {
                     output = scatterplotMenu(parent);
-                    break;
                 }
+                break;
             case "T-Distribution":
                 output = tDistributionMenu(parent);
                 break;
             case "Histogram":
+                if(Dataset.dataArray!=null)
                 output = histogramMenu(parent);
                 break;
             default:
@@ -327,9 +328,12 @@ public class ChoiceMenu {
             xFieldNames[i + 1] = name;
             yFieldNames[i + 1] = name;
         }
-        String [] categoryFieldNames = new String[categoryFields.length + 2];
+        String [] categoryFieldNames = new String[categoryFields.length + 1];
         categoryFieldNames[0] = "(Optional) Level";
         //categoryFieldNames[1] = "none";
+        for (Field field : categoryFields) {
+            System.out.println("----" + field.getName());
+        }
         for (int i = 0; i< categoryFields.length; i++) {
             categoryFieldNames[i+1] = categoryFields[i].getName();
         }
@@ -338,14 +342,14 @@ public class ChoiceMenu {
         ArrayList<HandleError[]> errors = new ArrayList<>();
         errors.add(new HandleError[]{HandleError.REQUIRED,HandleError.MINIMUM_FIELD_N}); //xField
         errors.add(new HandleError[]{HandleError.REQUIRED,HandleError.MINIMUM_FIELD_N}); //yField
-        errors.add(new HandleError[]{HandleError.MINIMUM_FIELD_N}); //categoryField
+        errors.add(new HandleError[]{HandleError.NONE});//HandleError.MINIMUM_FIELD_N}); //categoryField
         
         
         Popup popup = new Popup(parent,"Scatterplot");
         popup.addQuestions(questionType, questionList, errors);
         popup.addMinFieldN(1); //xField
         popup.addMinFieldN(1); //yField
-        popup.addMinFieldN(1); //categoryField
+        //popup.addMinFieldN(1); //categoryField
 
 
 

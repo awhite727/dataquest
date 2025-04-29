@@ -440,8 +440,8 @@ public class Field implements Serializable{
         if(isMissing.get(typedArray.size()-1)) {
             for (int i=0; i<typedArray.size();i++) {
                 if(!isMissing.get(i)) {
-                    stringArray.set(stringArray.size(), stringArray.get(i));
-                    typedArray.set(typedArray.size(), Float.valueOf(stringArray.get(i)));
+                    stringArray.set(stringArray.size()-1, stringArray.get(i));
+                    typedArray.set(typedArray.size()-1, Float.valueOf(stringArray.get(i)));
                     break;
                 }
             }
