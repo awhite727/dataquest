@@ -34,39 +34,17 @@
             <version>3.3</version>
         </dependency>
     </dependencies>
-    <!-- <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>2.4</version>
-                <configuration>
-                    <archive>
-                            <finalName>dataquest</finalName>
-                        <manifest>
-                            <mainClass>dataquest.Layout</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-    <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>3.4.2</version>
-        <configuration>
-          <archive>
-            <index>true</index>
+<plugin>
+    <!-- Build an executable JAR -->
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-jar-plugin</artifactId>
+    <version>2.4</version>
+    <configuration>
+        <archive>
             <manifest>
-              <addClasspath>true</addClasspath>
+                <mainClass>com.path.to.YourMainClass</mainClass>
             </manifest>
-            
-          </archive>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>-->
+        </archive>
+    </configuration>
+</plugin>
 </project>

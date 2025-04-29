@@ -1,12 +1,16 @@
+dataquest\Popup$HandleError.class
 dataquest\StatisticalSummary$1.class
 dataquest\Layout$HeaderEditorListener$1.class
 dataquest\Proportion$1.class
 dataquest\Layout$2.class
+dataquest\Popup$QuestionType.class
 dataquest\Popup.class
 dataquest\Layout$EditableHeaderRenderer.class
 dataquest\Visualization.class
 dataquest\Boxplot$CustomBoxAndWhiskerRenderer.class
+dataquest\Popup$1.class
 dataquest\Layout$4.class
+dataquest\TwoSample$1.class
 dataquest\TDistribution.class
 dataquest\Boxplot.class
 dataquest\Layout$1.class

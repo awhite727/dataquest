@@ -35,6 +35,10 @@ public class Field implements Serializable{
         }
         return values;
     }
+    int getRowCount() {
+        return typedArray.size();
+    }
+    
     void setFieldName(String newName) {
         name = newName;
     }
@@ -395,7 +399,8 @@ public class Field implements Serializable{
         String stringValue = "" + value;
         for (int i=0; i<typedArray.size(); i++) {
             if(isMissing.get(i)) {
-                updateCell(i, stringValue);
+                typedArray.set(i, value);
+                stringArray.set(i, value + "");
                 System.out.println("Updated at " + i + " with "+ stringValue);
             }
         }
@@ -415,7 +420,8 @@ public class Field implements Serializable{
         if(isMissing.get(0)) {
             for(int i=typedArray.size()-1; i>0; i--) {
                 if(!isMissing.get(i)) {
-                    updateCell(0, stringArray.get(i));
+                    stringArray.set(0, stringArray.get(i));
+                    typedArray.set(0, Float.valueOf(stringArray.get(i)));
                     break;
                 }
             }
@@ -423,8 +429,8 @@ public class Field implements Serializable{
         // fill all missing values with previous value
         for (int i=1; i<typedArray.size(); i++) {
             if (isMissing.get(i)) {
-                updateCell(i, stringArray.get(i-1));
-                System.out.println("Replaced " + stringArray.get(i-1));
+                stringArray.set(i, stringArray.get(i-1));
+                typedArray.set(i, Float.valueOf(stringArray.get(i-1)));
             }
         }
     }
@@ -434,7 +440,8 @@ public class Field implements Serializable{
         if(isMissing.get(typedArray.size()-1)) {
             for (int i=0; i<typedArray.size();i++) {
                 if(!isMissing.get(i)) {
-                    updateCell(typedArray.size(), stringArray.get(i));
+                    stringArray.set(stringArray.size(), stringArray.get(i));
+                    typedArray.set(typedArray.size(), Float.valueOf(stringArray.get(i)));
                     break;
                 }
             }
@@ -442,7 +449,8 @@ public class Field implements Serializable{
         // iterate backwards, fill all missing values with index that is 1 greater
         for (int i=typedArray.size()-2; i>0; i--) {
             if (isMissing.get(i)) {
-                updateCell(i, stringArray.get(i+1));
+                stringArray.set(i, stringArray.get(i+1));
+                typedArray.set(i, Float.valueOf(stringArray.get(i+1)));
             }
         }
     }

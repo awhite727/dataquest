@@ -229,7 +229,7 @@ public class ChoiceMenu {
 
         // pass to choice menu
         String tabName = "Linear Regression";
-        ArrayList<String> questionType = new ArrayList<>(Arrays.asList("radio", "check"));
+        ArrayList<String> questionType = new ArrayList<>(Arrays.asList("combo", "check"));
         ArrayList<String[]> questionList = new ArrayList<>(Arrays.asList(radioFieldNames, checkFieldNames));
         ArrayList<HandleError[]> errors = new ArrayList<>();
 

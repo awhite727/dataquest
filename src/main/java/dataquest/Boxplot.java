@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JPanel;
+import javax.swing.UIManager;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -26,6 +27,7 @@ import org.jfree.chart.renderer.Outlier;
 import org.jfree.chart.renderer.OutlierListCollection;
 import org.jfree.chart.renderer.category.BoxAndWhiskerRenderer;
 import org.jfree.chart.renderer.category.CategoryItemRendererState;
+import org.jfree.chart.title.TextTitle;
 import org.jfree.chart.ui.RectangleEdge;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.statistics.BoxAndWhiskerCategoryDataset;
@@ -94,6 +96,11 @@ public class Boxplot extends Visualization {
         rangeAxis.setAutoRange(false);
         double padding = (max - min) / 10;
         rangeAxis.setRange(min - padding, max + padding);
+
+        // set color of title
+        TextTitle title = chart.getTitle();
+        title.setBackgroundPaint(UIManager.getColor("Label.background"));
+        title.setPaint(UIManager.getColor("Label.foreground"));
 
     
         ChartPanel chartPanel = new ChartPanel(chart);

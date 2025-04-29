@@ -129,7 +129,7 @@ public class StatisticalSummary {
         int dfE = dataArray.size() - levels.length;
         double pValue = model.anovaPValue(dataSplit);
         StringBuilder output = new StringBuilder();
-        output.append("\tOne Way ANOVA Test");
+        output.append("\n\tOne Way ANOVA Test");
         output.append("\nComparing " + numerical.getName() +" by " + category.getName());
         output.append("\nLevels: \n   ");
         output.append(levels[0]);
@@ -140,7 +140,7 @@ public class StatisticalSummary {
         output.append("\nDegrees of freedom: ");
         output.append("\n   Regression: " + dfR);
         output.append("    Error: " + dfE);
-        output.append("\np-value: " + String.format("%.4f", pValue));
+        output.append("\np-value: " + String.format("%.4f", pValue) +"\n");
         return output.toString();
     }
 
@@ -166,7 +166,7 @@ public class StatisticalSummary {
             SimpleRegression model = findSimpleLinearRegression(indVar, depVar);
             double fstat = model.getRegressionSumSquares()/model.getMeanSquareError();
             StringBuilder output = new StringBuilder();
-            output.append("\tSimple Linear Regression\n");
+            output.append("\n\tSimple Linear Regression\n");
             output.append("Dependent variable: " + target.getName() + "\n");
             output.append("Independent variable: " + parameters[0].getName() + "\n");
             output.append("Equation: y = " + String.format("%.4f", model.getIntercept()) + 
@@ -192,7 +192,7 @@ public class StatisticalSummary {
             }
             double fstat = meanSquareRegression/meanSquareResidual;
             StringBuilder output = new StringBuilder();
-            output.append("\tMultiple Linear Regression\n");
+            output.append("\n\tMultiple Linear Regression\n");
             output.append("Target field: " + target.getName() + "\n");
             output.append("Parameters: " + parameters[0].getName());
             for (int i=1; i<parameters.length; i++) {
@@ -328,7 +328,7 @@ public class StatisticalSummary {
         output.append("\nMedian: " + String.format("%.4f", getMedian(data)));
         output.append("\nThird Quartile: " + String.format("%.4f", getQuartile(data, 3)));
         output.append("\nMaximum: " + String.format("%.4f", getMax(data)));
-        output.append("\nCount: " + getCount(data));
+        output.append("\nCount: " + getCount(data) + "\n");
         return output.toString();
     }
 

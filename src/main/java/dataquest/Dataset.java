@@ -97,6 +97,19 @@ class Dataset {
         return -1;
     }
 
+    static int getMaxRowCount() {
+        if (dataArray.size() == 0) {
+            return 0;
+        }
+        int max = 0;
+        for (int i=0; i<dataArray.size(); i++) {
+            if (dataArray.get(i).getRowCount() > max) {
+                max = dataArray.get(i).getRowCount();
+            }
+        }
+        return max;
+    }
+
     // takes a list of fields, and outputs a list of list of doubles
     // ensure that all fields passed are numerical
     static ArrayList<ArrayList<Double>> matchFields(Field[] fields) {
