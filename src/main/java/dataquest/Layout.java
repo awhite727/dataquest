@@ -140,13 +140,13 @@ public class Layout extends JFrame {
         JMenuItem rowItem = new JMenuItem("Add row");
         JMenuItem columnItem = new JMenuItem("Add column");
         JMenuItem columnUpdateItem = new JMenuItem("Update column type");
-        JMenuItem columnDeleteItem = new JMenuItem("Delete column");
+        //JMenuItem columnDeleteItem = new JMenuItem("Delete column");
         
         JMenuItem missingItem = new JMenuItem("Handle missing values");
         spreadsheetMenu.add(rowItem);
         spreadsheetMenu.add(columnItem);
         spreadsheetMenu.add(columnUpdateItem);
-        spreadsheetMenu.add(columnDeleteItem);
+        //spreadsheetMenu.add(columnDeleteItem);
         spreadsheetMenu.addSeparator();     
         spreadsheetMenu.add(missingItem);
 
