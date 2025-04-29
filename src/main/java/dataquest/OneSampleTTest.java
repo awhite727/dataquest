@@ -25,10 +25,9 @@ public class OneSampleTTest {
     private double criticalValue;
     private double p;
     
-    //TODO: Add new constructors for custom sds; one field; one field and custom sds
     OneSampleTTest(Field fieldA, double alpha, double mu, Direction direction){
         this.fieldA = fieldA;
-        ArrayList<Double>valuesA = fieldA.getValues(); //TODO: handle differently for paired sample 
+        ArrayList<Double>valuesA = fieldA.getValues();
         this.valuesA = new double[valuesA.size()];
         for (int i = 0; i < this.valuesA.length; i++) {
             this.valuesA[i] = valuesA.get(i);
@@ -68,7 +67,6 @@ public class OneSampleTTest {
         ci[1] = round(meanA + moe);
     } 
 
-    //TODO: Separate and complete oneSampleT
         public String printBasic(){
             String result = ""; 
             result += "mean " + fieldA.getName()+ " = " + round(meanA);

@@ -359,7 +359,6 @@ public class Layout extends JFrame {
                     visualPanel1.repaint();
                 }
             }
-          //TODO: create actual graph
         }); */
         /* boxplotButton.addActionListener(e -> {
             if (Dataset.dataArray != null) {
@@ -663,7 +662,6 @@ public class Layout extends JFrame {
         if (success) {
             tableModel.setValueAt(value, row, col);
         } else {
-            //TODO: Set to a missing? Currently keeps looking at typed array so may lead to confusion if a number isn't properly updated
             tableModel.setValueAt(null, row, col);
         }
 
@@ -736,7 +734,6 @@ public class Layout extends JFrame {
         chart2.getXYPlot().setDataset(dataset2);
         
 
-        //TODO: POSSIBLE BREAK POINT; make sure the color is properly set
         applyColorPalette(graph1.getChart());
         applyColorPalette(graph2.getChart());
         */

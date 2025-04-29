@@ -126,6 +126,7 @@ public class TwoSample {
         setPooledCI();
     }
 
+    //TODO: Recheck all pvalues and tstats but especially here
     public void setZ(){
         /* Formula z: https://www.statology.org/two-sample-z-test/
          * CI: https://www.statskingdom.com/difference-confidence-interval-calculator.html 
@@ -150,7 +151,7 @@ public class TwoSample {
                 //p/=2;
                 break;
             default: //EQUAL
-                p = 1 - p;
+                //p = 1 - p;
                 p*=2;
                 break;
         }

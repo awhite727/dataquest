@@ -28,7 +28,6 @@ public class ChoiceMenu {
         //popup.addQuestion(QuestionType.BUBBLE,new String[]{"File deliminator: ","Comma", "Semicolon", "Space", "New line", "Tab","Custom"}, new HandleError[]{HandleError.NONE});
         popup.addQuestions(questionType, questionList, errors);
         popup.addOptionalConditional(0, "Custom");
-        popup.printQuestions();
         String[] selected=  popup.showGenericPopup();//Popup.showGenericPopup(parent, "Deliminator", questionType, 
         //questionList, new ArrayList<>());
         System.out.println("SELECTED CALLED: " + Arrays.toString(selected));
@@ -91,7 +90,6 @@ public class ChoiceMenu {
         //String selected[] = Popup.showGenericPopup(parent, tabName, questionType, questionList, errors);
         Popup popup = new Popup(parent, tabName);
         popup.addQuestions(questionType, questionList, errors);
-        popup.printQuestions();
         String[] selected = popup.showGenericPopup();
         System.out.println(Arrays.toString(selected));
         if (selected==null) return;
@@ -175,7 +173,7 @@ public class ChoiceMenu {
         String[] selected = popup.showGenericPopup();//showComboPopup(parent, "Statistical Summary", "Choose a field", fieldNames);
         if (selected == null) return null;
         Field summaryField = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
-        String textOutput = StatisticalSummary.getSummary(summaryField.getValues());
+        String textOutput = StatisticalSummary.getSummary(summaryField);
         return textOutput;
    }
 
@@ -600,7 +598,6 @@ public class ChoiceMenu {
         popup.addMinFieldN(2); //for fieldA
         popup.addMinFieldN(2); //for fieldB
 
-        popup.printQuestions();
         String[] selected = popup.showGenericPopup();
         //String selected[] = Popup.showGenericPopup(parent, tabName, questionType, questionList, new ArrayList<String[]>());
 
@@ -793,7 +790,6 @@ public class ChoiceMenu {
         popup.addMinFieldN(2); //for fieldB
         popup.addCustomMessage("If population SD unknown, use a t-test");
         popup.addCustomMessage("If population SD unknown, use a t-test");
-        popup.printQuestions();
         String selected[] = popup.showGenericPopup();//Popup.showGenericPopup(parent, tabName, questionType, questionList, errors);
         if (selected == null) return null;
 
