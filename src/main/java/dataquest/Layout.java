@@ -140,13 +140,13 @@ public class Layout extends JFrame {
         JMenuItem rowItem = new JMenuItem("Add row");
         JMenuItem columnItem = new JMenuItem("Add column");
         JMenuItem columnUpdateItem = new JMenuItem("Update column type");
-        JMenuItem columnDeleteItem = new JMenuItem("Delete column");
+        //JMenuItem columnDeleteItem = new JMenuItem("Delete column");
         
         JMenuItem missingItem = new JMenuItem("Handle missing values");
         spreadsheetMenu.add(rowItem);
         spreadsheetMenu.add(columnItem);
         spreadsheetMenu.add(columnUpdateItem);
-        spreadsheetMenu.add(columnDeleteItem);
+        //spreadsheetMenu.add(columnDeleteItem);
         spreadsheetMenu.addSeparator();     
         spreadsheetMenu.add(missingItem);
 
@@ -365,7 +365,6 @@ public class Layout extends JFrame {
                     visualPanel1.repaint();
                 }
             }
-          //TODO: create actual graph
         }); */
         /* boxplotButton.addActionListener(e -> {
             if (Dataset.dataArray != null) {
@@ -692,7 +691,6 @@ public class Layout extends JFrame {
         if (success) {
             tableModel.setValueAt(value, row, col);
         } else {
-            //TODO: Set to a missing? Currently keeps looking at typed array so may lead to confusion if a number isn't properly updated
             tableModel.setValueAt(null, row, col);
         }
 

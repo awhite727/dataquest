@@ -85,27 +85,6 @@ public class Popup {
         NONE
     }
 
-    //TODO: Delete; used for testing 
-    public void printQuestions() {
-        if(questionList.size() != questionType.size() || questionType.stream().filter(a -> a!=QuestionType.LABEL).count() != errors.size()) {
-            System.out.println("ERROR: sizes are not equal");
-            System.out.println("\tqType.size() = " + questionType.size());
-            System.out.println("\tqList.size() = " + questionList.size());
-            System.out.println("\terrors.size() = " + errors.size());
-            return;
-        }
-
-        int errorIndex = 0;
-        for (int i = 0; i < questionType.size(); i++) {
-            System.out.println("Question " + (i+1) + ": ");
-            System.out.println("\tType = " + questionType.get(i));
-            System.out.println("\tContents = " + Arrays.toString(questionList.get(i)));
-            if(!questionType.get(i).equals(QuestionType.LABEL)) {
-                System.out.println("\terrors = " + Arrays.toString(errors.get(errorIndex)));
-                errorIndex++;
-            }
-        }
-    }
     //The look of the popup 
     private void designPopup() {
         popup = new JDialog(parent, tabName, true);

@@ -336,7 +336,7 @@ public class Field implements Serializable{
     public boolean setCell(int index, String newValue) {
         // if index is exactly at the end of the array, append the new cell.
         String valueType = Dataset.getPattern(newValue);
-        if (type.equals("String") && !valueType.equals(type) && !valueType.equals("missing")) {
+        if (!type.equals("String") && !valueType.equals(type) && !valueType.equals("missing")) {
             return false;
         }
         if (index == stringArray.size()) {
