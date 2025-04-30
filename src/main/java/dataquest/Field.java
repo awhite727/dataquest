@@ -161,12 +161,12 @@ public class Field implements Serializable{
                 }
                 break;
             default:
-                Popup.showErrorMessage(null, "Error finding levels of " + name + ": invalid type declared. \n" + name + ": " + type);
+                System.out.println("Error finding levels of " + name + ": invalid type declared. \n" + name + ": " + type);
         }
         //System.out.println(levelsList.toString());
         levels = levelsList.toArray(new String[levelsList.size()]);
         if (levels.length <= 1) {
-            Popup.showErrorMessage(null, "Error finding levels of " + name + ": too few levels to read.");
+            System.out.println("Error finding levels of " + name + ": too few levels to read.");
         }
         return levels;
     }

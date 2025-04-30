@@ -88,7 +88,7 @@ public class Layout extends JFrame {
             e.printStackTrace();
         }
         updateTheme();  //sets global theme for charts
-        setIconImage(new ImageIcon("src\\main\\resources\\dataquest-logo.png").getImage()); //Just changes icon at the bottom when it's running to whatever icon.png we have in resources
+        setIconImage(new ImageIcon("target\\classes\\dataquest-logo.png").getImage()); //Just changes icon at the bottom when it's running to whatever icon.png we have in resources
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         dataset = new Dataset();
         loadSavedWorkspace();
@@ -424,7 +424,7 @@ public class Layout extends JFrame {
     //Opens the importing window using python
     //Once file selected, calls the repesective Dataset's csvReading, xlsReading, or xlsxReading
     private void importAssist(){
-        String pythonPath = "src\\main\\resources\\PythonAssist.py";
+        String pythonPath = "target\\classes\\PythonAssist.py";
         String selectedPath = "";
         File file = null;
         ProcessBuilder pb;
