@@ -183,7 +183,7 @@ public class StatisticalSummary {
         // multiple linear regression output
         else {
             OLSMultipleLinearRegression  model = findMultipleLinearRegression(values, depVar);
-            double meanSquareRegression = model.calculateTotalSumOfSquares()/parameters.length;
+            //double meanSquareRegression = model.calculateTotalSumOfSquares()/parameters.length;
             int dfe = depVar.size()-parameters.length;
             if (dfe<=0) {
                 dfe = 1;
