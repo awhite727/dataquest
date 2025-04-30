@@ -427,7 +427,7 @@ public class Layout extends JFrame {
         String pythonPath = "target\\classes\\PythonAssist.py";
         String selectedPath = "";
         File file = null;
-        ProcessBuilder pb;
+        ProcessBuilder pb; 
         Process p;
         BufferedReader bf;
         try {
