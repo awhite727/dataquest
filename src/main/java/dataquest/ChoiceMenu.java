@@ -65,7 +65,7 @@ public class ChoiceMenu {
         String[] fieldNames = new String[fields.length+1];
         final String[] types = {"Type ", "String","Boolean","Numeric"};
         if (fields.length == 0) {
-            System.out.println("ERROR: No fields to update");
+            Popup.showNoticeMessage(parent, "No fields to update");
             return;
         }
         fieldNames[0] = "Field ";
@@ -151,7 +151,7 @@ public class ChoiceMenu {
                 output = histogramMenu(parent);
                 break;
             default:
-                System.out.println("Error creating visualization of type: " + selected[0]);
+                Popup.showErrorMessage(parent, "Error creating visualization of type: " + selected[0]);
                 return null;
         }
         return output;
@@ -160,7 +160,8 @@ public class ChoiceMenu {
     public static String statisticalSummaryMenu(JFrame parent) {
         Field[] fields = Dataset.getNumericFields();
         if (fields.length==0) {
-            return "No numerical fields available for statistical summary.";
+            Popup.showNoticeMessage(parent, "No numerical fields available for statistical summary.");
+            return null;
         }
         String [] fieldNames = new String[fields.length+1];
         fieldNames[0] = "Select a field: ";
@@ -256,9 +257,7 @@ public class ChoiceMenu {
         }
 
         String output = StatisticalSummary.getLinearRegression(target, parameters);
-        if(output == null) {
-            popup.showErrorMessage("Too many missing values to compute linear regression.");
-        }
+        
         return output;
     }
 
@@ -304,18 +303,15 @@ public class ChoiceMenu {
             }
         }
 
-        //TODO: Getting an error if the n of category is more than the n of field?
-        //I can implement a field < field error detection, but if we need to force retangular for other reasons then no need to
         boxplotField = Dataset.dataArray.get(Dataset.indexOfField(boxplotFieldName));
         Boxplot boxplot = new Boxplot("Boxplot", null, boxplotField, categoryField);
         return boxplot;
     }
 
-    //TODO: Fix error where non-retangular(?) x/y's have index error
     public static Graph scatterplotMenu(JFrame parent) {
         Field[] fields = Dataset.getNumericFields();
         if (fields.length < 2) {
-            System.out.println("Not enough numeric fields");
+            Popup.showNoticeMessage(parent,"Not enough numeric fields");
             return null;
         }
         Field[] categoryFields = Dataset.getCategoricalFields();
@@ -370,14 +366,13 @@ public class ChoiceMenu {
                 graph = new Graph("Scatterplot", null, xField, yField, categoryField);
             }
             else {
-                System.out.println("Error finding field of name " + categoryFieldName);
+                Popup.showErrorMessage(parent, "Error finding field of name " + categoryFieldName);
                 graph = new Graph("Scatterplot", null, xField, yField, null);
             }
         }
         return graph;
     }
 
-    //TODO: Add from one-sample from data (backend done) 
     public static TDistribution tDistributionMenu(JFrame parent) {
 
         ArrayList<String> questionType = new ArrayList<>(Arrays.asList("text", "radio", "text"));
@@ -401,6 +396,7 @@ public class ChoiceMenu {
             a = Double.parseDouble(selected[2]);
         } catch(NumberFormatException e) {
             System.out.println("Invalid entry: " + e.getMessage());
+            Popup.showErrorMessage(parent, "Error setting df or t-score. Setting to defaults");
             df = 10;
             a = 0;
         }
@@ -429,14 +425,17 @@ public class ChoiceMenu {
         Field[] fields = Dataset.getNumericFields();
         Field[] levels = Dataset.getCategoricalAnovaFields();
         if (fields.length==0) {
-            return "No numerical fields for calculation";
+            Popup.showNoticeMessage(parent,"No numerical fields for calculation");
+            return null;
         }
         if (levels.length == 0) {
-            return "No categorical fields for splitting";
+            Popup.showNoticeMessage(parent, "No categorical fields for splitting");
+            return null;
         }
         // case where the numerical and categorical field are the same field
         if (fields.length == 1 && levels.length == 1 && fields[0].getName().equals(levels[0].getName())) {
-            return "Not enough fields for calculation";
+            Popup.showNoticeMessage(parent, "Not enough fields for calculation");
+            return null;
         }
         String[] fieldNames = new String[fields.length+1];
         fieldNames[0] = "Test field ";
@@ -466,7 +465,7 @@ public class ChoiceMenu {
         final String binSize; //just to prevent naming errors
         final String numBins; //just to prevent naming errors
         if (fields.length==0) {
-            System.out.println("No numerical fields available for histogram.");
+            Popup.showNoticeMessage(parent,"No numerical fields available for histogram.");
             return null;
         }
         //preparing for generic popup
@@ -504,31 +503,7 @@ public class ChoiceMenu {
             histogram.setBins(false,Double.valueOf(selected[2]));
         } else {
             histogram.setBins(true,Integer.valueOf(selected[2]));
-        }/* 
-        double textResponse = -1;
-        try {
-            textResponse = Double.valueOf(selected[2]);
-            if(textResponse <= 0) throw new Exception();
-            
-        } catch (Exception e) {
-            System.out.println("ERROR: Not a valid text entry. Defaulting to 10 bins");
-            histogram.setBins(true,10);
-            return histogram;
         }
-
-        if(selected[1].equals(binSize)) {
-            histogram.setBins(false,textResponse);
-        } else if(selected[1].equals(numBins)) {
-            try {
-                int num = (int)textResponse;
-                histogram.setBins(true,num);
-            } catch (Exception e) {
-                System.out.println("ERROR: Not valid: Assuming size");
-                histogram.setBins(false,textResponse);
-            }
-        } else { //shouldn't be called but just in case
-            System.out.println("ERROR: Shape using undefined");
-        }  */
         return histogram;
    }
 
@@ -554,7 +529,7 @@ public class ChoiceMenu {
         for (int i=0;i<fields.length;i++) {
             fieldA[i+1] = fields[i].getName();
             fieldB[i+1] = fields[i].getName();
-        } //TODO: note that tabbedPane might be handy for popups or something maybe for like the graph menus? 
+        } 
 
         Popup popup = new Popup(parent, tabName);
         //Fields
@@ -603,12 +578,7 @@ public class ChoiceMenu {
         popup.addMinFieldN(2); //for fieldB
 
         String[] selected = popup.showGenericPopup();
-        //String selected[] = Popup.showGenericPopup(parent, tabName, questionType, questionList, new ArrayList<String[]>());
-
-        //Check validity, if anything null return 
-        /* for (String string : selected) {
-            if (string == null) return "";
-        } */
+        
         if(selected == null) return null;
         
         Field fieldOne = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
@@ -626,8 +596,8 @@ public class ChoiceMenu {
                 direction = Direction.EQUAL;
                 break;
             default:
-                System.out.println("ERROR: Not a valid direction: " + selected[2]);
-                return "";
+                Popup.showErrorMessage(parent, "ERROR: Not a valid direction: " + selected[2]);
+                return null;
         }
         double difference = 0;
         double alpha = 0.05;
@@ -705,8 +675,8 @@ public class ChoiceMenu {
                 direction = Direction.EQUAL;
                 break;
             default:
-                System.out.println("ERROR: Not a valid direction: " + selected[2]);
-                return "";
+                Popup.showErrorMessage(parent, "ERROR: Not a valid direction: " + selected[2]);
+                return null;
         }
         double difference = 0;
         double alpha = 0.05;
@@ -723,13 +693,12 @@ public class ChoiceMenu {
         return tt.printBasic();
     }
 
-    //TODO: Found a weird error scrolling up and down? Sometimes textfields just? disappeared? but scrolling up and down again made them reappear? 
     public static String zTwoSampleMenu(JFrame parent) {
         final String tabName = "Two Sample Z-Test";
         Field[] fields = Dataset.getNumericFields();
         if (fields.length < 2) {
-            System.out.println("ERROR: Not enough numerical fields available for mean comparison.");
-            return "";
+            Popup.showErrorMessage(parent, "ERROR: Not enough numerical fields available for mean comparison.");
+            return null;
         }
         ArrayList<String> questionType = new ArrayList<>();
         ArrayList<String[]> questionList = new ArrayList<>();
@@ -798,7 +767,7 @@ public class ChoiceMenu {
         if (selected == null) return null;
 
         if (selected[2] == "" || selected[3] == "") {
-            System.out.println("ERROR: Population SDs required for a z-test. If unknown, try a two sample t-test");
+            Popup.showErrorMessage(parent, "ERROR: Population SDs required for a z-test. If unknown, try a two sample t-test");
         }
         Field fieldOne = Dataset.dataArray.get(Dataset.indexOfField(selected[0]));
         Field fieldTwo = Dataset.dataArray.get(Dataset.indexOfField(selected[1]));
@@ -821,8 +790,8 @@ public class ChoiceMenu {
                 direction = Direction.EQUAL;
                 break;
             default:
-                System.out.println("ERROR: Not a valid direction: " + directionCheck);
-                return "";
+                Popup.showErrorMessage(parent, "ERROR: Not a valid direction: " + directionCheck);
+                return null;
         }
         if(!selected[5].strip().equals("")) difference = Double.valueOf(selected[5]);
             
@@ -837,10 +806,10 @@ public class ChoiceMenu {
         final String tabName = "Proportion z-test";
         Field[] fields = Dataset.getNumericFields();
         if (fields.length < 1) {
-            System.out.println("ERROR: No numerical fields available.");
-            return "";
+            Popup.showErrorMessage(parent, "ERROR: No numerical fields available.");
+            return null;
         } else if(fields.length < 2) {
-            System.out.println("NOTE: Not enough numerical fields available for a two-proportion test.");
+            Popup.showNoticeMessage(parent, "NOTE: Not enough numerical fields available for a two-proportion test.");
             return oneProportionMenu(parent);
         }
         ArrayList<String> questionType = new ArrayList<>();
@@ -863,8 +832,8 @@ public class ChoiceMenu {
         final String tabName = "One Sample Proportion";
         Field[] fields = Dataset.getNumericFields();
         if (fields.length < 1) {
-            System.out.println("ERROR: No numerical fields available.");
-            return "";
+            Popup.showErrorMessage(parent, "ERROR: No numerical fields available.");
+            return null;
         }
 
         ArrayList<String> questionType = new ArrayList<>();
@@ -939,7 +908,7 @@ public class ChoiceMenu {
                 successDirection = Direction.EQUAL;
                 break;
             default:
-                System.out.println("ERROR: Not a valid direction: " + selected[1]);
+                Popup.showErrorMessage(parent,"ERROR: Not a valid direction: " + selected[1]);
                 return null;
         }
 
@@ -957,8 +926,8 @@ public class ChoiceMenu {
                 nullDirection = Direction.EQUAL;
                 break;
             default:
-                System.out.println("ERROR: Not a valid direction: " + selected[3]);
-                return "";
+                Popup.showErrorMessage(parent, "ERROR: Not a valid direction: " + selected[3]);
+                return null;
         }
 
         double pNull = Double.valueOf(selected[4]); //Optional?
@@ -973,7 +942,7 @@ public class ChoiceMenu {
                     throw new Exception();
                 }
             } catch (Exception e) {
-                System.out.println("ERROR: alpha \u03B1 must be a number 0-1 (exclusive). Using default 0.05");
+                Popup.showNoticeMessage(parent, "alpha \u03B1 must be a number 0-1 (exclusive). Using default 0.05");
             }
         }
 
@@ -986,8 +955,8 @@ public class ChoiceMenu {
         final String tabName = "Proportion z-test";
         Field[] fields = Dataset.getNumericFields();
         if (fields.length < 2) {
-            System.out.println("ERROR: Not enough numerical fields available.");
-            return "";
+            Popup.showErrorMessage(parent, "ERROR: Not enough numerical fields available.");
+            return null;
         }
 
         ArrayList<String> questionType = new ArrayList<>();
@@ -1093,8 +1062,8 @@ public class ChoiceMenu {
                 successADirection = Direction.EQUAL;
                 break;
             default:
-                System.out.println("ERROR: Not a valid direction: " + successADirectionCheck);
-                return "";
+                Popup.showErrorMessage(parent, "ERROR: Not a valid direction: " + successADirectionCheck);
+                return null;
         }
         
         Direction successBDirection;
@@ -1109,8 +1078,8 @@ public class ChoiceMenu {
                 successBDirection = Direction.EQUAL;
                 break;
             default:
-                System.out.println("ERROR: Not a valid direction: " + successBDirectionCheck);
-                return "";
+                Popup.showErrorMessage(parent, "ERROR: Not a valid direction: " + successBDirectionCheck);
+                return null;
         }
         
         Direction nullDirection;
@@ -1125,8 +1094,8 @@ public class ChoiceMenu {
                 nullDirection = Direction.EQUAL;
                 break;
             default:
-                System.out.println("ERROR: Not a valid direction: " + nullDirectionCheck);
-                return "";
+                Popup.showErrorMessage(parent, "ERROR: Not a valid direction: " + nullDirectionCheck);
+                return null;
         }
 
         Proportion proportion = new Proportion(fieldOne, fieldTwo, successABound, successADirection, successBBound, successBDirection, alpha, nullDirection);

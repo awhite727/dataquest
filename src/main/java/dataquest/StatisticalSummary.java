@@ -98,7 +98,8 @@ public class StatisticalSummary {
     // takes the fields for anova and outputs information about the anova test
     public static String getAnova(Field numerical, Field category) {
         if (numerical == null || category == null) {
-            return "Error selecting fields.";
+            Popup.showErrorMessage(null,"Error selecting fields.");
+            return null;
         }
         String [] levels = category.getLevels();
         Collection<double[]> dataSplit = new ArrayList<>();     // data split by category
@@ -107,7 +108,8 @@ public class StatisticalSummary {
             ArrayList<Integer> indexes = category.getIndexOfLevel(level);
             if (indexes.size() == 1) {
                 String out = "All levels must have two or more values, " + level + " has 1 at line " + indexes.get(0);
-                return out;
+                Popup.showErrorMessage(null, out);
+                return null;
             }
             List<Double> dataLevel = new ArrayList<>();
             for(int i:indexes) {
@@ -147,7 +149,7 @@ public class StatisticalSummary {
     // takes the fields of the linear regression and outputs a string of information about the model
     public static String getLinearRegression(Field target, Field[] parameters) {
         if (target == null || parameters == null || parameters.length ==0) {
-            return "There was a problem computing the linear regression";
+            Popup.showErrorMessage(null, "There was a problem computing the linear regression");
         }
         Field[] variables = new Field[parameters.length + 1];
         variables[0] = target;
@@ -156,7 +158,8 @@ public class StatisticalSummary {
         }
         ArrayList<ArrayList<Double>> values = Dataset.matchFields(variables);
         if (values.get(0).size() <= 1) {
-            return null;//return "Too many missing values to compute linear regression.";
+            Popup.showErrorMessage(null, "Too many missing values to compute linear regression.");
+            return null;
         }
         ArrayList<Double> depVar = values.get(0);
         values.remove(0); // gives dependent variables
@@ -187,10 +190,10 @@ public class StatisticalSummary {
             }
             double meanSquareResidual = model.calculateResidualSumOfSquares()/dfe;
             if(meanSquareResidual <=0) {
-                System.out.println("Error calculating f statistic");
+                Popup.showErrorMessage(null,"Error calculating f statistic");
                 meanSquareResidual = 1;
             }
-            double fstat = meanSquareRegression/meanSquareResidual;
+            //double fstat = meanSquareRegression/meanSquareResidual;
             StringBuilder output = new StringBuilder();
             output.append("\n\tMultiple Linear Regression\n");
             output.append("Target field: " + target.getName() + "\n");
@@ -211,7 +214,7 @@ public class StatisticalSummary {
                     output.append("\n" + "\t");
                 }
             }
-            output.append("\nF-Statistic: " + String.format("%.4f", fstat));
+            //output.append("\nF-Statistic: " + String.format("%.4f", fstat));
             output.append("\nR-Squared: " + String.format("%.4f", model.calculateRSquared()) + "\n");
             return output.toString();
         }

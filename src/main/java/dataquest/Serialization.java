@@ -21,7 +21,8 @@ public class Serialization implements Serializable{
         try {
             savedWorkspace.add(workspace);
             //Add any more elements here
-            savedWorkspace.add(new ArrayList<Field>(Dataset.dataArray));
+            if(Dataset.dataArray == null) savedWorkspace.add(null);
+            else savedWorkspace.add(new ArrayList<Field>(Dataset.dataArray));
             
             ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(savePath));
             out.writeObject(savedWorkspace);

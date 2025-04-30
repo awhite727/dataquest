@@ -6,7 +6,6 @@ import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -24,7 +23,7 @@ import org.jfree.data.statistics.Regression;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
-public class Graph extends Visualization implements Serializable {
+public class Graph extends Visualization {
     //NOTE: I think we need chart here to make sure the right chart info 
     //is tied to the right graph info, but can remove all chart related and leave in 
     //layout if another way is found
@@ -212,13 +211,13 @@ public class Graph extends Visualization implements Serializable {
 
 
     // maybe delete
-    private JFreeChart createEmptyChart() {
+    /* private JFreeChart createEmptyChart() {
         JFreeChart chart = ChartFactory.createXYLineChart(title, xLabel, yLabel, data);
         XYPlot plot = chart.getXYPlot();
         plot.setBackgroundPaint(Color.WHITE);
         plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
         plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
         return chart;
-    }
+    } */
     
 }

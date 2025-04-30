@@ -217,8 +217,8 @@ class Dataset {
         dataArray = new ArrayList<>();
         String[] rowSplit;
         String[] fieldNames;
-        int incorrectCount = 0;
-        if (delim.equals("")){System.out.println("ERROR: No delim detected"); csvReader.close(); return;}
+        //int incorrectCount = 0;
+        if (delim.equals("")){Popup.showErrorMessage(null,"ERROR: No deliminator detected"); csvReader.close(); return;}
         String regex = delim + "(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)";
         if (row == null) {csvReader.close();return;}
         
@@ -230,8 +230,8 @@ class Dataset {
         while(row != null) {
             rowSplit = row.split(regex);
             if(rowSplit.length != fieldNames.length) {
-                    System.out.println("ERROR: Unable to unpack row " + row);
-                    incorrectCount++;
+                    Popup.showErrorMessage(null, "ERROR: Unable to read row " + row);
+                    //incorrectCount++;
                     row = csvReader.readLine();
                     continue;
             }
@@ -246,13 +246,13 @@ class Dataset {
                 if(dataArray.get(i).addCell(rowSplit[i])){
                     continue;
                 } else {
-                    incorrectCount++;
+                    //incorrectCount++;
                 }
             }
             row = csvReader.readLine();
         }
         csvReader.close();
-        System.out.println("\n~ ~ ~\nReading completed.");
+        /* System.out.println("\n~ ~ ~\nReading completed.");
         System.out.println("Total lines of data: " + dataArray.get(0).getStringArray().size());
         System.out.println("Lines with typing errors: " + incorrectCount);
         for (Field field : dataArray) {
@@ -265,35 +265,35 @@ class Dataset {
             if(nullCount > 0) {
                 System.out.println("\t" + field.getName() + ": " + nullCount);
             }
-        }
+        } */
     }
     
     //Takes an imported .xlsx file and fills out the dataArray
     public void xlsxReading(File file) throws IOException{
-        System.out.println("Called");
+        //System.out.println("Called");
         XSSFWorkbook wb;
         XSSFSheet sheet;
         DataFormatter df = new DataFormatter(); //have emulatecsv = true if we want to prevent trimming
         df.setUseCachedValuesForFormulaCells(true);
         String type = "";
         dataArray = new ArrayList<>();
-        int incorrectCount = 0;
+        //int incorrectCount = 0;
         try {
-            System.out.println("Attempt to get sheet");
+            //System.out.println("Attempt to get sheet");
             wb = new XSSFWorkbook(file);
             sheet = wb.getSheetAt(0);
             if(sheet == null){
-                System.out.println("ERROR: Sheet not found within file");
+                Popup.showErrorMessage(null, "ERROR: Sheet not found within file");
                 wb.close();
                 return;
             }
             wb.close();
         } catch(InvalidFormatException ioException) {
-            System.out.println("ERROR: Not a valid file type");
+            Popup.showErrorMessage(null,"ERROR: Not a valid file type");
             return;
         }
         Row fields = sheet.getRow(sheet.getFirstRowNum()); //updated to find the first populated row, not just the first row
-        System.out.println("Preparing iterations: ");
+        //System.out.println("Preparing iterations: ");
         int numFields = fields.getPhysicalNumberOfCells();
         for (Row row : sheet){
             for (int j=0; j < numFields; j++) {
@@ -317,7 +317,7 @@ class Dataset {
                         dataArray.get(j).setType(type); //Error message printed in Field
                 }
                 if(!dataArray.get(j).addCell(cellString)){
-                    incorrectCount++;
+                    //incorrectCount++;
                 }
             }
         }
@@ -333,7 +333,7 @@ class Dataset {
             dataArray.ind
         }*/
         
-        System.out.println("\n~ ~ ~\nReading completed.");
+        /* System.out.println("\n~ ~ ~\nReading completed.");
         System.out.println("Total lines of data: " + dataArray.get(0).getStringArray().size());
         System.out.println("Lines with typing errors: " + incorrectCount);
         for (Field field : dataArray) {
@@ -346,7 +346,7 @@ class Dataset {
             if(nullCount > 0) {
                 System.out.println("\t" + field.getName() + ": " + nullCount);
             }
-        }
+        } */
     }
     
     //Takes an imported .xls file and fills out the dataArray
@@ -355,10 +355,10 @@ class Dataset {
         Sheet sheet;
         String type = "";
         dataArray = new ArrayList<>();
-        int incorrectCount = 0;
+        //int incorrectCount = 0;
 
         try {
-            System.out.println("Attempt to get sheet");
+            //System.out.println("Attempt to get sheet");
             workbook = Workbook.getWorkbook(file);
             sheet = workbook.getSheet(0);
             int numFields = sheet.getColumns();
@@ -376,18 +376,18 @@ class Dataset {
                             dataArray.get(i).setType(type); //Error message printed in Field
                     }
                     if(!dataArray.get(i).addCell(cellString)){
-                        incorrectCount++;
+                        //++;
                     }
                 }              
             }
             workbook.close();
-            System.out.println("Success!");
+            //System.out.println("Success!");
         } catch (BiffException | IOException e) {
             System.out.println("ERROR: Issue reading a BIFF file");
             e.printStackTrace();
             return;
         }
-        System.out.println("\n~ ~ ~\nReading completed.");
+        /* System.out.println("\n~ ~ ~\nReading completed.");
         System.out.println("Total lines of data: " + dataArray.get(0).getStringArray().size());
         System.out.println("Lines with typing errors: " + incorrectCount);
         for (Field field : dataArray) {
@@ -400,7 +400,7 @@ class Dataset {
             if(nullCount > 0) {
                 System.out.println("\t" + field.getName() + ": " + nullCount);
             }
-        }
+        } */
     }
 
     public static void trimDataArray() {

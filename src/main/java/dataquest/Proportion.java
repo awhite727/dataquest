@@ -98,7 +98,7 @@ public class Proportion {
                     if(d == successA) xA++;
                     continue;
                 default: 
-                    System.out.println("ERROR: Unexpected error checking the direction of sample A");
+                    Popup.showErrorMessage(null, "ERROR: Unexpected error checking the direction of sample A");
                     break;
             }
         }
@@ -169,7 +169,7 @@ public class Proportion {
                     if(d == successA) xA++;
                     continue;
                 default: 
-                    System.out.println("ERROR: Unexpected error checking the direction of porportion test");
+                    Popup.showErrorMessage(null,"Unexpected error checking the direction of porportion test");
                     break;
             }
         }
@@ -188,7 +188,7 @@ public class Proportion {
                     if(d == successB) xB++;
                     continue;
                 default: 
-                    System.out.println("ERROR: Unexpected error checking the direction of porportion test");
+                    Popup.showErrorMessage(null, "ERROR: Unexpected error checking the direction of porportion test");
                     break;
             }
         }
@@ -234,13 +234,13 @@ public class Proportion {
 
         double meanDiff = pHatA - pHatB;
         //double zStar = StatisticalSummary.getZStar(alpha);
-        System.out.println("MeanDiff: " + meanDiff);
+        /* System.out.println("MeanDiff: " + meanDiff);
         System.out.println("\tpHatA: " +pHatA);
         System.out.println("\tpHatB: " +pHatB);
-        System.out.println("Z-star: " + round(criticalValue));
+        System.out.println("Z-star: " + round(criticalValue)); */
         double sqrtPart = Math.sqrt((pHatA*(1-pHatA)/nA) + (pHatB*(1-pHatB)/nB));
-        System.out.println("Sqrt: " + sqrtPart);
-        System.out.println("z*Sqrt: " + (criticalValue*sqrtPart));
+        /* System.out.println("Sqrt: " + sqrtPart);
+        System.out.println("z*Sqrt: " + (criticalValue*sqrtPart)); */
 
 
         ci[0] = round(meanDiff - (Math.abs(criticalValue)*sqrtPart));

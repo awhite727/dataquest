@@ -13,7 +13,7 @@ public class OneSampleTTest {
     double[] valuesA;
 
     private TTest tTest = new TTest();
-    private Direction direction; 
+    //private Direction direction; 
     private double meanA;
     StatisticalSummaryValues statsA; 
     private double mu; //(typically?) just do meanA - meanB - difference 
@@ -43,7 +43,7 @@ public class OneSampleTTest {
         System.out.println("nA: " + statsA.getN());
 
         this.alpha = alpha;
-        this.direction = direction;
+        //this.direction = direction;
     }
 
     //used because of inexactness of floats causing slight but noticeable differences in t tests 

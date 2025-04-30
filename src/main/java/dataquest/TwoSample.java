@@ -51,7 +51,7 @@ public class TwoSample {
         statsA = new StatisticalSummaryValues(meanA, Math.pow(StatisticalSummary.getStandardDeviation(valuesA),2), StatisticalSummary.getCount(valuesA),StatisticalSummary.getMax(valuesA),StatisticalSummary.getMin(valuesA),StatisticalSummary.getSum(valuesA));
         statsB = new StatisticalSummaryValues(meanB+difference, Math.pow(StatisticalSummary.getStandardDeviation(valuesB),2), StatisticalSummary.getCount(valuesB),StatisticalSummary.getMax(valuesB),StatisticalSummary.getMin(valuesB),StatisticalSummary.getSum(valuesB));
 
-        System.out.println("MeanA: " + meanA);
+        /* System.out.println("MeanA: " + meanA);
             System.out.println("\tstatsA meanA: " + statsA.getMean());
         System.out.println("MeanB: " + meanB);
             System.out.println("\tMeanB+difference: " + statsB.getMean());
@@ -60,7 +60,7 @@ public class TwoSample {
         System.out.println("VarB: " + statsB.getVariance());
             System.out.println("\tsdB: " + statsB.getStandardDeviation());
         System.out.println("nA: " + statsA.getN());
-        System.out.println("nB: " + statsB.getN());
+        System.out.println("nB: " + statsB.getN()); */
 
 
         this.alpha = alpha;
@@ -87,7 +87,7 @@ public class TwoSample {
         statsA = new StatisticalSummaryValues(meanA, Math.pow(popSDA,2), StatisticalSummary.getCount(valuesA),StatisticalSummary.getMax(valuesA),StatisticalSummary.getMin(valuesA),StatisticalSummary.getSum(valuesA));
         statsB = new StatisticalSummaryValues(meanB+difference, Math.pow(popSDB,2), StatisticalSummary.getCount(valuesB),StatisticalSummary.getMax(valuesB),StatisticalSummary.getMin(valuesB),StatisticalSummary.getSum(valuesB));
 
-        System.out.println("MeanA: " + meanA);
+        /* System.out.println("MeanA: " + meanA);
             System.out.println("\tstatsA meanA: " + statsA.getMean());
         System.out.println("MeanB: " + meanB);
             System.out.println("\tMeanB+difference: " + statsB.getMean());
@@ -96,7 +96,7 @@ public class TwoSample {
         System.out.println("VarB: " + statsB.getVariance());
             System.out.println("\tsdB: " + statsB.getStandardDeviation());
         System.out.println("nA: " + statsA.getN());
-        System.out.println("nB: " + statsB.getN());
+        System.out.println("nB: " + statsB.getN()); */
 
 
         this.alpha = alpha;
@@ -125,7 +125,6 @@ public class TwoSample {
         setPooledDF();
         setPooledCI();
     }
-    //TODO: Recheck all p-vals and tstats but especially this one 
     public void setZ(){
         /* Formula z: https://www.statology.org/two-sample-z-test/
          * CI: https://www.statskingdom.com/difference-confidence-interval-calculator.html 
@@ -212,7 +211,7 @@ public class TwoSample {
                 System.out.println("\tnB -1: " + (nB-1));
  */
             finalNum = numerator/(denomA + denomB); 
-            System.out.println(finalNum);
+            //System.out.println(finalNum);
             df = round(finalNum); 
         } catch(Exception e) {
             e.printStackTrace();
@@ -271,9 +270,9 @@ public class TwoSample {
         double pooledV = round((((statsA.getN()-1)*statsA.getVariance()) + ((statsB.getN()-1)*statsB.getVariance())) 
                         /df);
         double sqrtInterior = pooledV* (1.0/statsA.getN() + 1.0/statsB.getN());
-        System.out.println("meanDiff: " + meanDiff);
+        /* System.out.println("meanDiff: " + meanDiff);
         System.out.println("Pooled Sample Variance: " + pooledV);
-        System.out.println("sqrtInterior: " + sqrtInterior);
+        System.out.println("sqrtInterior: " + sqrtInterior); */
         ci[0] = round(meanDiff - criticalValue*Math.sqrt(sqrtInterior));
         ci[1] = round(meanDiff + criticalValue*Math.sqrt(sqrtInterior));
     }

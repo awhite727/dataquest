@@ -40,7 +40,7 @@ public class Histogram extends Visualization {
     }
 
     void setDefaultColors(ChartPanel chartPanel) {
-        System.out.println("In default");
+        //System.out.println("In default");
     }
     @Override
     public JPanel createChart() {
@@ -65,7 +65,6 @@ public class Histogram extends Visualization {
     }
     @Override
     public JPanel updateChart() {
-        // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'updateChart'");
     }
 

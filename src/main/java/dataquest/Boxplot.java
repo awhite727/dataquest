@@ -40,9 +40,9 @@ public class Boxplot extends Visualization {
     private Field data;
     private Field category;
     private double min;
-    private double q1;
+    /* private double q1;
     private double median;
-    private double q3;
+    private double q3; */
     private double max;
 
 
@@ -60,9 +60,9 @@ public class Boxplot extends Visualization {
         }
         ArrayList<Double> values = data.getValues();
         min = StatisticalSummary.getMin(values);
-        q1 = StatisticalSummary.getQuartile(values, 1);
-        median = StatisticalSummary.getMedian(values);
-        q3 = StatisticalSummary.getQuartile(values, 3);
+        //q1 = StatisticalSummary.getQuartile(values, 1);
+        //median = StatisticalSummary.getMedian(values);
+        //q3 = StatisticalSummary.getQuartile(values, 3);
         max = StatisticalSummary.getMax(values);
     }
 
@@ -120,7 +120,7 @@ public class Boxplot extends Visualization {
     private DefaultBoxAndWhiskerCategoryDataset createDataset() {
         DefaultBoxAndWhiskerCategoryDataset dataset = new DefaultBoxAndWhiskerCategoryDataset();
         if (data == null || !data.getType().equalsIgnoreCase("float")) {
-            System.out.println("Error creating dataset with field " + data.getName() + ". Invalid type.");
+            Popup.showErrorMessage(null, "Error creating dataset with field " + data.getName() + ". Invalid type.");
             return null;
         }
         if (category == null) {
@@ -138,7 +138,7 @@ public class Boxplot extends Visualization {
                             dataLevels.add((float) dataArray.get(i));
                         }
                     } catch (IndexOutOfBoundsException e) {
-                        System.out.println("ERROR: dataArray is smaller than indexes of the levels");
+                        Popup.showErrorMessage(null, "ERROR: dataArray is smaller than indexes of the levels");
                         e.printStackTrace();
                     }
                 }
@@ -357,7 +357,7 @@ public class Boxplot extends Visualization {
      * @param oRadius  the radius.
      * @param g2  the graphics device.
      */
-    private void drawMultipleEllipse(Point2D point, double boxWidth,
+    /* private void drawMultipleEllipse(Point2D point, double boxWidth,
                                      double oRadius, Graphics2D g2)  {
 
         Ellipse2D dot1 = new Ellipse2D.Double(point.getX() - (boxWidth / 2)
@@ -366,7 +366,7 @@ public class Boxplot extends Visualization {
                 point.getY(), oRadius, oRadius);
         g2.draw(dot1);
         g2.draw(dot2);
-    }
+    } */
 
 
     /**

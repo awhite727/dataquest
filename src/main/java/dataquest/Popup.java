@@ -25,7 +25,6 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.UIManager;
 
-//TODO: Fix automatic width sizing
     //-- JLabel.setText("<html>Text</html>")/new JLabel("<html>" + text + "</html>")
     //Special characters need to be escaped first, like \<
     //https://stackoverflow.com/questions/2420742/make-a-jlabel-wrap-its-text-by-setting-a-max-width 
@@ -371,6 +370,7 @@ public class Popup {
         return selected;
     }
 
+    @SuppressWarnings("unchecked")
     private String[] submission(){
         selected = new String[mainComponents.size()];
         try {

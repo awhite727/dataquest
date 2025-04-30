@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -87,7 +88,7 @@ public class Layout extends JFrame {
             e.printStackTrace();
         }
         updateTheme();  //sets global theme for charts
-        //setIconImage(new ImageIcon("src\\main\\resources\\icon.png").getImage()); //Just changes icon at the bottom when it's running to whatever icon.png we have in resources
+        setIconImage(new ImageIcon("src\\main\\resources\\dataquest-logo.png").getImage()); //Just changes icon at the bottom when it's running to whatever icon.png we have in resources
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         dataset = new Dataset();
         loadSavedWorkspace();
@@ -128,12 +129,12 @@ public class Layout extends JFrame {
         JMenu statsMenu = new JMenu("Statistics");
 
         JMenuItem newItem = new JMenuItem("New");
-        JMenuItem openItem = new JMenuItem("Open");
-        JMenuItem saveItem = new JMenuItem("Save");
+        /* JMenuItem openItem = new JMenuItem("Open");
+        JMenuItem saveItem = new JMenuItem("Save"); */
         JMenuItem importItem = new JMenuItem("Import");
         fileMenu.add(newItem);
-        fileMenu.add(openItem);
-        fileMenu.add(saveItem);
+        /* fileMenu.add(openItem);
+        fileMenu.add(saveItem); */
         fileMenu.addSeparator();
         fileMenu.add(importItem);
 
@@ -289,7 +290,7 @@ public class Layout extends JFrame {
         columnItem.addActionListener(e -> addColumn());
         columnUpdateItem.addActionListener(e -> {
             if(Dataset.dataArray == null) {
-                System.out.println("ERROR: No data to update");
+                Popup.showNoticeMessage(null, "No data to update");
             } else {
                 ChoiceMenu.updateFieldType(this);
                 updateSpreadsheet();
@@ -405,14 +406,14 @@ public class Layout extends JFrame {
                     //graph1 = graphs[0];
                     //graph2 = graphs[1];
                 } else {
-                    System.out.println(object.getClass());
+                    //System.out.println(object.getClass());
                 }
             }
             //graph1 = (Graph)((Graph[])directState.get(0))[0];
             //graph2 = (Graph)((Graph[])directState.get(0))[1];
             //graph1.updateChart();
             //graph2.updateChart();
-
+            if((ArrayList<Field>)state.get(1) != null) 
             dataset.setDataArray((ArrayList<Field>)state.get(1));
         } catch(Exception e) {
             e.printStackTrace();
@@ -433,7 +434,7 @@ public class Layout extends JFrame {
             p = Runtime.getRuntime().exec("python --version");
             bf = new BufferedReader(new InputStreamReader(p.getInputStream()));
             p.waitFor();
-            System.out.println(bf.readLine()); //prints the python version read
+            //System.out.println(bf.readLine()); //prints the python version read
             bf.close();
         } catch (Exception e) {
             //Python isn't present
@@ -469,18 +470,18 @@ public class Layout extends JFrame {
             } 
             //String extension = file.getName().split(".")[1];//NOTE: Apparently capital extensions are valid, so can be used to prevent capital issues; however I'm worried this may lead to more issues than benefits
             if(file.getName().endsWith(".txt")) {
-                System.out.println("txt");
+                //System.out.println("txt");
                 String delim = ChoiceMenu.importingDelimMenu(this);
                 if(delim == null) return;
                  dataset.csvReading(file, delim);
             } else if(file.getName().endsWith(".csv")) {
-                System.out.println("csv");
+                //System.out.println("csv");
                 dataset.csvReading(file,","); 
             } else if(file.getName().endsWith(".xlsx")) {
-                System.out.println("xlsx");
+                //System.out.println("xlsx");
                 dataset.xlsxReading(file);
             } else if(file.getName().endsWith(".xls")) {
-                System.out.println("xls");
+                //System.out.println("xls");
                 dataset.xlsReading(file);
             } else {
                 Popup.showErrorMessage(this, "ERROR: Not a valid file type\n" + file.getName());
@@ -504,7 +505,6 @@ public class Layout extends JFrame {
         if(data == null){return;} // handles empty dataset
         //int rows = data.get(0).getTypedArray().size();
         int rows = 0;
-        //TODO: Note non-rectangular dataArrays lead to handleMissingValues believing that a column with only following missing values to not be missing any values and not allowing the user to fill that field
         // for non-rectangular dataArrays, gets the largest row size
         for (int i = 0; i < data.size(); i++ ) {
             int rowSize = data.get(i).getTypedArray().size();

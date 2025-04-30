@@ -95,7 +95,7 @@ public class TDistribution extends Visualization {
                 upperSeries.add(4, 0);
                 break;
             default:
-                System.out.println("Invalid direction: " + direction);
+                Popup.showErrorMessage(null,"Invalid direction: " + direction);
         }
 
         dataset = new XYSeriesCollection();
